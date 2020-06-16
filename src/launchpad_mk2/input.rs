@@ -10,12 +10,12 @@ pub enum Message {
 	Release { button: Button },
 }
 
-pub struct LaunchpadSInput<'a> {
+pub struct LaunchpadMk2Input<'a> {
 	_connection: MidiInputConnection<'a, ()>,
 }
 
-impl<'a> LaunchpadSInput<'a> {
-	const NAME: &'static str = "Launchy S Input";
+impl<'a> LaunchpadMk2Input<'a> {
+	const NAME: &'static str = "Launchy Mk2 Input";
 
 	pub fn from_port<F>(midi_input: MidiInput, port: &MidiInputPort, mut user_callback: F)
 			-> anyhow::Result<Self>
@@ -39,7 +39,7 @@ impl<'a> LaunchpadSInput<'a> {
 				.context("Couldn't create MidiInput object")?;
 
 		let port = super::guess_port(&midi_in)
-				.context("No Launchpad S input device found")?;
+				.context(format!("No {} device found", Self::NAME))?;
 		let self_ = Self::from_port(midi_in, &port, callback)
 				.context("Couldn't make launchpad input obj from port")?;
 		return Ok(self_);
@@ -78,6 +78,8 @@ impl<'a> LaunchpadSInput<'a> {
 	}
 
 	fn decode_grid_button(btn: u8) -> Button {
-		return Button::GridButton { x: btn % 16, y: btn / 16 };
+		let x = (btn % 10) - 1;
+		let y = 8 - (btn / 10);
+		return Button::GridButton { x, y };
 	}
 } 

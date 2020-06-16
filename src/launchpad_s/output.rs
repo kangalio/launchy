@@ -1,7 +1,7 @@
 use anyhow::{anyhow, Context};
 use midir::{MidiOutput, MidiOutputConnection, MidiOutputPort};
 
-use super::Button;
+use crate::Button;
 
 
 #[derive(Debug, Copy, Clone)]

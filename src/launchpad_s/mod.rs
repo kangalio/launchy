@@ -8,12 +8,6 @@ mod output;
 pub use output::*;
 
 
-#[derive(Debug)]
-pub enum Button {
-	ControlButton { number: u8 },
-	GridButton { x: u8, y: u8 },
-} 
-
 fn guess_port<T: midir::MidiIO>(midi_io: &T) -> Option<T::Port> {
 	for port in midi_io.ports() {
 		let name = ok_or_continue!(midi_io.port_name(&port));
