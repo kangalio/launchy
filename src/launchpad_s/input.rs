@@ -1,18 +1,13 @@
 use anyhow::{anyhow, Context};
 use midir::{MidiInput, MidiInputConnection, MidiInputPort};
-use crate::{ok_or_continue};
 
+use super::Button;
 
-#[derive(Debug)]
-pub enum Button {
-	ControlButton { number: u8 },
-	GridButton { x: u8, y: u8 },
-}
 
 #[derive(Debug)]
 pub enum Message {
-	NoteOff { button: Button },
-	NoteOn { button: Button },
+	Press { button: Button },
+	Release { button: Button },
 }
 
 pub struct LaunchpadSInput<'a> {
@@ -20,11 +15,11 @@ pub struct LaunchpadSInput<'a> {
 }
 
 impl<'a> LaunchpadSInput<'a> {
-	const NAME: &'static str = "LaunchpadRs Launchpad S"; // dunno what this should be lol
+	const NAME: &'static str = "Launchy S Input";
 
-	pub fn from_port<F>(midi_input: MidiInput, port: &MidiInputPort, user_callback: F)
+	pub fn from_port<F>(midi_input: MidiInput, port: &MidiInputPort, mut user_callback: F)
 			-> anyhow::Result<Self>
-			where F: Fn(Message) + Send + 'a {
+			where F: FnMut(Message) + Send + 'a {
 		
 		let midir_callback = move |timestamp: u64, data: &[u8], _: &mut _| {
 			let msg = Self::decode_message(timestamp, data);
@@ -38,26 +33,22 @@ impl<'a> LaunchpadSInput<'a> {
 	}
 
 	pub fn guess<F>(callback: F) -> anyhow::Result<Self>
-			where F: Fn(Message) + Send + 'a {
+			where F: FnMut(Message) + Send + 'a {
 		
 		let midi_in = MidiInput::new(crate::APPLICATION_NAME)
 				.context("Couldn't create MidiInput object")?;
 
-		for port in midi_in.ports() {
-			let name = ok_or_continue!(midi_in.port_name(&port));
-			
-			if name.contains("Launchpad S") {
-				let object = Self::from_port(midi_in, &port, callback)
-						.context("Couldn't make launchpad input obj from port")?;
-				return Ok(object);
-			}
-		}
-	
-		return Err(anyhow!("No Launchpad S input found"));
+		let port = super::guess_port(&midi_in)
+				.context("No Launchpad S input device found")?;
+		let self_ = Self::from_port(midi_in, &port, callback)
+				.context("Couldn't make launchpad input obj from port")?;
+		return Ok(self_);
 	}
 
 	fn decode_message(_timestamp: u64, data: &[u8]) -> Message {
 		assert_eq!(data.len(), 3);
+
+		println!("Decoding {:?}", data); // REMEMBER
 
 		// first byte of a launchpad midi message is the message type
 		match data[0] {
@@ -66,8 +57,8 @@ impl<'a> LaunchpadSInput<'a> {
 				
 				let velocity = data[2];
 				match velocity {
-					0 => return Message::NoteOff { button },
-					127 => return Message::NoteOn { button },
+					0 => return Message::Release { button },
+					127 => return Message::Press { button },
 					other => panic!("Unexpected grid note-on velocity {}", other),
 				}
 			},
@@ -76,8 +67,8 @@ impl<'a> LaunchpadSInput<'a> {
 
 				let velocity = data[2];
 				match velocity {
-					0 => return Message::NoteOff { button },
-					127 => return Message::NoteOn { button },
+					0 => return Message::Release { button },
+					127 => return Message::Press { button },
 					other => panic!("Unexpected control note-on velocity {}", other),
 				}
 			},
