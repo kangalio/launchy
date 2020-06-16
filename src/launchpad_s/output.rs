@@ -128,6 +128,4 @@ impl LaunchpadSOutput {
 		}
 		return Ok(());
 	}
-
-
 }

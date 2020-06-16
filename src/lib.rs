@@ -13,8 +13,24 @@ pub use launchpad_mk2 as mk2;
 const APPLICATION_NAME: &'static str = "LaunchpadRs";
 
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub enum Button {
 	ControlButton { number: u8 },
 	GridButton { x: u8, y: u8 },
+}
+
+impl Button {
+	pub fn x(&self) -> u8 {
+		match self {
+			Self::ControlButton { number } => return *number,
+			Self::GridButton { x, .. } => return *x,
+		}
+	}
+
+	pub fn y(&self) -> u8 {
+		match self {
+			Self::ControlButton { .. } => return 0,
+			Self::GridButton { y, .. } => y + 1,
+		}
+	}
 }
