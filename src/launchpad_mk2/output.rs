@@ -57,16 +57,24 @@ impl PaletteColor {
 	// These are some commonly used colors as palette colors. I don't have Rgb colors as constants
 	// because in the case of rgb colors you can just make your required colors yourself
 
+	// Basic colors, the top row
 	pub const BLACK: PaletteColor = Self { id: 0 };
+	pub const DARK_GRAY: PaletteColor = Self { id: 1 };
+	pub const LIGHT_GRAY: PaletteColor = Self { id: 2 };
 	pub const WHITE: PaletteColor = Self { id: 3 };
-	pub const RED: PaletteColor = Self { id: 72 }; // #ff0a00 (almost pure red #ff0000)
-	// lol this specific shade of green occurs not once but FOUR times in the color palette xD
-	// if you so choose, you could not only go with 21 but also 25, 87, or 88
-	pub const GREEN: PaletteColor = Self { id: 21 }; // #00fd00 (almost pure green #00ff00)
+
+	// Third column from the right
+	pub const RED: PaletteColor = Self { id: 5 };
+	pub const YELLOW: PaletteColor = Self { id: 13 };
+	pub const GREEN: PaletteColor = Self { id: 21 };
+	pub const SLIGHTLY_LIGHT_GREEN: PaletteColor = Self { id: 29 };
+	pub const LIGHT_BLUE: PaletteColor = Self { id: 37 };
 	pub const BLUE: PaletteColor = Self { id: 45 };
-	pub const CYAN: PaletteColor = Self { id: 90 }; // #00fcca (almost pure yellow #00ffff)
 	pub const MAGENTA: PaletteColor = Self { id: 53 };
-	pub const YELLOW: PaletteColor = Self { id: 13 }; // #fdfd00 (almost pure yellow #ffff00)
+	pub const BROWN: PaletteColor = Self { id: 61 };
+
+	// This is not belonging to any of the columns/rows but included anyway cuz cyan is important
+	pub const CYAN: PaletteColor = Self { id: 90 };
 }
 
 /// The Mk2 can light a button in multiple different ways
@@ -107,6 +115,10 @@ impl LaunchpadMk2Output {
 	}
 
 	fn send(&mut self, bytes: &[u8]) -> anyhow::Result<()> {
+		// let a: Vec<_> = bytes.iter().map(|b| format!("{: <3}", b)).collect();
+		// println!("sending: {}", a.join(" "));
+		println!("sending {:?}", bytes);
+
 		self.connection.send(bytes)?;
 		return Ok(());
 	}
@@ -114,33 +126,58 @@ impl LaunchpadMk2Output {
 	/// This is a function testing various parts of this API by executing various commands in order
 	/// to find issues either in this library or in your device
 	pub fn test_api(&mut self) -> anyhow::Result<()> {
-		self.light_all(PaletteColor { id: 1 })?;
+		self.light_all(PaletteColor::DARK_GRAY)?;
 		std::thread::sleep(std::time::Duration::from_millis(250));
-		self.light_all(PaletteColor { id: 0 })?;
+		self.light_all(PaletteColor::BLACK)?;
 
+		// Test single led lighting, only plain
 		self.light(Button::ControlButton { number: 0 }, PaletteColor { id: 5 })?;
-		self.light(Button::ControlButton { number: 1 }, PaletteColor { id: 13 })?;
-		self.light_rgb(Button::ControlButton { number: 2 }, RgbColor { r: 63, g: 0, b: 63 })?;
-		self.light_rgb(Button::ControlButton { number: 3 }, RgbColor { r: 63, g: 63, b: 63 })?;
+		self.light_rgb(Button::ControlButton { number: 1 }, RgbColor { r: 63, g: 0, b: 63 })?;
 		self.light(Button::GridButton { x: 0, y: 0 }, PaletteColor { id: 5 })?;
-		self.light(Button::GridButton { x: 1, y: 0 }, PaletteColor { id: 13 })?;
-		self.light_rgb(Button::GridButton { x: 2, y: 0 }, RgbColor { r: 63, g: 0, b: 63 })?;
-		self.light_rgb(Button::GridButton { x: 3, y: 0 }, RgbColor { r: 63, g: 63, b: 63 })?;
+		self.light_rgb(Button::GridButton { x: 1, y: 0 }, RgbColor { r: 63, g: 0, b: 63 })?;
 
-		self.flash(Button::GridButton { x: 1, y: 1 }, PaletteColor { id: 13 })?;
-		self.pulse(Button::GridButton { x: 1, y: 2 }, PaletteColor { id: 13 })?;
+		// Test multiple lights
 		self.light_multiple(&[
-			(Button::GridButton { x: 0, y: 1 }, PaletteColor { id: 13 }),
-			(Button::GridButton { x: 0, y: 2 }, PaletteColor { id: 14 }),
+			(Button::GridButton { x: 0, y: 1 }, PaletteColor { id: 18 }),
+			(Button::GridButton { x: 0, y: 2 }, PaletteColor { id: 18 }),
 		])?;
+		self.light_multiple_rgb(&[
+			(Button::GridButton { x: 0, y: 3 }, RgbColor { r: 63, g: 63, b: 63 }),
+			(Button::GridButton { x: 0, y: 4 }, RgbColor { r: 63, g: 40, b: 63 }),
+		])?;
+
+		// Test pulse and flash
+		self.flash(Button::GridButton { x: 1, y: 1 }, PaletteColor { id: 5 })?;
+		self.pulse(Button::GridButton { x: 1, y: 2 }, PaletteColor { id: 9 })?;
 		self.flash_multiple(&[
-			(Button::GridButton { x: 1, y: 1 }, PaletteColor { id: 13 }),
-			(Button::GridButton { x: 1, y: 2 }, PaletteColor { id: 14 }),
+			(Button::GridButton { x: 2, y: 1 }, PaletteColor { id: 5 }),
+			(Button::GridButton { x: 2, y: 2 }, PaletteColor { id: 9 }),
 		])?;
 		self.pulse_multiple(&[
-			(Button::GridButton { x: 2, y: 1 }, PaletteColor { id: 13 }),
-			(Button::GridButton { x: 2, y: 2 }, PaletteColor { id: 14 }),
+			(Button::GridButton { x: 3, y: 1 }, PaletteColor { id: 5 }),
+			(Button::GridButton { x: 3, y: 2 }, PaletteColor { id: 9 }),
 		])?;
+		// same but for control row
+		self.flash(Button::ControlButton { number: 2 }, PaletteColor { id: 5 })?;
+		self.pulse(Button::ControlButton { number: 3 }, PaletteColor { id: 9 })?;
+		self.flash_multiple(&[
+			(Button::ControlButton { number: 4 }, PaletteColor { id: 5 }),
+			(Button::ControlButton { number: 5 }, PaletteColor { id: 9 }),
+		])?;
+		self.pulse_multiple(&[
+			(Button::ControlButton { number: 6 }, PaletteColor { id: 5 }),
+			(Button::ControlButton { number: 7 }, PaletteColor { id: 9 }),
+		])?;
+		
+		// Test row, only grid
+		self.light_rows(&[
+			(7, PaletteColor { id: 16 }),
+			(8, PaletteColor { id: 18 }),
+			])?;
+			
+		// std::thread::sleep(std::time::Duration::from_millis(1000));
+		// Test control button row
+		// self.light_row(0, PaletteColor { id: 5 })?;
 
 		return Ok(());
 	}
@@ -173,7 +210,15 @@ impl LaunchpadMk2Output {
 			LightMode::Pulse => 40,
 		};
 
-		return self.send_multiple(msg_type_byte, pairs.iter()
+		// I have NO IDEA why this is needed?!?! It's not in the official documentation, but
+		// experimentation revealed that each packet needs to be prefixed with a dummy null byte
+		// in order to work ONLY FOR FLASH AND PULSE THOUGH! why? xD
+		let add_null_byte = match light_mode {
+			LightMode::Plain => false,
+			LightMode::Flash | LightMode::Pulse => true,
+		};
+
+		return self.send_multiple(msg_type_byte, add_null_byte, pairs.iter()
 				.map(|(button, color)| (Self::encode_button(*button), *color)));
 	}
 
@@ -195,13 +240,15 @@ impl LaunchpadMk2Output {
 	pub fn light_columns(&mut self, pairs: &[(u8, PaletteColor)]) -> anyhow::Result<()> {
 		assert!(pairs.len() <= 9);
 
-		return self.send_multiple(12, pairs.iter());
+		return self.send_multiple(12, false, pairs.iter());
 	}
 
+	/// Light multiple row with varying colors. Note: the row counting begins at the control row!
+	/// So e.g. when you want to light the first grid row, pass `1` not `0`.
 	pub fn light_rows<'a>(&mut self, pairs: &'a [(u8, PaletteColor)]) -> anyhow::Result<()> {
 		assert!(pairs.len() <= 9);
 
-		return self.send_multiple(13, pairs.iter()
+		return self.send_multiple(13, false, pairs.iter()
 				.map(|(row, color)| (8 - row, *color)));
 	}
 
@@ -209,15 +256,19 @@ impl LaunchpadMk2Output {
 		return self.send(&[240, 0, 32, 41, 2, 24, 14, color.id, 247]);
 	}
 
-	fn send_multiple<'a, I, T>(&mut self, msg_type_byte: u8, pair_iterator: I) -> anyhow::Result<()>
+	// param `insert_null_bytes`: whether every packet should be preceeded by a null byte
+	fn send_multiple<'a, I, T>(&mut self, msg_type_byte: u8, insert_null_bytes: bool, pair_iterator: I)
+			-> anyhow::Result<()>
 			where I: Iterator<Item=T>,
 			T: std::borrow::Borrow<(u8, PaletteColor)> {
 		
-		let mut bytes = Vec::with_capacity(8 + 12 * pair_iterator.size_hint().0);
+		let capacity = 8 + 12 * (pair_iterator.size_hint().0 + insert_null_bytes as usize);
+		let mut bytes = Vec::with_capacity(capacity);
 
 		bytes.extend(&[240, 0, 32, 41, 2, 24, msg_type_byte]);
 		for pair in pair_iterator {
 			let (button_specifier, color) = pair.borrow();
+			if insert_null_bytes { bytes.push(0) }
 			bytes.extend(&[*button_specifier, color.id]);
 		}
 		bytes.push(247);
@@ -270,6 +321,8 @@ impl LaunchpadMk2Output {
 		return self.light_columns(&[(column, color)]);
 	}
 
+	/// Light a single row, specified by `row`. Note: the row counting begins at the control row!
+	/// So e.g. when you want to light the first grid row, pass `1` not `0`.
 	pub fn light_row(&mut self, row: u8, color: PaletteColor)
 			-> anyhow::Result<()> {
 		

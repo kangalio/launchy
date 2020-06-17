@@ -13,7 +13,7 @@ pub use launchpad_mk2 as mk2;
 const APPLICATION_NAME: &'static str = "LaunchpadRs";
 
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Hash, Eq, PartialEq)]
 pub enum Button {
 	ControlButton { number: u8 },
 	GridButton { x: u8, y: u8 },
