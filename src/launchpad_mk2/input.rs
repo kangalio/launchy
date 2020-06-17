@@ -4,7 +4,7 @@ use midir::{MidiInput, MidiInputConnection, MidiInputPort};
 use crate::Button;
 
 
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq, Hash, Clone)]
 pub enum Message {
 	Press { button: Button },
 	Release { button: Button },

@@ -14,9 +14,9 @@ use crate::Button;
 /// to see the palette, or [see here](http://launchpaddr.com/mk2palette/)
 ///
 /// The `id` field must be 127 or lower
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Hash, Eq, PartialEq)]
 pub struct PaletteColor {
-	pub id: u8,
+	pub(crate) id: u8,
 }
 
 impl PaletteColor {
@@ -29,14 +29,23 @@ impl PaletteColor {
 		assert!(self_.is_valid());
 		return self_;
 	}
+
+	pub fn id(&self) -> u8 { self.id }
+	pub fn set_id(&mut self, id: u8) { self.id = id }
 }
 
-#[derive(Debug, Copy, Clone)]
+impl From<u8> for PaletteColor {
+	fn from(id: u8) -> Self {
+		return Self::new(id);
+	}
+}
+
+#[derive(Debug, Copy, Clone, Hash, Eq, PartialEq)]
 /// An RGB color. Each component may only go up to 63
 pub struct RgbColor {
-	pub r: u8,
-	pub g: u8,
-	pub b: u8,
+	r: u8,
+	g: u8,
+	b: u8,
 }
 
 impl RgbColor {
@@ -51,6 +60,13 @@ impl RgbColor {
 		assert!(self_.is_valid());
 		return self_;
 	}
+
+	pub fn r(&self) -> u8 { self.r }
+	pub fn g(&self) -> u8 { self.g }
+	pub fn b(&self) -> u8 { self.b }
+	pub fn set_r(&mut self, r: u8) { assert!(r <= 63); self.r = r }
+	pub fn set_g(&mut self, g: u8) { assert!(g <= 63); self.g = g }
+	pub fn set_b(&mut self, b: u8) { assert!(b <= 63); self.b = b }
 }
 
 impl PaletteColor {
@@ -78,6 +94,7 @@ impl PaletteColor {
 }
 
 /// The Mk2 can light a button in multiple different ways
+#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
 pub enum LightMode {
 	/// This is the standard mode. A straight consistent light
 	Plain,
@@ -115,10 +132,6 @@ impl LaunchpadMk2Output {
 	}
 
 	fn send(&mut self, bytes: &[u8]) -> anyhow::Result<()> {
-		// let a: Vec<_> = bytes.iter().map(|b| format!("{: <3}", b)).collect();
-		// println!("sending: {}", a.join(" "));
-		println!("sending {:?}", bytes);
-
 		self.connection.send(bytes)?;
 		return Ok(());
 	}
@@ -311,18 +324,20 @@ impl LaunchpadMk2Output {
 		return self.set_button(button, color, LightMode::Flash);
 	}
 
+	/// Start a pulse; a rhythmic increase and decreases in brightness
 	pub fn pulse(&mut self, button: Button, color: PaletteColor) -> anyhow::Result<()> {
 		return self.set_button(button, color, LightMode::Pulse);
 	}
 
+	/// Light a single column, specified by `row` (0-8)
 	pub fn light_column(&mut self, column: u8, color: PaletteColor)
 			-> anyhow::Result<()> {
 		
 		return self.light_columns(&[(column, color)]);
 	}
 
-	/// Light a single row, specified by `row`. Note: the row counting begins at the control row!
-	/// So e.g. when you want to light the first grid row, pass `1` not `0`.
+	/// Light a single row, specified by `row` (0-8). Note: the row counting begins at the control
+	/// row! So e.g. when you want to light the first grid row, pass `1` not `0`.
 	pub fn light_row(&mut self, row: u8, color: PaletteColor)
 			-> anyhow::Result<()> {
 		

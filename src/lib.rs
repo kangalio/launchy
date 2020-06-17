@@ -20,14 +20,16 @@ pub enum Button {
 }
 
 impl Button {
-	pub fn x(&self) -> u8 {
+	/// Returns x coordinate assuming coordinate origin in the leftmost control button
+	pub fn abs_x(&self) -> u8 {
 		match self {
 			Self::ControlButton { number } => return *number,
 			Self::GridButton { x, .. } => return *x,
 		}
 	}
 
-	pub fn y(&self) -> u8 {
+	/// Returns y coordinate assuming coordinate origin in the leftmost control button
+	pub fn abs_y(&self) -> u8 {
 		match self {
 			Self::ControlButton { .. } => return 0,
 			Self::GridButton { y, .. } => y + 1,
