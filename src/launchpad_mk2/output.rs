@@ -68,12 +68,12 @@ impl RgbColor {
 		return self.r <= 63 && self.g <= 63 && self.b <= 63;
 	}
 
-	pub fn r(&self) -> u8 { self.r }
-	pub fn g(&self) -> u8 { self.g }
-	pub fn b(&self) -> u8 { self.b }
-	pub fn set_r(&mut self, r: u8) { assert!(r <= 63); self.r = r }
-	pub fn set_g(&mut self, g: u8) { assert!(g <= 63); self.g = g }
-	pub fn set_b(&mut self, b: u8) { assert!(b <= 63); self.b = b }
+	pub fn red(&self) -> u8 { self.r }
+	pub fn green(&self) -> u8 { self.g }
+	pub fn blue(&self) -> u8 { self.b }
+	pub fn set_red(&mut self, r: u8) { assert!(r <= 63); self.r = r }
+	pub fn set_green(&mut self, g: u8) { assert!(g <= 63); self.g = g }
+	pub fn set_blue(&mut self, b: u8) { assert!(b <= 63); self.b = b }
 }
 
 impl PaletteColor {
@@ -274,6 +274,8 @@ impl LaunchpadMk2Output {
 	/// This is a function testing various parts of this API by executing various commands in order
 	/// to find issues either in this library or in your device
 	pub fn test_api(&mut self) -> anyhow::Result<()> {
+		use crate::Button;
+
 		self.light_all(PaletteColor::DARK_GRAY)?;
 		std::thread::sleep(std::time::Duration::from_millis(250));
 		self.light_all(PaletteColor::BLACK)?;
@@ -753,5 +755,85 @@ impl LaunchpadMk2Output {
 	/// ```
 	pub fn pulse_multiple(&mut self, pairs: &[(Button, PaletteColor)]) -> anyhow::Result<()> {
 		return self.set_buttons(pairs, LightMode::Pulse);
+	}
+}
+
+fn x_y_to_button(x: u8, y: u8) -> Button {
+	match y {
+		0 => {
+			assert!(x <= 7);
+			return Button::ControlButton { number: x };
+		},
+		1..=8 => {
+			assert!(x <= 8);
+			return Button::GridButton { x, y: y - 1 };
+		},
+		other => panic!("Unexpected y: {}", other),
+	}
+}
+
+pub struct Canvas {
+	pub backend: LaunchpadMk2Output,
+	old_state: crate::util::Array2d<crate::Color>,
+	new_state: crate::util::Array2d<crate::Color>,
+}
+
+impl Canvas {
+	/// The passed-in backend must not have been
+	pub fn new(backend: LaunchpadMk2Output) -> Self {
+		let old_state = crate::util::Array2d::new(9, 9);
+		let new_state = crate::util::Array2d::new(9, 9);
+		return Self { backend, old_state, new_state };
+	}
+}
+
+impl crate::Canvas for Canvas {
+	const BOUNDING_BOX_WIDTH: u32 = 9;
+	const BOUNDING_BOX_HEIGHT: u32 = 9;
+
+	fn is_valid(x: u32, y: u32) -> bool {
+		if x > 8 || y > 8 { return false }
+		if x == 8 && y == 0 { return false }
+		return true;
+	}
+
+	fn set(&mut self, x: u32, y: u32, color: crate::Color) {
+		assert!(Self::is_valid(x, y));
+
+		self.new_state.set(x as usize, y as usize, color);
+	}
+
+	fn get(&self, x: u32, y: u32) -> crate::Color {
+		assert!(Self::is_valid(x, y));
+
+		return self.new_state.get(x as usize, y as usize);
+	}
+
+	fn get_old(&self, x: u32, y: u32) -> crate::Color {
+		assert!(Self::is_valid(x, y));
+
+		return self.old_state.get(x as usize, y as usize);
+	}
+
+	fn flush(&mut self) -> anyhow::Result<()> {
+		let mut changes = Vec::with_capacity(9 * 9);
+
+		for y in 0..9 {
+			for x in 0..9 {
+				if !Self::is_valid(x, y) { continue }
+
+				if self.get(x, y) != self.get_old(x, y) {
+					let color = self.get(x, y);
+					let (r, g, b) = color.quantize(64);
+					let color = RgbColor::new(r, g, b);
+
+					let button = x_y_to_button(x as u8, y as u8);
+
+					changes.push((button, color));
+				}
+			}
+		}
+
+		return self.backend.light_multiple_rgb(&changes);
 	}
 }

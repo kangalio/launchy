@@ -2,6 +2,9 @@
 
 mod util;
 
+mod color;
+pub use color::*;
+
 pub mod launchpad_s;
 pub use launchpad_s as s;
 
@@ -15,7 +18,7 @@ const APPLICATION_NAME: &'static str = "LaunchpadRs";
 
 #[derive(Debug, Copy, Clone, Hash, Eq, PartialEq)]
 pub enum Button {
-	ControlButton { number: u8 },
+	ControlButton { number: u8 }, // TODO: Rename "number" -> "index"
 	GridButton { x: u8, y: u8 },
 }
 
@@ -52,4 +55,21 @@ impl Button {
 			Self::GridButton { y, .. } => y + 1,
 		}
 	}
+}
+
+pub trait Canvas {
+	const BOUNDING_BOX_WIDTH: u32;
+	const BOUNDING_BOX_HEIGHT: u32;
+
+	/// Check if the location is in bounds
+	fn is_valid(x: u32, y: u32) -> bool;
+	/// Sets the color at the given location. Panics if the location is out of bounds
+	fn set(&mut self, x: u32, y: u32, color: Color);
+	/// Retrieves the current color at the given location. Panics if the location is out of bounds
+	fn get(&self, x: u32, y: u32) -> Color;
+	/// Retrieves the old, unflushed color at the given location. Panics if the location is out of
+	/// bounds
+	fn get_old(&self, x: u32, y: u32) -> Color;
+	/// Flush the accumulated changes to the underlying device
+	fn flush(&mut self) -> anyhow::Result<()>;
 }
