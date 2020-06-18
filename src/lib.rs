@@ -20,6 +20,23 @@ pub enum Button {
 }
 
 impl Button {
+	pub const UP: Self = Button::ControlButton { number: 0 };
+	pub const DOWN: Self = Button::ControlButton { number: 1 };
+	pub const LEFT: Self = Button::ControlButton { number: 2 };
+	pub const RIGHT: Self = Button::ControlButton { number: 3 };
+	pub const SESSION: Self = Button::ControlButton { number: 4 };
+	pub const USER_1: Self = Button::ControlButton { number: 5 };
+	pub const USER_2: Self = Button::ControlButton { number: 6 };
+	pub const MIXER: Self = Button::ControlButton { number: 7 };
+	pub const VOLUME: Self = Button::GridButton { x: 8, y: 0 };
+	pub const PAN: Self = Button::GridButton { x: 8, y: 1 };
+	pub const SEND_A: Self = Button::GridButton { x: 8, y: 2 };
+	pub const SEND_B: Self = Button::GridButton { x: 8, y: 3 };
+	pub const STOP: Self = Button::GridButton { x: 8, y: 4 };
+	pub const MUTE: Self = Button::GridButton { x: 8, y: 5 };
+	pub const SOLO: Self = Button::GridButton { x: 8, y: 6 };
+	pub const RECORD_ARM: Self = Button::GridButton { x: 8, y: 7 };
+
 	/// Returns x coordinate assuming coordinate origin in the leftmost control button
 	pub fn abs_x(&self) -> u8 {
 		match self {
