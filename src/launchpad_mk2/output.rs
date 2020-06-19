@@ -797,21 +797,15 @@ impl crate::Canvas for Canvas {
 		return true;
 	}
 
-	fn set(&mut self, x: u32, y: u32, color: crate::Color) {
-		assert!(Self::is_valid(x, y));
-
+	fn set_unchecked(&mut self, x: u32, y: u32, color: crate::Color) {
 		self.new_state.set(x as usize, y as usize, color);
 	}
 
-	fn get(&self, x: u32, y: u32) -> crate::Color {
-		assert!(Self::is_valid(x, y));
-
+	fn get_unchecked(&self, x: u32, y: u32) -> crate::Color {
 		return self.new_state.get(x as usize, y as usize);
 	}
 
-	fn get_old(&self, x: u32, y: u32) -> crate::Color {
-		assert!(Self::is_valid(x, y));
-
+	fn get_old_unchecked(&self, x: u32, y: u32) -> crate::Color {
 		return self.old_state.get(x as usize, y as usize);
 	}
 
