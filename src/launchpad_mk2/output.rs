@@ -774,16 +774,16 @@ fn x_y_to_button(x: u8, y: u8) -> Button {
 
 pub struct Canvas {
 	pub backend: LaunchpadMk2Output,
-	old_state: crate::util::Array2d<crate::Color>,
+	curr_state: crate::util::Array2d<crate::Color>,
 	new_state: crate::util::Array2d<crate::Color>,
 }
 
 impl Canvas {
 	/// The passed-in backend must not have been
 	pub fn new(backend: LaunchpadMk2Output) -> Self {
-		let old_state = crate::util::Array2d::new(9, 9);
+		let curr_state = crate::util::Array2d::new(9, 9);
 		let new_state = crate::util::Array2d::new(9, 9);
-		return Self { backend, old_state, new_state };
+		return Self { backend, curr_state, new_state };
 	}
 }
 
@@ -806,7 +806,7 @@ impl crate::Canvas for Canvas {
 	}
 
 	fn get_old_unchecked(&self, x: u32, y: u32) -> crate::Color {
-		return self.old_state.get(x as usize, y as usize);
+		return self.curr_state.get(x as usize, y as usize);
 	}
 
 	fn flush(&mut self) -> anyhow::Result<()> {
@@ -828,6 +828,12 @@ impl crate::Canvas for Canvas {
 			}
 		}
 
-		return self.backend.light_multiple_rgb(&changes);
+		if changes.len() > 0 {
+			self.backend.light_multiple_rgb(&changes)?;
+		}
+
+		self.curr_state = self.new_state.clone();
+
+		return Ok(());
 	}
 }
