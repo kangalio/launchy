@@ -4,54 +4,51 @@ use midir::{MidiInput, MidiInputConnection, MidiInputPort};
 use crate::Button;
 
 
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq, Hash, Clone)]
 pub enum Message {
 	Press { button: Button },
 	Release { button: Button },
 }
 
-pub struct LaunchpadSInput<'a> {
-	_connection: MidiInputConnection<'a, ()>,
+fn decode_grid_button(btn: u8) -> Button {
+	return Button::GridButton { x: btn % 16, y: btn / 16 };
 }
 
-impl<'a> LaunchpadSInput<'a> {
-	const NAME: &'static str = "Launchy S Input";
+pub struct LaunchpadSInput<'a> {
+	// yes the connection is never explictly used BUT we need it in here to uphold the connection
+	#[allow(dead_code)]
+	connection: MidiInputConnection<'a, ()>,
+}
 
-	pub fn from_port<F>(midi_input: MidiInput, port: &MidiInputPort, mut user_callback: F)
+impl<'a> crate::InputDevice<'a> for LaunchpadSInput<'a> {
+	const MIDI_CONNECTION_NAME: &'static str = "Launchy S input";
+	const MIDI_DEVICE_KEYWORD: &'static str = "Launchpad S";
+	type Message = Message;
+
+	fn from_port<F>(midi_input: MidiInput, port: &MidiInputPort, mut user_callback: F)
 			-> anyhow::Result<Self>
-			where F: FnMut(Message) + Send + 'a {
+			where F: FnMut(Self::Message) + Send + 'a {
 		
 		let midir_callback = move |timestamp: u64, data: &[u8], _: &mut _| {
 			let msg = Self::decode_message(timestamp, data);
 			(user_callback)(msg);
 		};
 		
-		let connection = midi_input.connect(port, Self::NAME, midir_callback, ())
+		let connection = midi_input.connect(port, Self::MIDI_CONNECTION_NAME, midir_callback, ())
 				.map_err(|_| anyhow!("Failed to connect to port"))?;
 		
-		return Ok(Self { _connection: connection });
+		return Ok(Self { connection });
 	}
+}
 
-	pub fn guess<F>(callback: F) -> anyhow::Result<Self>
-			where F: FnMut(Message) + Send + 'a {
-		
-		let midi_in = MidiInput::new(crate::APPLICATION_NAME)
-				.context("Couldn't create MidiInput object")?;
-
-		let port = super::guess_port(&midi_in)
-				.context("No Launchpad S input device found")?;
-		let self_ = Self::from_port(midi_in, &port, callback)
-				.context("Couldn't make launchpad input obj from port")?;
-		return Ok(self_);
-	}
-
+impl LaunchpadSInput<'_> {
 	fn decode_message(_timestamp: u64, data: &[u8]) -> Message {
 		assert_eq!(data.len(), 3);
 
 		// first byte of a launchpad midi message is the message type
 		match data[0] {
 			0x90 => { // Note on
-				let button = Self::decode_grid_button(data[1]);
+				let button = decode_grid_button(data[1]);
 				
 				let velocity = data[2];
 				match velocity {
@@ -76,8 +73,4 @@ impl<'a> LaunchpadSInput<'a> {
 			_other => panic!("First byte of midi short messages was unexpected. {:?}", data),
 		}
 	}
-
-	fn decode_grid_button(btn: u8) -> Button {
-		return Button::GridButton { x: btn % 16, y: btn / 16 };
-	}
-} 
+}
