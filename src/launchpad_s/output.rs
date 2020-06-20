@@ -52,25 +52,36 @@ pub enum Buffer {
 	Buffer1 = 1,
 }
 
-#[derive(Debug, Eq, PartialEq, Hash, Clone)]
-pub struct LightState {
-	color: Color,
-	copy: bool,
-	clear: bool,
+#[derive(Debug, Hash, Eq, PartialEq, Copy, Clone)]
+pub enum DoubleBufferingBehavior {
+	/// Only write to the currently edited buffer
+	None,
+	/// Clear the other buffer's copy of this LED
+	Clear,
+	/// Write this LED data to both buffers
+	Copy,
 }
 
-impl LightState {
-	fn code(&self) -> u8 {
-		// Bit 6 - Must be 0
-		// Bit 5..4 - Green LED brightness
-		// Bit 3 - Clear - If 1: clear the other buffer’s copy of this LED.
-		// Bit 2 - Copy - If 1: write this LED data to both buffers.
-		// Bit 1..0 - Red LED brightness
-		return (self.color.green << 4)
-				| ((self.clear as u8) << 3)
-				| ((self.copy as u8) << 2)
-				| self.color.red;
-	}
+#[derive(Debug, Eq, PartialEq, Hash, Clone)]
+pub struct DoubleBuffering {
+	pub copy: bool,
+	pub flash: bool,
+	pub edited_buffer: Buffer,
+	pub displayed_buffer: Buffer,
+}
+
+fn make_color_code(color: Color, dbb: DoubleBufferingBehavior) -> u8 {
+	// Bit 6 - Must be 0
+	// Bit 5..4 - Green LED brightness
+	// Bit 3 - Clear - If 1: clear the other buffer’s copy of this LED.
+	// Bit 2 - Copy - If 1: write this LED data to both buffers.
+	// Bit 1..0 - Red LED brightness
+	let double_buffering_code = match dbb {
+		DoubleBufferingBehavior::None => 0b00,
+		DoubleBufferingBehavior::Copy => 0b01,
+		DoubleBufferingBehavior::Clear => 0b10,
+	};
+	return (color.green << 4) | (double_buffering_code << 2) | color.red;
 }
 
 pub struct LaunchpadSOutput {
@@ -81,25 +92,27 @@ impl crate::OutputDevice for LaunchpadSOutput {
 	const MIDI_CONNECTION_NAME: &'static str = "Launchy S output";
 	const MIDI_DEVICE_KEYWORD: &'static str = "Launchpad S";
 
-	fn from_connection(connection: MidiOutputConnection) -> Self {
-		return Self { connection };
+	fn from_connection(connection: MidiOutputConnection) -> anyhow::Result<Self> {
+		return Ok(Self { connection });
 	}
 }
 
 impl LaunchpadSOutput {
 	/// Updates the state for a single LED, specified by `button`. The color, as well as the double
 	/// buffering attributes, are specified in `light_state`.
-	pub fn set_button(&mut self, button: Button, light_state: LightState)
+	pub fn set_button(&mut self, button: Button, color: Color, d: DoubleBufferingBehavior)
 			-> anyhow::Result<()> {
 		
+		let light_code = make_color_code(color, d);
+
 		match button {
 			Button::GridButton { x, y } => {
 				let button_code = y * 16 + x;
-				self.connection.send(&[0x90, button_code, light_state.code()])?;
+				self.send(&[0x90, button_code, light_code])?;
 			},
 			Button::ControlButton { number } => {
 				let button_code = 104 + number;
-				self.connection.send(&[0xB0, button_code, light_state.code()])?;
+				self.send(&[0xB0, button_code, light_code])?;
 			}
 		}
 
@@ -116,11 +129,11 @@ impl LaunchpadSOutput {
 	/// To leave the mode, simply send any other message. Sending another kind of message and then
 	/// re-sending this message will reset the cursor to the top left of the grid.
 	pub fn set_button_rapid(&mut self,
-		light_state_1: LightState,
-		light_state_2: LightState
+		color1: Color, dbb1: DoubleBufferingBehavior,
+		color2: Color, dbb2: DoubleBufferingBehavior,
 	) -> anyhow::Result<()> {
 		
-		return self.send(&[0xB2, light_state_1.code(), light_state_2.code()]);
+		return self.send(&[0xB2, make_color_code(color1, dbb1), make_color_code(color2, dbb2)]);
 	}
 
 	/// Turns on all LEDs to a certain brightness, dictated by the `brightness` parameter.
@@ -138,8 +151,7 @@ impl LaunchpadSOutput {
 			Brightness::Full => 127,
 		};
 
-		self.connection.send(&[0xB0, 0, brightness_code])?;
-		return Ok(());
+		return self.send(&[0xB0, 0, brightness_code]);
 	}
 
 	/// Launchpad controls the brightness of its LEDs by continually switching them on and off
@@ -183,16 +195,12 @@ impl LaunchpadSOutput {
 	/// - If `flash` is set, continually flip displayed buffers to make selected LEDs flash.
 	/// - `updated`: the new updated buffer
 	/// - `displayed`: the new displayed buffer
-	pub fn control_double_buffering(&mut self,
-		copy: bool, flash: bool,
-		updated: Buffer, displayed: Buffer
-	) -> anyhow::Result<()> {
-		
+	pub fn control_double_buffering(&mut self, d: DoubleBuffering) -> anyhow::Result<()> {
 		let last_byte = 0b00100000
-				& ((copy as u8) << 4)
-				& ((flash as u8) << 3)
-				& ((updated as u8) << 2)
-				& displayed as u8;
+				| ((d.copy as u8) << 4)
+				| ((d.flash as u8) << 3)
+				| ((d.edited_buffer as u8) << 2)
+				| d.displayed_buffer as u8;
 		
 		return self.send(&[0xB0, 0, last_byte]);
 	}
@@ -210,5 +218,9 @@ impl LaunchpadSOutput {
 	/// their default values.
 	pub fn reset(&mut self) -> anyhow::Result<()> {
 		return self.turn_on_all_leds(Brightness::Off);
+	}
+
+	pub fn light(&mut self, button: Button, color: Color) -> anyhow::Result<()> {
+		return self.set_button(button, color, DoubleBufferingBehavior::Copy);
 	}
 }

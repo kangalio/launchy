@@ -80,7 +80,8 @@ pub trait OutputDevice where Self: Sized {
 	const MIDI_CONNECTION_NAME: &'static str;
 	const MIDI_DEVICE_KEYWORD: &'static str;
 
-	fn from_connection(connection: MidiOutputConnection) -> Self;
+	/// Initiate from an existing midir connection.
+	fn from_connection(connection: MidiOutputConnection) -> anyhow::Result<Self>;
 
 	fn guess() -> anyhow::Result<Self> {
 		let midi_output = MidiOutput::new(crate::APPLICATION_NAME)
@@ -93,7 +94,7 @@ pub trait OutputDevice where Self: Sized {
 				.connect(&port, Self::MIDI_CONNECTION_NAME)
 				.map_err(|_| anyhow!("Failed to connect to port"))?;
 		
-		return Ok(Self::from_connection(connection));
+		return Self::from_connection(connection);
 	}
 }
 
@@ -102,10 +103,13 @@ pub trait InputDevice<'a> where Self: Sized {
 	const MIDI_DEVICE_KEYWORD: &'static str;
 	type Message;
 
+	#[must_use = "If not saved, the connection will be immediately dropped"]
 	fn from_port<F>(midi_input: MidiInput, port: &MidiInputPort, user_callback: F)
 			-> anyhow::Result<Self>
 			where F: FnMut(Self::Message) + Send + 'a;
 	
+	/// Search the midi devices and choose the first midi device matching the wanted Launchpad type.
+	#[must_use = "If not saved, the connection will be immediately dropped"]
 	fn guess<F>(user_callback: F) -> anyhow::Result<Self>
 			where F: FnMut(Self::Message) + Send + 'a {
 		

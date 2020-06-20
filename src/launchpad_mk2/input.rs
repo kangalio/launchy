@@ -23,11 +23,12 @@ pub struct LaunchpadMk2Input<'a> {
 	wait_release_receiver: std::sync::mpsc::Receiver<WaitFor>,
 }
 
-impl<'a> LaunchpadMk2Input<'a> {
-	const NAME: &'static str = "Launchy Mk2 Input";
+impl<'a> crate::InputDevice<'a> for LaunchpadMk2Input<'a> {
+	const MIDI_DEVICE_KEYWORD: &'static str = "Launchpad MK2";
+	const MIDI_CONNECTION_NAME: &'static str = "Launchy Mk2 Input";
+	type Message = Message;
 
-	#[must_use = "If not saved, the connection will be immediately dropped"]
-	pub fn from_port<F>(midi_input: MidiInput, port: &MidiInputPort, mut user_callback: F)
+	fn from_port<F>(midi_input: MidiInput, port: &MidiInputPort, mut user_callback: F)
 			-> anyhow::Result<Self>
 			where F: FnMut(Message) + Send + 'a {
 		
@@ -54,26 +55,14 @@ impl<'a> LaunchpadMk2Input<'a> {
 			(user_callback)(msg);
 		};
 		
-		let connection = midi_input.connect(port, Self::NAME, midir_callback, ())
+		let connection = midi_input.connect(port, Self::MIDI_CONNECTION_NAME, midir_callback, ())
 				.map_err(|_| anyhow!("Failed to connect to port"))?; // can't use context()
 		
 		return Ok(Self { _connection: connection, wait_release_receiver });
 	}
+}
 
-	#[must_use = "If not saved, the connection will be immediately dropped"]
-	pub fn guess<F>(callback: F) -> anyhow::Result<Self>
-			where F: FnMut(Message) + Send + 'a {
-		
-		let midi_in = MidiInput::new(crate::APPLICATION_NAME)
-				.context("Couldn't create MidiInput object")?;
-
-		let port = super::guess_port(&midi_in)
-				.context(format!("No {} device found", Self::NAME))?;
-		let self_ = Self::from_port(midi_in, &port, callback)
-				.context("Couldn't make launchpad input obj from port")?;
-		return Ok(self_);
-	}
-
+impl LaunchpadMk2Input<'_> {
 	// ...jank?
 	pub fn wait_for(&self, anticipated_token: WaitFor) {
 		loop {
@@ -159,4 +148,4 @@ impl<'a> LaunchpadMk2Input<'a> {
 		let y = 8 - (btn / 10);
 		return Button::GridButton { x, y };
 	}
-} 
+}

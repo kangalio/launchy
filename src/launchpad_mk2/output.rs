@@ -235,37 +235,18 @@ pub struct LaunchpadMk2Output {
 	connection: MidiOutputConnection,
 }
 
-impl LaunchpadMk2Output {
-	const NAME: &'static str = "Launchy Mk2 Output";
+impl crate::OutputDevice for LaunchpadMk2Output {
+	const MIDI_CONNECTION_NAME: &'static str = "Launchy Mk2 output";
+	const MIDI_DEVICE_KEYWORD: &'static str = "Launchpad MK2";
 
-	/// Initiate from an existing midir port.
-	/// Note: this method will send an initialization midi message to set the layout to a sane
-	/// default! This non-disablable, hidden midi message is required because without knowing the
-	/// layout, this library cannot correctly abstract over button positions
-	#[must_use = "If not saved, the connection will be immediately dropped"]
-	pub fn from_port(midi_output: MidiOutput, port: &MidiOutputPort) -> anyhow::Result<Self> {
-		let connection = midi_output.connect(port, Self::NAME)
-				.map_err(|_| anyhow!("Failed to connect to port"))?;
-		
+	fn from_connection(connection: MidiOutputConnection) -> anyhow::Result<Self> {
 		let mut self_ = Self { connection };
 		self_.change_layout(Layout::Session)?;
 		return Ok(self_);
 	}
+}
 
-	/// Search the midi devices and choose the first midi device belonging to a Launchpad Mk2.
-	/// This method will send a midi message. See `from_port()`
-	#[must_use = "If not saved, the connection will be immediately dropped"]
-	pub fn guess() -> anyhow::Result<Self> {
-		let midi_output = MidiOutput::new(crate::APPLICATION_NAME)
-				.context("Couldn't create MidiOutput object")?;
-
-		let port = super::guess_port(&midi_output)
-				.context(format!("No {} device found", Self::NAME))?;
-		let self_ = Self::from_port(midi_output, &port)
-				.context("Couldn't make launchpad obj from port")?;
-		return Ok(self_);
-	}
-
+impl LaunchpadMk2Output {
 	fn send(&mut self, bytes: &[u8]) -> anyhow::Result<()> {
 		self.connection.send(bytes)?;
 		return Ok(());
