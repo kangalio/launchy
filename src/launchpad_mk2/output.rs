@@ -2,6 +2,7 @@ use anyhow::{anyhow, Context};
 use midir::{MidiOutput, MidiOutputConnection, MidiOutputPort};
 
 use crate::Button;
+use crate::OutputDevice;
 
 
 /// The Launchpad Mk2 has two different ways to represent color. You can either use one of the 128
@@ -244,14 +245,14 @@ impl crate::OutputDevice for LaunchpadMk2Output {
 		self_.change_layout(Layout::Session)?;
 		return Ok(self_);
 	}
-}
 
-impl LaunchpadMk2Output {
 	fn send(&mut self, bytes: &[u8]) -> anyhow::Result<()> {
 		self.connection.send(bytes)?;
 		return Ok(());
 	}
+}
 
+impl LaunchpadMk2Output {
 	/// This is a function testing various parts of this API by executing various commands in order
 	/// to find issues either in this library or in your device
 	pub fn test_api(&mut self) -> anyhow::Result<()> {
@@ -736,6 +737,11 @@ impl LaunchpadMk2Output {
 	/// ```
 	pub fn pulse_multiple(&mut self, pairs: &[(Button, PaletteColor)]) -> anyhow::Result<()> {
 		return self.set_buttons(pairs, LightMode::Pulse);
+	}
+
+	/// Clears the entire field of buttons. Equivalent to `output.light_all(PaletteColor::BLACK)`.
+	pub fn clear(&mut self) -> anyhow::Result<()> {
+		return self.light_all(PaletteColor::BLACK);
 	}
 }
 
