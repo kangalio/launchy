@@ -8,6 +8,7 @@ use crate::Button;
 pub enum Message {
 	Press { button: Button },
 	Release { button: Button },
+	TextEndedOrLooped,
 }
 
 fn decode_grid_button(btn: u8) -> Button {
@@ -43,11 +44,9 @@ impl<'a> crate::InputDevice<'a> for LaunchpadSInput<'a> {
 
 impl LaunchpadSInput<'_> {
 	fn decode_message(_timestamp: u64, data: &[u8]) -> Message {
-		assert_eq!(data.len(), 3);
-
 		// first byte of a launchpad midi message is the message type
-		match data[0] {
-			0x90 => { // Note on
+		match data {
+			[0x90, button, velocity] => { // Note on
 				let button = decode_grid_button(data[1]);
 				
 				let velocity = data[2];
@@ -57,20 +56,19 @@ impl LaunchpadSInput<'_> {
 					other => panic!("Unexpected grid note-on velocity {}", other),
 				}
 			},
-			0xB0 => { // Controller change
-				let button = Button::ControlButton { number: data[1] - 104 };
+			[0xB0, number @ 104..=111, velocity] => { // Controller change
+				let button = Button::ControlButton { number: number - 104 };
 
-				let velocity = data[2];
 				match velocity {
 					0 => return Message::Release { button },
 					127 => return Message::Press { button },
 					other => panic!("Unexpected control note-on velocity {}", other),
 				}
 			},
-			// This is the note off code BUT it's not used by the launchpad. It sends zero-velocity
-			// note-on messages instead
-			0x80 => panic!("Unexpected note-on message: {:?}", data),
-			_other => panic!("First byte of midi short messages was unexpected. {:?}", data),
+			[0xB0, 0, 3] => return Message::TextEndedOrLooped,
+			// YES we have no note off message handler here because it's not used by the launchpad.
+			// It sends zero-velocity note-on messages instead.
+			_ => panic!("Unexpected midi message: {:?}", data),
 		}
 	}
 }

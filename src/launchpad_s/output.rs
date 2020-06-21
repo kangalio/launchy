@@ -4,7 +4,7 @@ use midir::{MidiOutput, MidiOutputConnection, MidiOutputPort};
 use crate::Button;
 use crate::OutputDevice;
 
-pub use crate::capabilities::*;
+pub use crate::capabilities::original::*;
 
 
 /// ## Double buffering
@@ -37,3 +37,36 @@ impl crate::OutputDevice for LaunchpadSOutput {
 }
 
 impl crate::capabilities::OriginalLaunchpad for LaunchpadSOutput {}
+
+fn make_color_code_loopable(color: Color, should_loop: bool)
+		-> u8 {
+	
+	// Bit 6 - Loop - If 1: loop the text
+	// Bit 5..4 - Green LED brightness
+	// Bit 3 - uhhhh, I think these should probably be empty?
+	// Bit 2 - same as above
+	// Bit 1..0 - Red LED brightness
+	
+	return ((should_loop as u8) << 6) | (color.green() << 4) | color.red();
+}
+
+impl LaunchpadSOutput {
+	// Uncommented because I have no idea to parse the return format
+	// pub fn request_device_inquiry(&mut self) -> anyhow::Result<()> {
+	// 	return self.send(&[240, 126, 127, 6, 1, 247]);
+	// }
+
+	pub fn scroll_text(&mut self, text: &[u8], color: Color, should_loop: bool)
+			-> anyhow::Result<()> {
+		
+		let color_code = make_color_code_loopable(color, should_loop);
+
+		let bytes = &[
+			&[240, 0, 32, 41, 9, color_code],
+			text,
+			&[247]
+		].concat();
+
+		return self.send(bytes);
+	}
+}
