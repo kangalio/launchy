@@ -35,7 +35,7 @@ fn decode_short_message(data: &[u8]) -> Message {
 		0xB0 => { // Controller change
 			match data[1] {
 				104..=111 => {
-					let button = Button::ControlButton { number: data[1] - 104 };
+					let button = Button::ControlButton { index: data[1] - 104 };
 	
 					let velocity = data[2];
 					match velocity {

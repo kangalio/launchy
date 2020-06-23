@@ -263,8 +263,8 @@ impl LaunchpadMk2Output {
 		self.light_all(PaletteColor::BLACK)?;
 
 		// Test single led lighting, only plain
-		self.light(Button::ControlButton { number: 0 }, PaletteColor { id: 5 })?;
-		self.light_rgb(Button::ControlButton { number: 1 }, RgbColor { r: 63, g: 0, b: 63 })?;
+		self.light(Button::ControlButton { index: 0 }, PaletteColor { id: 5 })?;
+		self.light_rgb(Button::ControlButton { index: 1 }, RgbColor { r: 63, g: 0, b: 63 })?;
 		self.light(Button::GridButton { x: 0, y: 0 }, PaletteColor { id: 5 })?;
 		self.light_rgb(Button::GridButton { x: 1, y: 0 }, RgbColor { r: 63, g: 0, b: 63 })?;
 
@@ -290,15 +290,15 @@ impl LaunchpadMk2Output {
 			(Button::GridButton { x: 3, y: 2 }, PaletteColor { id: 9 }),
 		])?;
 		// same but for control row
-		self.flash(Button::ControlButton { number: 2 }, PaletteColor { id: 5 })?;
-		self.pulse(Button::ControlButton { number: 3 }, PaletteColor { id: 9 })?;
+		self.flash(Button::ControlButton { index: 2 }, PaletteColor { id: 5 })?;
+		self.pulse(Button::ControlButton { index: 3 }, PaletteColor { id: 9 })?;
 		self.flash_multiple(&[
-			(Button::ControlButton { number: 4 }, PaletteColor { id: 5 }),
-			(Button::ControlButton { number: 5 }, PaletteColor { id: 9 }),
+			(Button::ControlButton { index: 4 }, PaletteColor { id: 5 }),
+			(Button::ControlButton { index: 5 }, PaletteColor { id: 9 }),
 		])?;
 		self.pulse_multiple(&[
-			(Button::ControlButton { number: 6 }, PaletteColor { id: 5 }),
-			(Button::ControlButton { number: 7 }, PaletteColor { id: 9 }),
+			(Button::ControlButton { index: 6 }, PaletteColor { id: 5 }),
+			(Button::ControlButton { index: 7 }, PaletteColor { id: 9 }),
 		])?;
 		
 		// Test row, only grid
@@ -329,7 +329,7 @@ impl LaunchpadMk2Output {
 	/// ```
 	/// let mut output = LaunchpadMk2Output::guess();
 	/// 
-	/// let button = Button::ControlButton { number: 0 };
+	/// let button = Button::ControlButton { index: 0 };
 	/// let color = PaletteColor::YELLOW;
 	/// let light_mode = LightMode::Pulse;
 	/// output.set_button(button, color, light_mode)?;
@@ -358,14 +358,14 @@ impl LaunchpadMk2Output {
 	/// button to the right:
 	/// ```
 	/// output.set_buttons(&[
-	/// 	(Button::ControlButton { number: 0 }, PaletteColor::YELLOW),
-	/// 	(Button::ControlButton { number: 1 }, PaletteColor::RED),
+	/// 	(Button::ControlButton { index: 0 }, PaletteColor::YELLOW),
+	/// 	(Button::ControlButton { index: 1 }, PaletteColor::RED),
 	/// ], LightMode::Flash)?;
 	/// ```
-	pub fn set_buttons(&mut self, assignments: &[(Button, PaletteColor)], light_mode: LightMode)
-			-> anyhow::Result<()> {
-		
-		assert!(assignments.len() <= 80); // As per Launchpad documentation
+	pub fn set_buttons(&mut self,
+		buttons: impl IntoIterator<Item = impl std::borrow::Borrow<(Button, PaletteColor)>>,
+		light_mode: LightMode
+	) -> anyhow::Result<()> {
 		
 		let msg_type_byte = match light_mode {
 			LightMode::Plain => 10,
@@ -381,8 +381,11 @@ impl LaunchpadMk2Output {
 			LightMode::Flash | LightMode::Pulse => true,
 		};
 
-		return self.send_multiple(msg_type_byte, add_null_byte, assignments.iter()
-				.map(|(button, color)| (Self::encode_button(*button), *color)));
+		return self.send_multiple(msg_type_byte, add_null_byte, 80, buttons.into_iter()
+				.map(|pair| {
+					let &(button, color) = pair.borrow();
+					(Self::encode_button(button), color)
+				}));
 	}
 
 	/// Light multiple buttons with varying color. This method support RGB.
@@ -394,15 +397,24 @@ impl LaunchpadMk2Output {
 	/// 	(Button::GridButton { x: 7, y: 0 }, RgbColor.new(63, 0, 0)),
 	/// ])?;
 	/// ```
-	pub fn light_multiple_rgb(&mut self, pairs: &[(Button, RgbColor)]) -> anyhow::Result<()> {
-		assert!(pairs.len() <= 80);
+	pub fn light_multiple_rgb<I, T>(&mut self,
+		buttons: I,
+	) -> anyhow::Result<()>
+		where I: IntoIterator<Item = T>,
+			T: std::borrow::Borrow<(Button, RgbColor)>,
+			I::IntoIter: ExactSizeIterator {
 
-		let mut bytes = Vec::with_capacity(8 + 12 * pairs.len());
+		let buttons = buttons.into_iter();
+
+		assert!(buttons.size_hint().0 <= 80);
+
+		let mut bytes = Vec::with_capacity(8 + 12 * buttons.len());
 
 		bytes.extend(&[240, 0, 32, 41, 2, 24, 11]);
-		for (button, color) in pairs {
+		for pair in buttons {
+			let &(button, color) = pair.borrow();
 			assert!(color.is_valid());
-			bytes.extend(&[Self::encode_button(*button), color.r, color.g, color.b]);
+			bytes.extend(&[Self::encode_button(button), color.r, color.g, color.b]);
 		}
 		bytes.push(247);
 
@@ -419,10 +431,11 @@ impl LaunchpadMk2Output {
 	/// 	(1, PaletteColor::BLUE),
 	/// ])?;
 	/// ```
-	pub fn light_columns(&mut self, pairs: &[(u8, PaletteColor)]) -> anyhow::Result<()> {
-		assert!(pairs.len() <= 9);
+	pub fn light_columns(&mut self,
+		buttons: impl IntoIterator<Item = impl std::borrow::Borrow<(u8, PaletteColor)>>,
+	) -> anyhow::Result<()> {
 
-		return self.send_multiple(12, false, pairs.iter());
+		return self.send_multiple(12, false, 9, buttons);
 	}
 
 	/// Light multiple row with varying colors. This method _does_ light up the side buttons.
@@ -435,11 +448,15 @@ impl LaunchpadMk2Output {
 	/// 	(1, PaletteColor::GREEN),
 	/// ])?;
 	/// ```
-	pub fn light_rows(&mut self, pairs: &[(u8, PaletteColor)]) -> anyhow::Result<()> {
-		assert!(pairs.len() <= 9);
+	pub fn light_rows(&mut self,
+		buttons: impl IntoIterator<Item = impl std::borrow::Borrow<(u8, PaletteColor)>>,
+	) -> anyhow::Result<()> {
 
-		return self.send_multiple(13, false, pairs.iter()
-				.map(|(row, color)| (8 - row, *color)));
+		return self.send_multiple(13, false, 9, buttons.into_iter()
+				.map(|pair| {
+					let &(row, color) = pair.borrow();
+					(8 - row, color)
+				}));
 	}
 
 	/// Light all buttons, including control and side buttons.
@@ -585,19 +602,27 @@ impl LaunchpadMk2Output {
 	}
 
 	// param `insert_null_bytes`: whether every packet should be preceeded by a null byte
-	fn send_multiple<'a, I, T>(&mut self, msg_type_byte: u8, insert_null_bytes: bool, pair_iterator: I)
-			-> anyhow::Result<()>
-			where I: Iterator<Item=T>,
-			T: std::borrow::Borrow<(u8, PaletteColor)> {
+	fn send_multiple(&mut self,
+		msg_type_byte: u8,
+		insert_null_bytes: bool,
+		max_packets: usize,
+		pair_iterator: impl IntoIterator<Item = impl std::borrow::Borrow<(u8, PaletteColor)>>,
+	) -> anyhow::Result<()> {
 		
+		let pair_iterator = pair_iterator.into_iter();
+
 		let capacity = 8 + 12 * (pair_iterator.size_hint().0 + insert_null_bytes as usize);
 		let mut bytes = Vec::with_capacity(capacity);
 
 		bytes.extend(&[240, 0, 32, 41, 2, 24, msg_type_byte]);
-		for pair in pair_iterator {
-			let (button_specifier, color) = pair.borrow();
+		for (i, pair) in pair_iterator.enumerate() {
+			if i >= max_packets {
+				panic!("Only {} or less elements are supported per message!", max_packets);
+			}
+
+			let &(button_specifier, color) = pair.borrow();
 			if insert_null_bytes { bytes.push(0) }
-			bytes.extend(&[*button_specifier, color.id]);
+			bytes.extend(&[button_specifier, color.id]);
 		}
 		bytes.push(247);
 
@@ -612,10 +637,10 @@ impl LaunchpadMk2Output {
 
 				return 10 * (8 - y) + x + 1;
 			},
-			Button::ControlButton { number } => {
-				assert!(number <= 7);
+			Button::ControlButton { index } => {
+				assert!(index <= 7);
 
-				return number + 104;
+				return index + 104;
 			}
 		}
 	}
@@ -706,8 +731,11 @@ impl LaunchpadMk2Output {
 	/// 	(Button::USER_2, PaletteColor::new(9)),
 	/// ])?;
 	/// ```
-	pub fn light_multiple(&mut self, pairs: &[(Button, PaletteColor)]) -> anyhow::Result<()> {
-		return self.set_buttons(pairs, LightMode::Plain);
+	pub fn light_multiple(&mut self,
+		buttons: impl IntoIterator<Item = impl std::borrow::Borrow<(Button, PaletteColor)>>,
+	) -> anyhow::Result<()> {
+
+		return self.set_buttons(buttons, LightMode::Plain);
 	}
 
 	/// Start flashing multiple buttons with varying colors. Identical to
@@ -720,8 +748,11 @@ impl LaunchpadMk2Output {
 	/// 	(Button::USER_2, PaletteColor::new(9)),
 	/// ])?;
 	/// ```
-	pub fn flash_multiple(&mut self, pairs: &[(Button, PaletteColor)]) -> anyhow::Result<()> {
-		return self.set_buttons(pairs, LightMode::Flash);
+	pub fn flash_multiple(&mut self,
+		buttons: impl IntoIterator<Item = impl std::borrow::Borrow<(Button, PaletteColor)>>,
+	) -> anyhow::Result<()> {
+
+		return self.set_buttons(buttons, LightMode::Flash);
 	}
 
 	/// Start pulsing multiple buttons with varying colors. Identical to
@@ -734,8 +765,11 @@ impl LaunchpadMk2Output {
 	/// 	(Button::USER_2, PaletteColor::new(9)),
 	/// ])?;
 	/// ```
-	pub fn pulse_multiple(&mut self, pairs: &[(Button, PaletteColor)]) -> anyhow::Result<()> {
-		return self.set_buttons(pairs, LightMode::Pulse);
+	pub fn pulse_multiple(&mut self,
+		buttons: impl IntoIterator<Item = impl std::borrow::Borrow<(Button, PaletteColor)>>,
+	) -> anyhow::Result<()> {
+		
+		return self.set_buttons(buttons, LightMode::Pulse);
 	}
 
 	/// Clears the entire field of buttons. Equivalent to `output.light_all(PaletteColor::BLACK)`.
@@ -748,7 +782,7 @@ fn x_y_to_button(x: u8, y: u8) -> Button {
 	match y {
 		0 => {
 			assert!(x <= 7);
-			return Button::ControlButton { number: x };
+			return Button::ControlButton { index: x };
 		},
 		1..=8 => {
 			assert!(x <= 8);
@@ -765,7 +799,8 @@ pub struct Canvas {
 }
 
 impl Canvas {
-	/// The passed-in backend must not have been
+	/// The passed-in backend must not have been used already. The canvas relies on a 'blank state',
+	/// so to say.
 	pub fn new(backend: LaunchpadMk2Output) -> Self {
 		let curr_state = crate::util::Array2d::new(9, 9);
 		let new_state = crate::util::Array2d::new(9, 9);

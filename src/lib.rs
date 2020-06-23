@@ -28,19 +28,19 @@ const APPLICATION_NAME: &'static str = "LaunchpadRs";
 
 #[derive(Debug, Copy, Clone, Hash, Eq, PartialEq)]
 pub enum Button {
-	ControlButton { number: u8 }, // TODO: Rename "number" -> "index"
+	ControlButton { index: u8 }, // TODO: Rename "number" -> "index"
 	GridButton { x: u8, y: u8 },
 }
 
 impl Button {
-	pub const UP: Self = Button::ControlButton { number: 0 };
-	pub const DOWN: Self = Button::ControlButton { number: 1 };
-	pub const LEFT: Self = Button::ControlButton { number: 2 };
-	pub const RIGHT: Self = Button::ControlButton { number: 3 };
-	pub const SESSION: Self = Button::ControlButton { number: 4 };
-	pub const USER_1: Self = Button::ControlButton { number: 5 };
-	pub const USER_2: Self = Button::ControlButton { number: 6 };
-	pub const MIXER: Self = Button::ControlButton { number: 7 };
+	pub const UP: Self = Button::ControlButton { index: 0 };
+	pub const DOWN: Self = Button::ControlButton { index: 1 };
+	pub const LEFT: Self = Button::ControlButton { index: 2 };
+	pub const RIGHT: Self = Button::ControlButton { index: 3 };
+	pub const SESSION: Self = Button::ControlButton { index: 4 };
+	pub const USER_1: Self = Button::ControlButton { index: 5 };
+	pub const USER_2: Self = Button::ControlButton { index: 6 };
+	pub const MIXER: Self = Button::ControlButton { index: 7 };
 	pub const VOLUME: Self = Button::GridButton { x: 8, y: 0 };
 	pub const PAN: Self = Button::GridButton { x: 8, y: 1 };
 	pub const SEND_A: Self = Button::GridButton { x: 8, y: 2 };
@@ -53,7 +53,7 @@ impl Button {
 	/// Returns x coordinate assuming coordinate origin in the leftmost control button
 	pub fn abs_x(&self) -> u8 {
 		match self {
-			Self::ControlButton { number } => return *number,
+			Self::ControlButton { index } => return *index,
 			Self::GridButton { x, .. } => return *x,
 		}
 	}

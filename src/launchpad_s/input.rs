@@ -35,7 +35,7 @@ impl crate::InputDevice for LaunchpadSInput {
 				}
 			},
 			&[0xB0, number @ 104..=111, velocity] => { // Controller change
-				let button = Button::ControlButton { number: number - 104 };
+				let button = Button::ControlButton { index: number - 104 };
 
 				match velocity {
 					0 => Message::Release { button },

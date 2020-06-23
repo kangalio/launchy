@@ -85,8 +85,8 @@ pub trait OriginalLaunchpad: crate::OutputDevice {
 				let button_code = y * 16 + x;
 				self.send(&[0x90, button_code, light_code])?;
 			},
-			Button::ControlButton { number } => {
-				let button_code = 104 + number;
+			Button::ControlButton { index } => {
+				let button_code = 104 + index;
 				self.send(&[0xB0, button_code, light_code])?;
 			}
 		}
