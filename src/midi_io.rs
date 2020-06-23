@@ -40,19 +40,102 @@ pub trait OutputDevice where Self: Sized {
 	}
 }
 
-pub trait InputDevice<'a> where Self: Sized {
+pub struct InputDeviceHandler<'a> {
+	#[allow(dead_code)]
+	connection: MidiInputConnection<'a, ()>
+}
+
+pub struct InputDeviceHandlerPolling<'a, Message> {
+	#[allow(dead_code)]
+	connection: MidiInputConnection<'a, ()>,
+	receiver: std::sync::mpsc::Receiver<Message>,
+}
+
+impl<Message> InputDeviceHandlerPolling<'_, Message> {
+	pub fn recv(&self) -> Message {
+		return self.receiver.recv()
+				.expect("Message sender has hung up - please report a bug");
+	}
+
+	pub fn try_recv(&self) -> Option<Message> {
+		use std::sync::mpsc::TryRecvError;
+		match self.receiver.try_recv() {
+			Ok(msg) => return Some(msg),
+			Err(TryRecvError::Empty) => return None,
+			Err(TryRecvError::Disconnected) => panic!("Message sender has hung up - please report a bug"),
+		}
+	}
+
+	pub fn recv_timeout(&self, timeout: std::time::Duration) -> Option<Message> {
+		use std::sync::mpsc::RecvTimeoutError;
+		match self.receiver.recv_timeout(timeout) {
+			Ok(msg) => return Some(msg),
+			Err(RecvTimeoutError::Timeout) => return None,
+			Err(RecvTimeoutError::Disconnected) => panic!("Message sender has hung up - please report a bug"),
+		}
+	}
+
+	pub fn iter(&self) -> impl Iterator<Item=Message> + '_ {
+		return self.receiver.iter();
+	}
+
+	pub fn try_iter(&self) -> impl Iterator<Item=Message> + '_ {
+		return self.receiver.try_iter();
+	}
+}
+
+pub trait InputDevice {
 	const MIDI_CONNECTION_NAME: &'static str;
 	const MIDI_DEVICE_KEYWORD: &'static str;
 	type Message;
 
+	fn decode_message(timestamp: u64, data: &[u8]) -> Option<Self::Message>;
+
 	#[must_use = "If not saved, the connection will be immediately dropped"]
-	fn from_port<F>(midi_input: MidiInput, port: &MidiInputPort, user_callback: F)
-			-> anyhow::Result<Self>
-			where F: FnMut(Self::Message) + Send + 'a;
+	fn from_port<'a, F>(midi_input: MidiInput, port: &MidiInputPort, mut user_callback: F)
+			-> anyhow::Result<InputDeviceHandler<'a>>
+			where F: FnMut(Self::Message) + Send + 'a {
+		
+		let midir_callback = move |timestamp: u64, data: &[u8], _: &mut _| {
+			let msg = Self::decode_message(timestamp, data);
+			if let Some(msg) = msg {
+				(user_callback)(msg);
+			}
+		};
+		
+		let connection = midi_input.connect(port, Self::MIDI_CONNECTION_NAME, midir_callback, ())
+				.map_err(|_| anyhow!("Failed to connect to port"))?;
+		
+		return Ok(InputDeviceHandler { connection });
+	}
+
+	#[must_use = "If not saved, the connection will be immediately dropped"]
+	fn from_port_polling(midi_input: MidiInput, port: &MidiInputPort)
+			-> anyhow::Result<InputDeviceHandlerPolling<'static, Self::Message>>
+			where Self::Message: Send + 'static {
+		
+		let (sender, receiver) = std::sync::mpsc::channel();
+		let midir_callback = move |timestamp: u64, data: &[u8], _: &mut _| {
+			let msg = Self::decode_message(timestamp, data);
+			if let Some(msg) = msg {
+				// The following statement can only panic when the receiver was dropped but the
+				// connection is still alive. This can't happen by accident I think, because the
+				// user would have to destructure the input device handler in order to get the
+				// connection and the receiver seperately, in order to drop one but not the other -
+				// but if he does that it's his fault that he gets a panic /shrug
+				sender.send(msg).expect("Message receiver has hung up (this shouldn't happen)");
+			}
+		};
+		
+		let connection = midi_input.connect(port, Self::MIDI_CONNECTION_NAME, midir_callback, ())
+				.map_err(|_| anyhow!("Failed to connect to port"))?;
+		
+		return Ok(InputDeviceHandlerPolling { connection, receiver });
+	}
 	
 	/// Search the midi devices and choose the first midi device matching the wanted Launchpad type.
 	#[must_use = "If not saved, the connection will be immediately dropped"]
-	fn guess<F>(user_callback: F) -> anyhow::Result<Self>
+	fn guess<'a, F>(user_callback: F) -> anyhow::Result<InputDeviceHandler<'a>>
 			where F: FnMut(Self::Message) + Send + 'a {
 		
 		let midi_input = MidiInput::new(crate::APPLICATION_NAME)
@@ -62,5 +145,19 @@ pub trait InputDevice<'a> where Self: Sized {
 				.context(format!("No '{}' input device found", Self::MIDI_DEVICE_KEYWORD))?;
 		
 		return Self::from_port(midi_input, &port, user_callback);
+	}
+
+	/// Search the midi devices and choose the first midi device matching the wanted Launchpad type.
+	#[must_use = "If not saved, the connection will be immediately dropped"]
+	fn guess_polling<'a>() -> anyhow::Result<InputDeviceHandlerPolling<'a, Self::Message>>
+			where Self::Message: Send + 'static {
+		
+		let midi_input = MidiInput::new(crate::APPLICATION_NAME)
+				.context("Couldn't create MidiInput object")?;
+
+		let port = guess_port(&midi_input, Self::MIDI_DEVICE_KEYWORD)
+				.context(format!("No '{}' input device found", Self::MIDI_DEVICE_KEYWORD))?;
+		
+		return Self::from_port_polling(midi_input, &port);
 	}
 }

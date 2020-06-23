@@ -36,7 +36,7 @@ impl crate::OutputDevice for LaunchpadSOutput {
 	}
 }
 
-impl crate::capabilities::OriginalLaunchpad for LaunchpadSOutput {}
+impl OriginalLaunchpad for LaunchpadSOutput {}
 
 fn make_color_code_loopable(color: Color, should_loop: bool)
 		-> u8 {
