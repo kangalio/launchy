@@ -479,7 +479,7 @@ impl LaunchpadMk2Output {
 	/// Requests the Launchpad Mk2 to send a so-called device inquiry. The device inquiry contains
 	/// information about the device ID and the firmware revision number.
 	/// 
-	/// In order to be able to receive the Launchpad Mk2's response to the device inquiry request,
+	/// In order to be able to receive the Launchpad Mk2's response to this request,
 	/// you must have a Launchpad Mk2 input object set up.
 	pub fn request_device_inquiry(&mut self, query: DeviceIdQuery) -> anyhow::Result<()> {
 		const QUERY_DEVICE_ID_FOR_ANY: u8 = 127;
@@ -499,9 +499,8 @@ impl LaunchpadMk2Output {
 	/// information about the current bootloader and firmware versions, as well as the size of the
 	/// bootloader in KB.
 	/// 
-	/// **It is not possible to receive the Launchpad Mk2's response to this request**. That's due
-	/// to the fact that Novation doesn't provide documentation on how to parse the response midi
-	/// message. As such, this method is kinda useless
+	/// In order to be able to receive the Launchpad Mk2's response to this request,
+	/// you must have a Launchpad Mk2 input object set up.
 	pub fn request_version_inquiry(&mut self) -> anyhow::Result<()> {
 		return self.send(&[240, 0, 32, 41, 0, 112, 247]);
 	}

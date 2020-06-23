@@ -22,9 +22,9 @@ impl crate::InputDevice for LaunchpadSInput {
 	const MIDI_DEVICE_KEYWORD: &'static str = "Launchpad S";
 	type Message = Message;
 
-	fn decode_message(_timestamp: u64, data: &[u8]) -> Option<Message> {
+	fn decode_message(_timestamp: u64, data: &[u8]) -> Message {
 		// first byte of a launchpad midi message is the message type
-		let msg = match data {
+		return match data {
 			&[0x90, button, velocity] => { // Note on
 				let button = decode_grid_button(button);
 				
@@ -48,7 +48,5 @@ impl crate::InputDevice for LaunchpadSInput {
 			// It sends zero-velocity note-on messages instead.
 			other => panic!("Unexpected midi message: {:?}", other),
 		};
-
-		return Some(msg);
 	}
 }

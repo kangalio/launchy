@@ -1,5 +1,6 @@
 use anyhow::{anyhow, Context};
 use midir::{MidiInput, MidiInputConnection, MidiInputPort};
+use std::convert::TryInto;
 
 use crate::Button;
 
@@ -10,6 +11,7 @@ pub enum Message {
 	Release { button: Button },
 	TextEndedOrLooped,
 	DeviceInquiry { device_id: u8, firmware_revision: u32 },
+	VersionInquiry { bootloader_version: u32, firmware_version: u32 },
 	FaderChange { index: u8, value: u8 },
 }
 
@@ -55,20 +57,35 @@ fn decode_short_message(data: &[u8]) -> Message {
 	}
 }
 
-fn decode_sysex_message(data: &[u8]) -> Option<Message> {
-	match data {
-		&[240, 0, 32, 41, 2, 24, 21, 247] => return Some(Message::TextEndedOrLooped),
+fn decode_sysex_message(data: &[u8]) -> Message {
+	return match data {
+		&[240, 0, 32, 41, 2, 24, 21, 247] => Message::TextEndedOrLooped,
 		&[240, 126, device_id, 6, 2, 0, 32, 41, 105, 0, 0, 0, fr1, fr2, fr3, fr4, 247] => {
 			let firmware_revision = u32::from_be_bytes([fr1, fr2, fr3, fr4]);
-			return Some(Message::DeviceInquiry { device_id, firmware_revision });
+			Message::DeviceInquiry { device_id, firmware_revision }
 		}
-		&[240, 0, 32, 41, 0, 112, ref _data @ .., 247] => {
-			// let data: [u8; 12] = data.try_into()
-			// 		.expect("Invalid version inquiry response length");
-			// TODO: Figure out how to parse the data (it's not in Novation's docs)
-			// println!("can't figure out how to parse {:?}", data);
+		&[240, 0, 32, 41, 0, 112, ref data @ .., 247] => {
+			let data: [u8; 12] = data.try_into()
+					.expect("Invalid version inquiry response length");
+			
+			let bootloader_version =
+					data[0] as u32 * 10000 +
+					data[1] as u32 * 1000 +
+					data[2] as u32 * 100 +
+					data[3] as u32 * 10 +
+					data[4] as u32;
+			
+			let firmware_version =
+					data[5] as u32 * 10000 +
+					data[6] as u32 * 1000 +
+					data[7] as u32 * 100 +
+					data[8] as u32 * 10 +
+					data[9] as u32;
+			
+			// Last two bytes are [13, 1] in my case, but the actual meaning of it is unknown.
+			// Let's just ignore them here
 
-			return None;
+			Message::VersionInquiry { bootloader_version, firmware_version }
 		},
 		other => panic!("Unexpected sysex message: {:?}", other),
 	}
@@ -85,9 +102,9 @@ impl crate::InputDevice for LaunchpadMk2Input {
 	const MIDI_CONNECTION_NAME: &'static str = "Launchy Mk2 Input";
 	type Message = Message;
 
-	fn decode_message(_timestamp: u64, data: &[u8]) -> Option<Message> {
+	fn decode_message(_timestamp: u64, data: &[u8]) -> Message {
 		if data.len() == 3 {
-			return Some(decode_short_message(data));
+			return decode_short_message(data);
 		} else {
 			return decode_sysex_message(data);
 		}
