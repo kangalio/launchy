@@ -1,7 +1,6 @@
 use crate::ok_or_continue;
-use anyhow::{Result, Context, anyhow};
-use midir::{MidiOutput, MidiOutputConnection, MidiOutputPort,
-			MidiInput, MidiInputConnection, MidiInputPort};
+use anyhow::{Context, anyhow};
+use midir::{MidiOutput, MidiOutputConnection, MidiInput, MidiInputConnection, MidiInputPort};
 
 
 fn guess_port<T: midir::MidiIO>(midi_io: &T, keyword: &str) -> Option<T::Port> {

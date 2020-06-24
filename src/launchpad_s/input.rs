@@ -1,6 +1,3 @@
-use anyhow::{anyhow, Context};
-use midir::{MidiInput, MidiInputConnection, MidiInputPort};
-
 use crate::Button;
 
 

@@ -142,93 +142,70 @@ impl<C: Canvas> Iterator for CanvasIterator<C> {
 	}
 }
 
-/*// Wow that was a lot of code for canvas iteration. Let's just..... do it all again (:
-// I need to repeat all the code in order to have a mutable version.. ugh
+// now we get to the generic canvas stuff...
 
-pub struct CanvasButtonMut<'a, C: Canvas + ?Sized> {
-	canvas: *mut C,
-	// canvas button coordinates MUST be valid!
-	x: u32,
-	y: u32,
-	phantom: std::marker::PhantomData<&'a C>,
+pub trait Flushable {
+	const BOUNDING_BOX_WIDTH: u32;
+	const BOUNDING_BOX_HEIGHT: u32;
+
+	fn is_valid(x: u32, y: u32) -> bool;
+	fn flush(&mut self, changes: &[(u32, u32, crate::Color)]) -> anyhow::Result<()>;
 }
 
-impl<'a, C: Canvas + ?Sized> CanvasButtonMut<'a, C> {
-	pub fn x(&self) -> u32 { self.x }
-	pub fn y(&self) -> u32 { self.y }
+pub struct GenericCanvas<Backend: Flushable> {
+	pub backend: Backend,
+	curr_state: crate::util::Array2d<crate::Color>,
+	new_state: crate::util::Array2d<crate::Color>,
+}
 
-    pub fn get(&self) -> Color {
-		unsafe {
-			return (*self.canvas).get_unchecked(self.x, self.y);
-		}
-	}
-
-    pub fn get_old(&self) -> Color {
-		unsafe {
-			return (*self.canvas).get_old_unchecked(self.x, self.y);
-		}
-	}
-	
-    pub fn set(&mut self, color: Color) {
-		unsafe {
-			return (*self.canvas).set_unchecked(self.x, self.y, color);
-		}
+impl<Backend: Flushable> GenericCanvas<Backend> {
+	/// The passed-in backend must not have been used already. The canvas relies on a 'blank state',
+	/// so to say.
+	pub fn new(backend: Backend) -> Self {
+		let curr_state = crate::util::Array2d::new(9, 9);
+		let new_state = crate::util::Array2d::new(9, 9);
+		return Self { backend, curr_state, new_state };
 	}
 }
 
-pub struct CanvasIteratorMut<'a, C: Canvas + ?Sized> {
-	canvas: &'a mut C,
-	// These are on a valid state at the start, and right before the next valid state afterwards
-	x: u32,
-	y: u32,
-}
+impl<Backend: Flushable> crate::Canvas for GenericCanvas<Backend> {
+	const BOUNDING_BOX_WIDTH: u32 = Backend::BOUNDING_BOX_WIDTH;
+	const BOUNDING_BOX_HEIGHT: u32 = Backend::BOUNDING_BOX_HEIGHT;
 
-impl<'a, C: Canvas + ?Sized> CanvasIteratorMut<'a, C> {
-	fn new(canvas: &'a mut C) -> Self {
-		let mut iter = CanvasIteratorMut {
-			canvas,
-			x: 0,
-			y: 0,
-		};
-		iter.find_next_valid(); // get to a valid state
-		return iter;
+	fn is_valid(x: u32, y: u32) -> bool { Backend::is_valid(x, y) }
+
+	fn set_unchecked(&mut self, x: u32, y: u32, color: crate::Color) {
+		self.new_state.set(x as usize, y as usize, color);
 	}
 
-	fn advance(&mut self) {
-		self.x += 1;
-		if self.x == C::BOUNDING_BOX_WIDTH {
-			self.y += 1;
+	fn get_unchecked(&self, x: u32, y: u32) -> crate::Color {
+		return self.new_state.get(x as usize, y as usize);
+	}
+
+	fn get_old_unchecked(&self, x: u32, y: u32) -> crate::Color {
+		return self.curr_state.get(x as usize, y as usize);
+	}
+
+	fn flush(&mut self) -> anyhow::Result<()> {
+		let mut changes: Vec<(u32, u32, crate::Color)> = Vec::with_capacity(9 * 9);
+
+		for y in 0..9 {
+			for x in 0..9 {
+				if !Self::is_valid(x, y) { continue }
+
+				if self.get(x, y) != self.get_old(x, y) {
+					let color = self.get(x, y);
+					changes.push((x, y, color));
+				}
+			}
 		}
-	}
 
-	// Returns false if there is no more valid state to go to
-	fn find_next_valid(&mut self) -> bool {
-		loop {
-			if self.y >= C::BOUNDING_BOX_HEIGHT { return false }
-			if C::is_valid(self.x, self.y) { return true }
-			// if the current position is not out of bounds but still invalid, let's continue
-			// searching
-			self.advance();
+		if changes.len() > 0 {
+			self.backend.flush(&changes)?;
 		}
+
+		self.curr_state = self.new_state.clone();
+
+		return Ok(());
 	}
 }
-
-impl<'a, C: Canvas> Iterator for CanvasIteratorMut<'a, C> {
-	type Item = CanvasButtonMut<'a, C>;
-
-	fn next(&mut self) -> Option<Self::Item> {
-		let in_bounds = self.find_next_valid();
-		if !in_bounds { return None };
-
-		let value = CanvasButtonMut {
-			canvas: self.canvas as *mut _,
-			x: self.x,
-			y: self.y,
-			phantom: std::marker::PhantomData,
-		};
-
-		self.advance();
-
-		return Some(value);
-	}
-}*/

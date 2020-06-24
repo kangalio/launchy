@@ -1,7 +1,3 @@
-#![allow(unused_imports)]
-
-use anyhow::{Result, Context, anyhow};
-
 mod util;
 
 mod color;

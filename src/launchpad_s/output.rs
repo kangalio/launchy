@@ -1,7 +1,5 @@
-use anyhow::{anyhow, Context};
-use midir::{MidiOutput, MidiOutputConnection, MidiOutputPort};
+use midir::MidiOutputConnection;
 
-use crate::Button;
 use crate::OutputDevice;
 
 pub use crate::capabilities::original::*;

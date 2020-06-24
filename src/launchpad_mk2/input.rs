@@ -1,5 +1,3 @@
-use anyhow::{anyhow, Context};
-use midir::{MidiInput, MidiInputConnection, MidiInputPort};
 use std::convert::TryInto;
 
 use crate::Button;

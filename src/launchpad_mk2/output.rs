@@ -1,5 +1,4 @@
-use anyhow::{anyhow, Context};
-use midir::{MidiOutput, MidiOutputConnection, MidiOutputPort};
+use midir::MidiOutputConnection;
 
 use crate::Button;
 use crate::OutputDevice;
@@ -256,8 +255,6 @@ impl LaunchpadMk2Output {
 	/// This is a function testing various parts of this API by executing various commands in order
 	/// to find issues either in this library or in your device
 	pub fn test_api(&mut self) -> anyhow::Result<()> {
-		use crate::Button;
-
 		self.light_all(PaletteColor::DARK_GRAY)?;
 		std::thread::sleep(std::time::Duration::from_millis(250));
 		self.light_all(PaletteColor::BLACK)?;
@@ -792,23 +789,7 @@ fn x_y_to_button(x: u8, y: u8) -> Button {
 	}
 }
 
-pub struct Canvas {
-	pub backend: LaunchpadMk2Output,
-	curr_state: crate::util::Array2d<crate::Color>,
-	new_state: crate::util::Array2d<crate::Color>,
-}
-
-impl Canvas {
-	/// The passed-in backend must not have been used already. The canvas relies on a 'blank state',
-	/// so to say.
-	pub fn new(backend: LaunchpadMk2Output) -> Self {
-		let curr_state = crate::util::Array2d::new(9, 9);
-		let new_state = crate::util::Array2d::new(9, 9);
-		return Self { backend, curr_state, new_state };
-	}
-}
-
-impl crate::Canvas for Canvas {
+impl crate::Flushable for LaunchpadMk2Output {
 	const BOUNDING_BOX_WIDTH: u32 = 9;
 	const BOUNDING_BOX_HEIGHT: u32 = 9;
 
@@ -818,43 +799,17 @@ impl crate::Canvas for Canvas {
 		return true;
 	}
 
-	fn set_unchecked(&mut self, x: u32, y: u32, color: crate::Color) {
-		self.new_state.set(x as usize, y as usize, color);
-	}
+	fn flush(&mut self, changes: &[(u32, u32, crate::Color)]) -> anyhow::Result<()> {
+		let changes = changes.iter().map(|&(x, y, color)| {
+			let (r, g, b) = color.quantize(64);
+			let color = RgbColor::new(r, g, b);
 
-	fn get_unchecked(&self, x: u32, y: u32) -> crate::Color {
-		return self.new_state.get(x as usize, y as usize);
-	}
+			let button = x_y_to_button(x as u8, y as u8);
 
-	fn get_old_unchecked(&self, x: u32, y: u32) -> crate::Color {
-		return self.curr_state.get(x as usize, y as usize);
-	}
-
-	fn flush(&mut self) -> anyhow::Result<()> {
-		let mut changes = Vec::with_capacity(9 * 9);
-
-		for y in 0..9 {
-			for x in 0..9 {
-				if !Self::is_valid(x, y) { continue }
-
-				if self.get(x, y) != self.get_old(x, y) {
-					let color = self.get(x, y);
-					let (r, g, b) = color.quantize(64);
-					let color = RgbColor::new(r, g, b);
-
-					let button = x_y_to_button(x as u8, y as u8);
-
-					changes.push((button, color));
-				}
-			}
-		}
-
-		if changes.len() > 0 {
-			self.backend.light_multiple_rgb(&changes)?;
-		}
-
-		self.curr_state = self.new_state.clone();
-
-		return Ok(());
+			return (button, color);
+		});
+		return self.light_multiple_rgb(changes);
 	}
 }
+
+pub type Canvas = crate::GenericCanvas<LaunchpadMk2Output>;
