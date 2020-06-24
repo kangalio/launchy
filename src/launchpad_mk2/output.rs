@@ -775,20 +775,6 @@ impl LaunchpadMk2Output {
 	}
 }
 
-fn x_y_to_button(x: u8, y: u8) -> Button {
-	match y {
-		0 => {
-			assert!(x <= 7);
-			return Button::ControlButton { index: x };
-		},
-		1..=8 => {
-			assert!(x <= 8);
-			return Button::GridButton { x, y: y - 1 };
-		},
-		other => panic!("Unexpected y: {}", other),
-	}
-}
-
 impl crate::Flushable for LaunchpadMk2Output {
 	const BOUNDING_BOX_WIDTH: u32 = 9;
 	const BOUNDING_BOX_HEIGHT: u32 = 9;
@@ -804,7 +790,7 @@ impl crate::Flushable for LaunchpadMk2Output {
 			let (r, g, b) = color.quantize(64);
 			let color = RgbColor::new(r, g, b);
 
-			let button = x_y_to_button(x as u8, y as u8);
+			let button = Button::from_abs(x as u8, y as u8);
 
 			return (button, color);
 		});

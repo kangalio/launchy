@@ -104,6 +104,8 @@ impl<Message> InputDeviceHandlerPolling<'_, Message> {
 	/// connection.
 	/// 
 	/// This function returns the number of messages that were discarded.
+	/// 
+	/// This is equivalent to `self.iter_pending().count()`.
 	pub fn drain(&self) -> usize {
 		return self.iter_pending().count();
 	}

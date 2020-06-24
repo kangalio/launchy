@@ -46,6 +46,22 @@ impl Button {
 	pub const SOLO: Self = Button::GridButton { x: 8, y: 6 };
 	pub const RECORD_ARM: Self = Button::GridButton { x: 8, y: 7 };
 
+	/// Creates a new button out of absolute coordinates, like the ones returned by `abs_x()` and
+	/// `abs_y()`.
+	pub fn from_abs(x: u8, y: u8) -> Button {
+		match y {
+			0 => {
+				assert!(x <= 7);
+				return Button::ControlButton { index: x };
+			},
+			1..=8 => {
+				assert!(x <= 8);
+				return Button::GridButton { x, y: y - 1 };
+			},
+			other => panic!("Unexpected y: {}", other),
+		}
+	}
+
 	/// Returns x coordinate assuming coordinate origin in the leftmost control button
 	pub fn abs_x(&self) -> u8 {
 		match self {

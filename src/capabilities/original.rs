@@ -193,5 +193,15 @@ pub trait OriginalLaunchpad: crate::OutputDevice {
 	fn light(&mut self, button: Button, color: Color) -> anyhow::Result<()> {
 		return self.set_button(button, color, DoubleBufferingBehavior::Copy);
 	}
+
+	fn light_all(&mut self, color: Color) -> anyhow::Result<()> {
+		let dbb = DoubleBufferingBehavior::Copy; // this is _probably_ a good default
+
+		for _ in 0..40 {
+			self.set_button_rapid(color, dbb, color, dbb)?;
+		}
+		
+		return Ok(());
+	}
 } 
  
