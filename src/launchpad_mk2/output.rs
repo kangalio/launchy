@@ -177,8 +177,8 @@ impl FaderMode {
 		return Ok(Self { output, fader_type });
 	}
 
-	#[must_use]
 	/// Exit fader mode by transforming this FaderMode object back into a LaunchpadMk2Output object.
+	#[must_use="You must use the returned object, or the MIDI connection will be dropped"]
 	pub fn exit(mut self) -> anyhow::Result<LaunchpadMk2Output> {
 		self.output.change_layout(Layout::Session)?;
 		return Ok(self.output);
@@ -576,7 +576,7 @@ impl LaunchpadMk2Output {
 	/// 
 	/// let mut output = fader_setup.exit()?;
 	/// ```
-	#[must_use]
+	#[must_use="If you don't use the returned object, the MIDI connection will be dropped immediately"]
 	pub fn enter_fader_mode(self, fader_type: FaderType) -> anyhow::Result<FaderMode> {
 		return FaderMode::new(self, fader_type);
 	}

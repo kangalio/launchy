@@ -1,3 +1,6 @@
+// WOW Clippy HATES being explicit
+#![allow(clippy::needless_return, clippy::tabs_in_doc_comments)]
+
 mod util;
 
 mod color;
@@ -19,7 +22,7 @@ pub use launchpad_mk2 as mk2;
 
 
 /// Identifier used for e.g. the midi port names etc.
-const APPLICATION_NAME: &'static str = "LaunchpadRs";
+const APPLICATION_NAME: &str = "LaunchpadRs";
 
 
 #[derive(Debug, Copy, Clone, Hash, Eq, PartialEq)]

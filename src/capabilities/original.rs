@@ -140,7 +140,7 @@ pub trait OriginalLaunchpad: crate::OutputDevice {
 	/// Generally, lower duty cycles (numbers closer to zero) will increase contrast between
 	/// different brightness settings but will also increase flicker; higher ones will eliminate
 	/// flicker, but will also reduce contrast. Note that using less simple ratios (such as 3/17 or
-	/// 2/11) can also increase	perceived flicker.
+	/// 2/11) can also increase perceived flicker.
 	/// If you are particularly sensitive to strobing lights, please use this command with care when
 	/// working with large areas of low-brightness LEDs: in particular, avoid duty cycles of 1/8 or
 	/// less.
