@@ -22,7 +22,7 @@ macro_rules! some_or_continue {
 	)
 }
 
-#[derive(Clone, Eq, PartialEq, Debug)]
+#[derive(Clone, Eq, PartialEq, Debug, Hash)]
 pub struct Array2d<T: Default + Copy> {
 	width: usize,
 	height: usize,

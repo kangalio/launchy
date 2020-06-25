@@ -46,53 +46,50 @@ pub trait Canvas {
 		return self.get_old_unchecked(x, y);
 	}
 
-	fn iter(&self) -> CanvasIterator<Self> {
+	fn iter(&self) -> CanvasIterator {
 		return CanvasIterator::new(self);
 	}
+}
 
-	// fn iter_mut(&mut self) -> CanvasIteratorMut<Self> {
-	// 	return CanvasIteratorMut::new(self);
-	// }
+pub trait IntoCanvas {
+	type CanvasType: Canvas;
+
+	fn into_canvas(self) -> Self::CanvasType;
 }
 
 // Next lines are canvas iteration stuff...
 
 #[derive(Debug, Clone, Eq, PartialEq)]
-pub struct CanvasButton<C: Canvas + ?Sized> {
+pub struct CanvasButton {
 	// canvas button coordinates MUST be valid!
 	x: u32,
 	y: u32,
-
-	// we need to restrict ourselves to just this specific canvas type, because the coordinates may
-	// be invalid for other canvas types
-	phantom: std::marker::PhantomData<C>,
 }
 
-impl<C: Canvas + ?Sized> CanvasButton<C> {
+impl CanvasButton {
 	pub fn x(&self) -> u32 { self.x }
 	pub fn y(&self) -> u32 { self.y }
 
-    pub fn get(&self, canvas: &C) -> Color {
+    pub fn get(&self, canvas: &impl Canvas) -> Color {
 		canvas.get_unchecked(self.x, self.y)
 	}
 
-    pub fn get_old(&self, canvas: &C) -> Color {
+    pub fn get_old(&self, canvas: &impl Canvas) -> Color {
 		canvas.get_old_unchecked(self.x, self.y)
 	}
 
-	pub fn set(&self, canvas: &mut C, color: Color) {
+	pub fn set(&self, canvas: &mut impl Canvas, color: Color) {
 		canvas.set_unchecked(self.x, self.y, color);
 	}
 }
 
-pub struct CanvasIterator<C: Canvas + ?Sized> {
+pub struct CanvasIterator {
 	coordinates: Vec<(u32, u32)>, // the list of coordinates that we will iterate through
 	index: usize,
-	phantom: std::marker::PhantomData<C>, // dunno why rustc needs this but whatever
 }
 
-impl<C: Canvas + ?Sized> CanvasIterator<C> {
-	fn new(canvas: &C) -> Self {
+impl CanvasIterator {
+	fn new<C: Canvas + ?Sized>(canvas: &C) -> Self {
 		let bb_height = canvas.bounding_box_height();
 		let bb_width = canvas.bounding_box_width();
 
@@ -108,13 +105,12 @@ impl<C: Canvas + ?Sized> CanvasIterator<C> {
 		return CanvasIterator {
 			coordinates,
 			index: 0,
-			phantom: std::marker::PhantomData,
 		};
 	}
 }
 
-impl<C: Canvas> Iterator for CanvasIterator<C> {
-	type Item = CanvasButton<C>;
+impl Iterator for CanvasIterator {
+	type Item = CanvasButton;
 
 	fn next(&mut self) -> Option<Self::Item> {
 		if self.index >= self.coordinates.len() {
@@ -124,7 +120,6 @@ impl<C: Canvas> Iterator for CanvasIterator<C> {
 		let value = CanvasButton {
 			x: self.coordinates[self.index].0,
 			y: self.coordinates[self.index].1,
-			phantom: std::marker::PhantomData,
 		};
 
 		self.index += 1;
@@ -143,6 +138,15 @@ pub trait Flushable {
 	fn flush(&mut self, changes: &[(u32, u32, crate::Color)]) -> anyhow::Result<()>;
 }
 
+impl<T> IntoCanvas for T where T: Flushable {
+	type CanvasType = GenericCanvas<Self>;
+	
+	fn into_canvas(self) -> Self::CanvasType where Self: Sized {
+		return GenericCanvas::new(self);
+	}
+}
+
+#[derive(Clone, PartialEq, Debug)]
 pub struct GenericCanvas<Backend: Flushable> {
 	pub backend: Backend,
 	curr_state: crate::util::Array2d<crate::Color>,
@@ -180,8 +184,8 @@ impl<Backend: Flushable> crate::Canvas for GenericCanvas<Backend> {
 		let mut changes: Vec<(u32, u32, crate::Color)> = Vec::with_capacity(9 * 9);
 
 		for button in self.iter() {
-			if button.get(&self) != button.get_old(&self) {
-				let color = button.get(&self);
+			if button.get(self) != button.get_old(self) {
+				let color = button.get(self);
 				changes.push((button.x(), button.y(), color));
 			}
 		}
@@ -192,6 +196,106 @@ impl<Backend: Flushable> crate::Canvas for GenericCanvas<Backend> {
 
 		self.curr_state = self.new_state.clone();
 
+		return Ok(());
+	}
+}
+
+// Now, the canvas layout stuff......
+
+use std::collections::HashMap;
+
+struct LayoutDevice {
+	canvas: Box<dyn Canvas>,
+	x: u32,
+	y: u32,
+}
+
+#[allow(clippy::borrowed_box)] // YES I KNOW WHAT I'M DOING (I don't even know if I'm being ironic)
+fn get_boxed_type<T: ?Sized + std::any::Any>(_value: &Box<T>) -> &'static str {
+	return std::any::type_name::<T>();
+}
+
+impl std::fmt::Debug for LayoutDevice {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		return f.write_fmt(
+			format_args!(
+				"{} from ({}|{}) to incl ({}|{})",
+				get_boxed_type(&self.canvas),
+				self.x,
+				self.y,
+				self.x + self.canvas.bounding_box_width() - 1,
+				self.y + self.canvas.bounding_box_height() - 1,
+			)
+		);
+	}
+}
+
+#[derive(Default, Debug)]
+pub struct CanvasLayout {
+	devices: Vec<LayoutDevice>,
+	// Maps coordinates to a specific LayoutDevice, specified by an index into the vector
+	coordinate_map: HashMap<(u32, u32), usize>,
+}
+
+impl CanvasLayout {
+	pub fn new() -> Self {
+		return Self {
+			devices: vec![],
+			coordinate_map: HashMap::new(),
+		};
+	}
+
+	pub fn add(&mut self, canvas: impl Canvas + 'static, x: u32, y: u32) {
+		let index = self.devices.len(); // The index of soon-to-be inserted object
+
+		for button in canvas.iter() {
+			self.coordinate_map.insert((x + button.x(), y + button.y()), index);
+		}
+
+		let canvas_box = Box::new(canvas) as Box<dyn Canvas>; // Static -> dynamic dispatch
+
+		// TODO: check collision!
+
+		self.devices.push(LayoutDevice { canvas: canvas_box, x, y });
+	}
+}
+
+impl Canvas for CanvasLayout {
+	fn bounding_box_width(&self) -> u32 {
+		return self.devices.iter()
+				.map(|device| device.x + device.canvas.bounding_box_width())
+				.max().unwrap_or(0);
+	}
+	
+	fn bounding_box_height(&self) -> u32 {
+		return self.devices.iter()
+				.map(|device| device.y + device.canvas.bounding_box_height())
+				.max().unwrap_or(0);
+	}
+	
+	fn is_valid(&self, x: u32, y: u32) -> bool {
+		return self.coordinate_map.contains_key(&(x, y));
+	}
+	
+	fn get_unchecked(&self, x: u32, y: u32) -> Color {
+		let device = &self.devices[*self.coordinate_map.get(&(x, y)).unwrap()];
+		return device.canvas.get_unchecked(x - device.x, y - device.y);
+	}
+	
+	fn set_unchecked(&mut self, x: u32, y: u32, color: Color) {
+		let device = &mut self.devices[*self.coordinate_map.get(&(x, y)).unwrap()];
+		return device.canvas.set_unchecked(x - device.x, y - device.y, color);
+	}
+	
+	fn get_old_unchecked(&self, x: u32, y: u32) -> Color {
+		let device = &self.devices[*self.coordinate_map.get(&(x, y)).unwrap()];
+		return device.canvas.get_old_unchecked(x - device.x, y - device.y);
+	}
+	
+	fn flush(&mut self) -> anyhow::Result<()> {
+		for device in &mut self.devices {
+			device.canvas.flush()?;
+		}
 		return Ok(());
 	}
 }
