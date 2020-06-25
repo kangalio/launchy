@@ -2,13 +2,14 @@ use crate::Color;
 
 
 pub trait Canvas {
-	const BOUNDING_BOX_WIDTH: u32;
-	const BOUNDING_BOX_HEIGHT: u32;
-
 	// These are the methods that _need_ to be implemented by the.. implementor
 
+	/// The width of the smallest rectangle that still fully encapsulates the shape of this canvas
+	fn bounding_box_width(&self) -> u32;
+	/// The height of the smallest rectangle that still fully encapsulates the shape of this canvas
+	fn bounding_box_height(&self) -> u32;
 	/// Check if the location is in bounds
-	fn is_valid(x: u32, y: u32) -> bool;
+	fn is_valid(&self, x: u32, y: u32) -> bool;
 	/// Retrieves the current color at the given location. No bounds checking
 	fn get_unchecked(&self, x: u32, y: u32) -> Color;
 	/// Sets the color at the given location. No bounds checking
@@ -22,7 +23,7 @@ pub trait Canvas {
 
 	/// Sets the color at the given location. Panics if the location is out of bounds
 	fn set(&mut self, x: u32, y: u32, color: Color) {
-		if !Self::is_valid(x, y) {
+		if !self.is_valid(x, y) {
 			panic!("Coordinates ({}|{}) out of bounds", x, y);
 		}
 		self.set_unchecked(x, y, color);
@@ -30,7 +31,7 @@ pub trait Canvas {
 
 	/// Sets the color at the given location. Panics if the location is out of bounds
 	fn get(&self, x: u32, y: u32) -> Color {
-		if !Self::is_valid(x, y) {
+		if !self.is_valid(x, y) {
 			panic!("Coordinates ({}|{}) out of bounds", x, y);
 		}
 		return self.get_unchecked(x, y);
@@ -39,14 +40,14 @@ pub trait Canvas {
 	/// Retrieves the old, unflushed color at the given location. Panics if the location is out of
 	/// bounds
 	fn get_old(&self, x: u32, y: u32) -> Color {
-		if !Self::is_valid(x, y) {
+		if !self.is_valid(x, y) {
 			panic!("Coordinates ({}|{}) out of bounds", x, y);
 		}
 		return self.get_old_unchecked(x, y);
 	}
 
-	fn iter() -> CanvasIterator<Self> {
-		return CanvasIterator::new();
+	fn iter(&self) -> CanvasIterator<Self> {
+		return CanvasIterator::new(self);
 	}
 
 	// fn iter_mut(&mut self) -> CanvasIteratorMut<Self> {
@@ -85,41 +86,30 @@ impl<C: Canvas + ?Sized> CanvasButton<C> {
 }
 
 pub struct CanvasIterator<C: Canvas + ?Sized> {
-	// These are on a valid state at the start, and right before the next valid state afterwards
-	x: u32,
-	y: u32,
-
+	coordinates: Vec<(u32, u32)>, // the list of coordinates that we will iterate through
+	index: usize,
 	phantom: std::marker::PhantomData<C>, // dunno why rustc needs this but whatever
 }
 
 impl<C: Canvas + ?Sized> CanvasIterator<C> {
-	fn new() -> Self {
-		let mut iter = CanvasIterator {
-			x: 0,
-			y: 0,
+	fn new(canvas: &C) -> Self {
+		let bb_height = canvas.bounding_box_height();
+		let bb_width = canvas.bounding_box_width();
+
+		let mut coordinates = Vec::with_capacity((bb_width * bb_height) as usize);
+		for y in 0..bb_height {
+			for x in 0..bb_width {
+				if canvas.is_valid(x, y) {
+					coordinates.push((x, y));
+				}
+			}
+		}
+
+		return CanvasIterator {
+			coordinates,
+			index: 0,
 			phantom: std::marker::PhantomData,
 		};
-		iter.find_next_valid(); // get to a valid state
-		return iter;
-	}
-
-	fn advance(&mut self) {
-		self.x += 1;
-		if self.x == C::BOUNDING_BOX_WIDTH {
-			self.x = 0;
-			self.y += 1;
-		}
-	}
-
-	// Returns false if there is no more valid state to go to
-	fn find_next_valid(&mut self) -> bool {
-		loop {
-			if self.y >= C::BOUNDING_BOX_HEIGHT { return false }
-			if C::is_valid(self.x, self.y) { return true }
-			// if the current position is not out of bounds but still invalid, let's continue
-			// searching
-			self.advance();
-		}
 	}
 }
 
@@ -127,16 +117,17 @@ impl<C: Canvas> Iterator for CanvasIterator<C> {
 	type Item = CanvasButton<C>;
 
 	fn next(&mut self) -> Option<Self::Item> {
-		let in_bounds = self.find_next_valid();
-		if !in_bounds { return None };
+		if self.index >= self.coordinates.len() {
+			return None;
+		}
 
 		let value = CanvasButton {
-			x: self.x,
-			y: self.y,
+			x: self.coordinates[self.index].0,
+			y: self.coordinates[self.index].1,
 			phantom: std::marker::PhantomData,
 		};
 
-		self.advance();
+		self.index += 1;
 
 		return Some(value);
 	}
@@ -169,10 +160,9 @@ impl<Backend: Flushable> GenericCanvas<Backend> {
 }
 
 impl<Backend: Flushable> crate::Canvas for GenericCanvas<Backend> {
-	const BOUNDING_BOX_WIDTH: u32 = Backend::BOUNDING_BOX_WIDTH;
-	const BOUNDING_BOX_HEIGHT: u32 = Backend::BOUNDING_BOX_HEIGHT;
-
-	fn is_valid(x: u32, y: u32) -> bool { Backend::is_valid(x, y) }
+	fn bounding_box_width(&self) -> u32 { Backend::BOUNDING_BOX_WIDTH }
+	fn bounding_box_height(&self) -> u32 { Backend::BOUNDING_BOX_HEIGHT }
+	fn is_valid(&self, x: u32, y: u32) -> bool { Backend::is_valid(x, y) }
 
 	fn set_unchecked(&mut self, x: u32, y: u32, color: crate::Color) {
 		self.new_state.set(x as usize, y as usize, color);
@@ -189,9 +179,10 @@ impl<Backend: Flushable> crate::Canvas for GenericCanvas<Backend> {
 	fn flush(&mut self) -> anyhow::Result<()> {
 		let mut changes: Vec<(u32, u32, crate::Color)> = Vec::with_capacity(9 * 9);
 
+		// TODO: use iterator here
 		for y in 0..9 {
 			for x in 0..9 {
-				if !Self::is_valid(x, y) { continue }
+				if !self.is_valid(x, y) { continue }
 
 				if self.get(x, y) != self.get_old(x, y) {
 					let color = self.get(x, y);

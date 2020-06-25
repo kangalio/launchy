@@ -44,8 +44,8 @@ impl Color {
 	/// `(component * range).floor().min(range - 1).max(0)` on every component
 	pub fn quantize(&self, range: u8) -> (u8, u8, u8) {
 		return (
-			((self.g * range as f32) as u8).min(range - 1).max(0),
 			((self.r * range as f32) as u8).min(range - 1).max(0),
+			((self.g * range as f32) as u8).min(range - 1).max(0),
 			((self.b * range as f32) as u8).min(range - 1).max(0),
 		);
 	}
