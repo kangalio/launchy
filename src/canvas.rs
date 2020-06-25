@@ -179,15 +179,10 @@ impl<Backend: Flushable> crate::Canvas for GenericCanvas<Backend> {
 	fn flush(&mut self) -> anyhow::Result<()> {
 		let mut changes: Vec<(u32, u32, crate::Color)> = Vec::with_capacity(9 * 9);
 
-		// TODO: use iterator here
-		for y in 0..9 {
-			for x in 0..9 {
-				if !self.is_valid(x, y) { continue }
-
-				if self.get(x, y) != self.get_old(x, y) {
-					let color = self.get(x, y);
-					changes.push((x, y, color));
-				}
+		for button in self.iter() {
+			if button.get(&self) != button.get_old(&self) {
+				let color = button.get(&self);
+				changes.push((button.x(), button.y(), color));
 			}
 		}
 

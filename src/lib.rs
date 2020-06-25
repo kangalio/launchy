@@ -27,7 +27,7 @@ const APPLICATION_NAME: &str = "LaunchpadRs";
 
 #[derive(Debug, Copy, Clone, Hash, Eq, PartialEq)]
 pub enum Button {
-	ControlButton { index: u8 }, // TODO: Rename "number" -> "index"
+	ControlButton { index: u8 },
 	GridButton { x: u8, y: u8 },
 }
 
