@@ -12,8 +12,6 @@ pub use canvas::*;
 mod midi_io;
 pub use midi_io::*;
 
-pub mod capabilities;
-
 pub mod launchpad_s;
 pub use launchpad_s as s;
 
@@ -21,7 +19,6 @@ pub mod launchpad_mk2;
 pub use launchpad_mk2 as mk2;
 
 pub mod prelude {
-	pub use crate::capabilities::*;
 	pub use crate::canvas::IntoCanvas;
 }
 
