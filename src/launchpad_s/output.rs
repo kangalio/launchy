@@ -241,8 +241,7 @@ fn make_color_code_loopable(color: Color, should_loop: bool)
 	
 	// Bit 6 - Loop - If 1: loop the text
 	// Bit 5..4 - Green LED brightness
-	// Bit 3 - uhhhh, I think these should probably be empty?
-	// Bit 2 - same as above
+	// Bit 3..2 - uhhhh, I think these should probably be empty?
 	// Bit 1..0 - Red LED brightness
 	
 	return ((should_loop as u8) << 6) | (color.green() << 4) | color.red();
@@ -312,5 +311,3 @@ impl crate::Flushable for LaunchpadSOutput {
 		return Ok(());
 	}
 }
-
-pub type Canvas = crate::GenericCanvas<LaunchpadSOutput>;

@@ -89,12 +89,36 @@ impl std::ops::Add for Color {
 
 impl std::ops::Sub for Color {
 	type Output = Self;
-
+	
 	fn sub(self, other: Self) -> Self {
 		return Self {
 			r: self.r - other.r,
 			g: self.g - other.g,
 			b: self.b - other.b,
+		};
+	}
+}
+
+impl std::ops::Add<f32> for Color {
+	type Output = Self;
+
+	fn add(self, addend: f32) -> Self {
+		return Self {
+			r: self.r + addend,
+			g: self.g + addend,
+			b: self.b + addend,
+		};
+	}
+}
+
+impl std::ops::Sub<f32> for Color {
+	type Output = Self;
+
+	fn sub(self, subtrand /* or something like that */: f32) -> Self {
+		return Self {
+			r: self.r - subtrand,
+			g: self.g - subtrand,
+			b: self.b - subtrand,
 		};
 	}
 }

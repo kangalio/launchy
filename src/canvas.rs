@@ -2,7 +2,7 @@ use crate::Color;
 
 
 pub trait Canvas {
-	// These are the methods that _need_ to be implemented by the.. implementor
+	// These are the methods that _need_ to be implemented by the implementor
 
 	/// The width of the smallest rectangle that still fully encapsulates the shape of this canvas
 	fn bounding_box_width(&self) -> u32;
@@ -204,63 +204,106 @@ impl<Backend: Flushable> crate::Canvas for GenericCanvas<Backend> {
 
 use std::collections::HashMap;
 
-struct LayoutDevice {
-	canvas: Box<dyn Canvas>,
+#[derive(Clone, Eq, PartialEq, Hash, Debug)]
+pub enum CanvasMessage {
+	Press { x: u32, y: u32 },
+	Release { x: u32, y: u32 },
+}
+
+unsafe impl Send for CanvasMessage {}
+
+struct LayoutDevice<'a> {
+	canvas: Box<dyn Canvas + 'a>,
+	#[allow(dead_code)]
+	input: crate::InputDeviceHandler<'a>,
 	x: u32,
 	y: u32,
 }
 
-#[allow(clippy::borrowed_box)] // YES I KNOW WHAT I'M DOING (I don't even know if I'm being ironic)
-fn get_boxed_type<T: ?Sized + std::any::Any>(_value: &Box<T>) -> &'static str {
-	return std::any::type_name::<T>();
-}
-
-impl std::fmt::Debug for LayoutDevice {
-	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-		return f.write_fmt(
-			format_args!(
-				"{} from ({}|{}) to incl ({}|{})",
-				get_boxed_type(&self.canvas),
-				self.x,
-				self.y,
-				self.x + self.canvas.bounding_box_width() - 1,
-				self.y + self.canvas.bounding_box_height() - 1,
-			)
-		);
-	}
-}
-
-#[derive(Default, Debug)]
-pub struct CanvasLayout {
-	devices: Vec<LayoutDevice>,
+pub struct CanvasLayout<'a> {
+	devices: Vec<LayoutDevice<'a>>,
 	// Maps coordinates to a specific LayoutDevice, specified by an index into the vector
 	coordinate_map: HashMap<(u32, u32), usize>,
+	callback: Arc<Box<dyn Fn(CanvasMessage) + Send + Sync + 'a>>,
 }
 
-impl CanvasLayout {
-	pub fn new() -> Self {
+pub trait DeviceCanvas {
+	type Input: crate::InputDevice;
+	type Output: crate::OutputDevice + IntoCanvas;
+
+	fn convert_message(input: <Self::Input as crate::InputDevice>::Message) -> Option<CanvasMessage>;
+}
+
+pub struct CanvasLayoutPoller {
+	receiver: std::sync::mpsc::Receiver<CanvasMessage>,
+}
+
+impl crate::MsgPollingWrapper for CanvasLayoutPoller {
+	type Message = CanvasMessage;
+
+	fn receiver(&self) -> &std::sync::mpsc::Receiver<Self::Message> { &self.receiver }
+}
+
+use std::sync::Arc;
+
+impl<'a> CanvasLayout<'a> {
+	pub fn new(callback: impl Fn(CanvasMessage) + Send + Sync + 'a) -> Self {
 		return Self {
 			devices: vec![],
 			coordinate_map: HashMap::new(),
+			callback: Arc::new(Box::new(callback)),
 		};
 	}
 
-	pub fn add(&mut self, canvas: impl Canvas + 'static, x: u32, y: u32) {
+	pub fn new_polling() -> (CanvasLayoutPoller, Self) {
+		let (sender, receiver) = std::sync::mpsc::sync_channel(50);
+		return (CanvasLayoutPoller { receiver }, Self::new(move |msg| sender.send(msg)
+				.expect("Message receiver has hung up (this shouldn't happen)")));
+	}
+
+	pub fn add_by_guess<C: DeviceCanvas>(&mut self, x: u32, y: u32) -> anyhow::Result<()>
+			where C::Output: 'a {
+		
+		use crate::{InputDevice, OutputDevice};
+
 		let index = self.devices.len(); // The index of soon-to-be inserted object
 
+		let callback = self.callback.clone();
+		let input = C::Input::guess(move |msg| {
+			if let Some(msg) = C::convert_message(msg) {
+				match msg {
+					CanvasMessage::Press { x: msg_x, y: msg_y } => {
+						(callback)(CanvasMessage::Press { x: msg_x + x, y: msg_y + y });
+					},
+					CanvasMessage::Release { x: msg_x, y: msg_y } => {
+						(callback)(CanvasMessage::Release { x: msg_x + x, y: msg_y + y });
+					},
+				}
+			}
+		})?;
+
+		let canvas = C::Output::guess()?.into_canvas();
+
 		for button in canvas.iter() {
-			self.coordinate_map.insert((x + button.x(), y + button.y()), index);
+			let translated_coords = (x + button.x(), y + button.y());
+			let old_value = self.coordinate_map.insert(translated_coords, index);
+
+			// check for overlap
+			if let Some(old_index) = old_value {
+				panic!("Canvas is overlapping with canvas {} (zero-indexed) at ({}|{})!",
+						old_index, translated_coords.0, translated_coords.1);
+			}
 		}
 
-		let canvas_box = Box::new(canvas) as Box<dyn Canvas>; // Static -> dynamic dispatch
+		let canvas_box = Box::new(canvas) as Box<dyn Canvas>;
 
-		// TODO: check collision!
+		self.devices.push(LayoutDevice { canvas: canvas_box, input, x, y });
 
-		self.devices.push(LayoutDevice { canvas: canvas_box, x, y });
+		return Ok(());
 	}
 }
 
-impl Canvas for CanvasLayout {
+impl Canvas for CanvasLayout<'_> {
 	fn bounding_box_width(&self) -> u32 {
 		return self.devices.iter()
 				.map(|device| device.x + device.canvas.bounding_box_width())

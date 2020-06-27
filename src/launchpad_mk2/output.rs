@@ -787,6 +787,7 @@ impl crate::Flushable for LaunchpadMk2Output {
 
 	fn flush(&mut self, changes: &[(u32, u32, crate::Color)]) -> anyhow::Result<()> {
 		let changes = changes.iter().map(|&(x, y, color)| {
+			// let color = color / 0.75 - 0.25; // REMEMBER
 			let (r, g, b) = color.quantize(64);
 			let color = RgbColor::new(r, g, b);
 
