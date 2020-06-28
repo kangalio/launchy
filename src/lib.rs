@@ -6,6 +6,8 @@
 
 mod util;
 
+mod protocols;
+
 mod color;
 pub use color::*;
 
@@ -21,9 +23,12 @@ pub use launchpad_s as s;
 pub mod launchpad_mk2;
 pub use launchpad_mk2 as mk2;
 
+pub mod launch_control;
+pub use launch_control as control;
+
 pub mod prelude {
 	pub use crate::midi_io::{OutputDevice, InputDevice, MsgPollingWrapper};
-	pub use crate::canvas::{Canvas};
+	pub use crate::canvas::Canvas;
 }
 
 /// Identifier used for e.g. the midi port names etc.

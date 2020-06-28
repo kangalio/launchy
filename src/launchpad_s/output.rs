@@ -3,6 +3,8 @@ use midir::MidiOutputConnection;
 use crate::OutputDevice;
 use crate::Button;
 
+pub use crate::protocols::double_buffering::*;
+
 /// ## Double buffering
 /// To make more economical use of data, the Launchpad has a feature called double buffering.
 /// Essentially, Launchpad manages two sets of LED data - buffers - for each pad. By default, these
@@ -13,77 +15,6 @@ use crate::Button;
 /// pre-programmed state, while the pads can again be updated invisibly ready for the next swap. The
 /// visible buffer can alternatively be configured to swap automatically at 280ms intervals in order
 /// to configure LEDs to flash.
-
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Default, Hash)]
-pub struct Color {
-	red: u8,
-	green: u8,
-}
-
-impl Color {
-	pub const BLACK: Color = Color { red: 0, green: 0 };
-	pub const RED: Color = Color { red: 3, green: 0 };
-	pub const GREEN: Color = Color { red: 0, green: 3 };
-	pub const YELLOW: Color = Color { red: 3, green: 3 };
-
-	pub fn new(red: u8, green: u8) -> Color {
-		assert!(red < 4);
-		assert!(green < 4);
-
-		return Color { red, green };
-	}
-
-	pub fn red(&self) -> u8 { self.red }
-	pub fn green(&self) -> u8 { self.green }
-	pub fn set_red(&mut self, red: u8) { assert!(red < 4); self.red = red }
-	pub fn set_green(&mut self, green: u8) { assert!(green < 4); self.green = green }
-}
-
-#[derive(Debug, Ord, PartialOrd, Eq, PartialEq, Hash, Copy, Clone)]
-pub enum Brightness {
-	Off, Low, Medium, Full
-}
-
-#[derive(Debug, Eq, PartialEq, Hash, Copy, Clone)]
-#[repr(u8)]
-pub enum Buffer {
-	Buffer0 = 0,
-	Buffer1 = 1,
-}
-
-#[derive(Debug, Hash, Eq, PartialEq, Copy, Clone)]
-pub enum DoubleBufferingBehavior {
-	/// Only write to the currently edited buffer
-	None,
-	/// Clear the other buffer's copy of this LED
-	Clear,
-	/// Write this LED data to both buffers
-	Copy,
-}
-
-#[derive(Debug, Eq, PartialEq, Hash, Clone)]
-pub struct DoubleBuffering {
-	pub copy: bool,
-	pub flash: bool,
-	pub edited_buffer: Buffer,
-	pub displayed_buffer: Buffer,
-}
-
-fn make_color_code(color: Color, dbb: DoubleBufferingBehavior)
-		-> u8 {
-	
-	// Bit 6 - Must be 0
-	// Bit 5..4 - Green LED brightness
-	// Bit 3 - Clear - If 1: clear the other buffer’s copy of this LED.
-	// Bit 2 - Copy - If 1: write this LED data to both buffers.
-	// Bit 1..0 - Red LED brightness
-	let double_buffering_code = match dbb {
-		DoubleBufferingBehavior::None => 0b00,
-		DoubleBufferingBehavior::Copy => 0b01,
-		DoubleBufferingBehavior::Clear => 0b10,
-	};
-	return (color.green << 4) | (double_buffering_code << 2) | color.red;
-}
 
 pub struct LaunchpadSOutput {
 	connection: MidiOutputConnection,
