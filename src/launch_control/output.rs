@@ -122,4 +122,14 @@ impl LaunchControlOutput {
 		
 		return self.send(&[0xB0 + template.into().0, 0, last_byte]);
 	}
+
+	// -----------------------------
+	// Shorthand functions:
+	// -----------------------------
+
+	/// All LEDs are turned off, and the mapping mode, buffer settings, and duty cycle are reset to
+	/// their default values.
+	pub fn reset(&mut self, template: impl Into<Template>) -> anyhow::Result<()> {
+		return self.turn_on_all_leds(template, Brightness::Off);
+	}
 }
