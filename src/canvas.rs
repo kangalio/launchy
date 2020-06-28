@@ -167,6 +167,14 @@ impl<'a, Spec: DeviceSpec> DeviceCanvas<'a, Spec> {
 	}
 }
 
+pub trait DeviceCanvasTrait {
+	type Spec: DeviceSpec;
+}
+
+impl<S: DeviceSpec> DeviceCanvasTrait for DeviceCanvas<'_, S> {
+	type Spec = S;
+}
+
 impl<Spec: DeviceSpec> crate::Canvas for DeviceCanvas<'_, Spec> {
 	fn bounding_box_width(&self) -> u32 { Spec::BOUNDING_BOX_WIDTH }
 	fn bounding_box_height(&self) -> u32 { Spec::BOUNDING_BOX_HEIGHT }
@@ -277,8 +285,8 @@ impl<'a> CanvasLayout<'a> {
 		return Ok(());
 	}
 
-	pub fn add_by_guess<S: 'a + DeviceSpec>(&mut self, x: u32, y: u32) -> anyhow::Result<()> {
-		self.add(x, y, DeviceCanvas::<S>::guess)
+	pub fn add_by_guess<E: 'a + DeviceCanvasTrait>(&mut self, x: u32, y: u32) -> anyhow::Result<()> {
+		self.add(x, y, DeviceCanvas::<E::Spec>::guess)
 	}
 }
 
