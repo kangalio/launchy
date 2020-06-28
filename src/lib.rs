@@ -11,7 +11,7 @@ mod protocols;
 mod color;
 pub use color::*;
 
-mod canvas;
+pub mod canvas;
 pub use canvas::*;
 
 mod midi_io;
