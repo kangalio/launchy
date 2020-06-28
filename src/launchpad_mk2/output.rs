@@ -774,29 +774,3 @@ impl LaunchpadMk2Output {
 		return self.light_all(PaletteColor::BLACK);
 	}
 }
-
-impl crate::Flushable for LaunchpadMk2Output {
-	const BOUNDING_BOX_WIDTH: u32 = 9;
-	const BOUNDING_BOX_HEIGHT: u32 = 9;
-
-	fn is_valid(x: u32, y: u32) -> bool {
-		if x > 8 || y > 8 { return false }
-		if x == 8 && y == 0 { return false }
-		return true;
-	}
-
-	fn flush(&mut self, changes: &[(u32, u32, crate::Color)]) -> anyhow::Result<()> {
-		let changes = changes.iter().map(|&(x, y, color)| {
-			// let color = color / 0.75 - 0.25; // REMEMBER
-			let (r, g, b) = color.quantize(64);
-			let color = RgbColor::new(r, g, b);
-
-			let button = Button::from_abs(x as u8, y as u8);
-
-			return (button, color);
-		});
-		return self.light_multiple_rgb(changes);
-	}
-}
-
-pub type Canvas = crate::GenericCanvas<LaunchpadMk2Output>;

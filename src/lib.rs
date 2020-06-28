@@ -1,4 +1,7 @@
 // WOW Clippy HATES being explicit
+// and also, the reasoning against tabs in doc comments is exactly the same reasoning against tabs
+// as indentation in general - and that is totally stupid, because indentation style is something
+// subjective. Guess clippy missed the note about that.
 #![allow(clippy::needless_return, clippy::tabs_in_doc_comments)]
 
 mod util;
@@ -19,9 +22,8 @@ pub mod launchpad_mk2;
 pub use launchpad_mk2 as mk2;
 
 pub mod prelude {
-	pub use crate::canvas::IntoCanvas;
 	pub use crate::midi_io::{OutputDevice, InputDevice, MsgPollingWrapper};
-	pub use crate::canvas::Canvas;
+	pub use crate::canvas::{Canvas};
 }
 
 /// Identifier used for e.g. the midi port names etc.

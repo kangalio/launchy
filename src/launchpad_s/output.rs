@@ -291,23 +291,3 @@ impl LaunchpadSOutput {
 // 				.map(|&(x, y, color)| (x_y_to_rapid_update_index(x, y), x, y, color))
 // 				.collect();
 // 		changes.sort_unstable_by_key(|&(rapid_update_index, ..)| rapid_update_index);
-
-impl crate::Flushable for LaunchpadSOutput {
-	const BOUNDING_BOX_WIDTH: u32 = 9;
-	const BOUNDING_BOX_HEIGHT: u32 = 9;
-
-	fn is_valid(x: u32, y: u32) -> bool {
-		if x > 8 || y > 8 { return false }
-		if x == 8 && y == 0 { return false }
-		return true;
-	}
-
-	fn flush(&mut self, changes: &[(u32, u32, crate::Color)]) -> anyhow::Result<()> {
-		for &(x, y, color) in changes {
-			let (r, g, _b) = color.quantize(4);
-			self.light(crate::Button::from_abs(x as u8, y as u8), Color::new(r, g))?;
-		}
-
-		return Ok(());
-	}
-}

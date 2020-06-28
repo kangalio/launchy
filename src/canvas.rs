@@ -51,12 +51,6 @@ pub trait Canvas {
 	}
 }
 
-pub trait IntoCanvas {
-	type CanvasType: Canvas;
-
-	fn into_canvas(self) -> Self::CanvasType;
-}
-
 // Next lines are canvas iteration stuff...
 
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -130,43 +124,53 @@ impl Iterator for CanvasIterator {
 
 // now we get to the generic canvas stuff...
 
-pub trait Flushable {
+pub trait DeviceSpec {
 	const BOUNDING_BOX_WIDTH: u32;
 	const BOUNDING_BOX_HEIGHT: u32;
 
+	type Input: crate::InputDevice;
+	type Output: crate::OutputDevice;
+
 	fn is_valid(x: u32, y: u32) -> bool;
-	fn flush(&mut self, changes: &[(u32, u32, crate::Color)]) -> anyhow::Result<()>;
+	fn flush(output: &mut Self::Output, changes: &[(u32, u32, crate::Color)]) -> anyhow::Result<()>;
+	fn convert_message(msg: <Self::Input as crate::InputDevice>::Message) -> Option<CanvasMessage>;
 }
 
-impl<T> IntoCanvas for T where T: Flushable {
-	type CanvasType = GenericCanvas<Self>;
-	
-	fn into_canvas(self) -> Self::CanvasType where Self: Sized {
-		return GenericCanvas::new(self);
-	}
-}
-
-#[derive(Clone, PartialEq, Debug)]
-pub struct GenericCanvas<Backend: Flushable> {
-	pub backend: Backend,
+pub struct DeviceCanvas<'a, Spec: DeviceSpec> {
+	_input: crate::InputDeviceHandler<'a>,
+	output: Spec::Output,
 	curr_state: crate::util::Array2d<crate::Color>,
 	new_state: crate::util::Array2d<crate::Color>,
 }
 
-impl<Backend: Flushable> GenericCanvas<Backend> {
-	/// The passed-in backend must not have been used already. The canvas relies on a 'blank state',
-	/// so to say.
-	pub fn new(backend: Backend) -> Self {
-		let curr_state = crate::util::Array2d::new(9, 9);
-		let new_state = crate::util::Array2d::new(9, 9);
-		return Self { backend, curr_state, new_state };
+impl<'a, Spec: DeviceSpec> DeviceCanvas<'a, Spec> {
+	pub fn guess(mut callback: impl FnMut(CanvasMessage) + Send + 'a) -> anyhow::Result<Self> {
+		use crate::midi_io::{InputDevice, OutputDevice};
+
+		let _input = Spec::Input::guess(move |msg| {
+			if let Some(msg) = Spec::convert_message(msg) {
+				(callback)(msg);
+			}
+		})?;
+		let output = Spec::Output::guess()?;
+		
+		let curr_state = crate::util::Array2d::new(
+			Spec::BOUNDING_BOX_WIDTH as usize,
+			Spec::BOUNDING_BOX_HEIGHT as usize,
+		);
+		let new_state = crate::util::Array2d::new(
+			Spec::BOUNDING_BOX_WIDTH as usize,
+			Spec::BOUNDING_BOX_HEIGHT as usize,
+		);
+
+		Ok(Self { _input, output, curr_state, new_state })
 	}
 }
 
-impl<Backend: Flushable> crate::Canvas for GenericCanvas<Backend> {
-	fn bounding_box_width(&self) -> u32 { Backend::BOUNDING_BOX_WIDTH }
-	fn bounding_box_height(&self) -> u32 { Backend::BOUNDING_BOX_HEIGHT }
-	fn is_valid(&self, x: u32, y: u32) -> bool { Backend::is_valid(x, y) }
+impl<Spec: DeviceSpec> crate::Canvas for DeviceCanvas<'_, Spec> {
+	fn bounding_box_width(&self) -> u32 { Spec::BOUNDING_BOX_WIDTH }
+	fn bounding_box_height(&self) -> u32 { Spec::BOUNDING_BOX_HEIGHT }
+	fn is_valid(&self, x: u32, y: u32) -> bool { Spec::is_valid(x, y) }
 
 	fn set_unchecked(&mut self, x: u32, y: u32, color: crate::Color) {
 		self.new_state.set(x as usize, y as usize, color);
@@ -191,7 +195,7 @@ impl<Backend: Flushable> crate::Canvas for GenericCanvas<Backend> {
 		}
 
 		if changes.len() > 0 {
-			self.backend.flush(&changes)?;
+			Spec::flush(&mut self.output, &changes)?;
 		}
 
 		self.curr_state = self.new_state.clone();
@@ -210,12 +214,8 @@ pub enum CanvasMessage {
 	Release { x: u32, y: u32 },
 }
 
-unsafe impl Send for CanvasMessage {}
-
 struct LayoutDevice<'a> {
 	canvas: Box<dyn Canvas + 'a>,
-	#[allow(dead_code)]
-	input: crate::InputDeviceHandler<'a>,
 	x: u32,
 	y: u32,
 }
@@ -225,13 +225,6 @@ pub struct CanvasLayout<'a> {
 	// Maps coordinates to a specific LayoutDevice, specified by an index into the vector
 	coordinate_map: HashMap<(u32, u32), usize>,
 	callback: Arc<Box<dyn Fn(CanvasMessage) + Send + Sync + 'a>>,
-}
-
-pub trait DeviceCanvas {
-	type Input: crate::InputDevice;
-	type Output: crate::OutputDevice + IntoCanvas;
-
-	fn convert_message(input: <Self::Input as crate::InputDevice>::Message) -> Option<CanvasMessage>;
 }
 
 pub struct CanvasLayoutPoller {
@@ -261,45 +254,31 @@ impl<'a> CanvasLayout<'a> {
 				.expect("Message receiver has hung up (this shouldn't happen)")));
 	}
 
-	pub fn add_by_guess<C: DeviceCanvas>(&mut self, x: u32, y: u32) -> anyhow::Result<()>
-			where C::Output: 'a {
+	pub fn add<C: 'a + Canvas, F, E>(&mut self, x: u32, y: u32, creator: F) -> Result<(), E>
+			where F: FnOnce(Box<dyn Fn(CanvasMessage) + Send + 'a>) -> Result<C, E> {
 		
-		use crate::{InputDevice, OutputDevice};
-
-		let index = self.devices.len(); // The index of soon-to-be inserted object
-
 		let callback = self.callback.clone();
-		let input = C::Input::guess(move |msg| {
-			if let Some(msg) = C::convert_message(msg) {
-				match msg {
-					CanvasMessage::Press { x: msg_x, y: msg_y } => {
-						(callback)(CanvasMessage::Press { x: msg_x + x, y: msg_y + y });
-					},
-					CanvasMessage::Release { x: msg_x, y: msg_y } => {
-						(callback)(CanvasMessage::Release { x: msg_x + x, y: msg_y + y });
-					},
-				}
+		let canvas = (creator)(Box::new(move |msg| {
+			match msg {
+				CanvasMessage::Press { x: msg_x, y: msg_y } => {
+					(callback)(CanvasMessage::Press { x: msg_x + x, y: msg_y + y });
+				},
+				CanvasMessage::Release { x: msg_x, y: msg_y } => {
+					(callback)(CanvasMessage::Release { x: msg_x + x, y: msg_y + y });
+				},
 			}
-		})?;
+		}))?;
 
-		let canvas = C::Output::guess()?.into_canvas();
-
-		for button in canvas.iter() {
-			let translated_coords = (x + button.x(), y + button.y());
-			let old_value = self.coordinate_map.insert(translated_coords, index);
-
-			// check for overlap
-			if let Some(old_index) = old_value {
-				panic!("Canvas is overlapping with canvas {} (zero-indexed) at ({}|{})!",
-						old_index, translated_coords.0, translated_coords.1);
-			}
-		}
-
-		let canvas_box = Box::new(canvas) as Box<dyn Canvas>;
-
-		self.devices.push(LayoutDevice { canvas: canvas_box, input, x, y });
+		self.devices.push(LayoutDevice {
+			canvas: Box::new(canvas),
+			x, y
+		});
 
 		return Ok(());
+	}
+
+	pub fn add_by_guess<S: 'a + DeviceSpec>(&mut self, x: u32, y: u32) -> anyhow::Result<()> {
+		self.add(x, y, DeviceCanvas::<S>::guess)
 	}
 }
 

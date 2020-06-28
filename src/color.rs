@@ -49,6 +49,12 @@ impl Color {
 			((self.b * range as f32) as u8).min(range - 1).max(0),
 		);
 	}
+	
+	// TODO: decide if we really want this, and if we do, whether this is a good implementation
+	pub fn quantize_human(&self, range: u8) -> (u8, u8, u8) {
+		let quantize = |v: f32| ((v * range as f32).ceil() as u8).min(range - 1).max(0);
+		return (quantize(self.r), quantize(self.g), quantize(self.b));
+	}
 }
 
 impl std::ops::Mul<f32> for Color {
