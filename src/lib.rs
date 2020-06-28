@@ -1,7 +1,6 @@
-// WOW Clippy HATES being explicit
-// and also, the reasoning against tabs in doc comments is exactly the same reasoning against tabs
-// as indentation in general - and that is totally stupid, because indentation style is something
-// subjective. Guess clippy missed the note about that.
+// I know explicitly returning at the end of functions is not idiomatic, but I prefer it personally.
+// Also, I use tabs everywhere and I don't agree with clippy's reasoning against tabs in doc
+// comments, so I will keep using tabs in doc comments
 #![allow(clippy::needless_return, clippy::tabs_in_doc_comments)]
 
 mod util;
