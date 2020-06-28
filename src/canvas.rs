@@ -225,6 +225,12 @@ pub trait DeviceSpec {
 	/// low-level message has no CanvasMessage equivalent, i.e. if it's irrelevant in a canvas
 	/// context, None is returned.
 	fn convert_message(msg: <Self::Input as crate::InputDevice>::Message) -> Option<CanvasMessage>;
+
+	/// Optional code to setup this device for canvas usage
+	fn setup(output: &mut Self::Output) -> anyhow::Result<()> {
+		let _ = output;
+		Ok(())
+	}
 }
 
 /// A generic `Canvas` implementation for all launchpads, that relies on a `DeviceSpec`. You as a
@@ -250,7 +256,8 @@ impl<'a, Spec: DeviceSpec> DeviceCanvas<'a, Spec> {
 				(callback)(msg);
 			}
 		})?;
-		let output = Spec::Output::guess()?;
+		let mut output = Spec::Output::guess()?;
+		Spec::setup(&mut output)?;
 		
 		let curr_state = crate::util::Array2d::new(
 			Spec::BOUNDING_BOX_WIDTH as usize,
@@ -424,6 +431,19 @@ impl<'a> CanvasLayout<'a> {
 				},
 			}
 		}))?;
+
+		let index = self.devices.len(); // The index of soon-to-be inserted object
+
+		for button in canvas.iter() {
+			let translated_coords = (x + button.x(), y + button.y());
+			let old_value = self.coordinate_map.insert(translated_coords, index);
+
+			// check for overlap
+			if let Some(old_index) = old_value {
+				panic!("Canvas is overlapping with canvas {} (zero-indexed) at ({}|{})!",
+						old_index, translated_coords.0, translated_coords.1);
+			}
+		}
 
 		self.devices.push(LayoutDevice {
 			canvas: Box::new(canvas),

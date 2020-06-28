@@ -83,3 +83,67 @@ impl Button {
 		}
 	}
 }
+
+pub struct Spec;
+
+impl crate::DeviceSpec for Spec {
+    const BOUNDING_BOX_WIDTH: u32 = 10;
+	const BOUNDING_BOX_HEIGHT: u32 = 2;
+	
+    type Input = LaunchControlInput;
+	type Output = LaunchControlOutput;
+	
+    fn is_valid(x: u32, y: u32) -> bool {
+		if y == 0 && x <= 7 { return false }
+		return true;
+	}
+
+	fn setup(output: &mut Self::Output) -> anyhow::Result<()> {
+		output.change_template(0)
+	}
+	
+    fn flush(output: &mut Self::Output, changes: &[(u32, u32, crate::Color)]) -> anyhow::Result<()> {
+        for &(x, y, color) in changes {
+			let (r, g, _b) = color.quantize(4);
+
+			let button = match (x, y) {
+				(8, 0) => Button::Up,
+				(9, 0) => Button::Down,
+				(8, 1) => Button::Left,
+				(9, 1) => Button::Right,
+				(index, 1) => Button::pad(index as u8),
+				_ => panic!("Unexpected coordinates ({}|{})", x, y),
+			};
+
+			output.light(0, button, Color::new(r, g))?;
+		}
+
+		return Ok(());
+    }
+	
+	fn convert_message(msg: Message) -> Option<crate::CanvasMessage> {
+		fn button_to_xy(button: Button) -> (u32, u32) {
+			match button {
+				Button::Pad(index) => (index as u32, 1),
+				Button::Up => (8, 0),
+				Button::Down => (9, 0),
+				Button::Left => (8, 1),
+				Button::Right => (9, 1),
+			}
+		}
+
+		match msg {
+			Message::Press { template: _, button } => {
+				let (x, y) = button_to_xy(button);
+				Some(crate::CanvasMessage::Press { x, y })
+			},
+			Message::Release { template: _, button } => {
+				let (x, y) = button_to_xy(button);
+				Some(crate::CanvasMessage::Release { x, y })
+			},
+			_ => None,
+		}
+	}
+}
+
+pub type Canvas<'a> = crate::DeviceCanvas<'a, Spec>;
