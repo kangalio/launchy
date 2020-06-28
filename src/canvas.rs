@@ -124,6 +124,7 @@ impl Iterator for CanvasIterator {
 
 // now we get to the generic canvas stuff...
 
+#[doc(hidden)]
 pub trait DeviceSpec {
 	const BOUNDING_BOX_WIDTH: u32;
 	const BOUNDING_BOX_HEIGHT: u32;
@@ -136,6 +137,7 @@ pub trait DeviceSpec {
 	fn convert_message(msg: <Self::Input as crate::InputDevice>::Message) -> Option<CanvasMessage>;
 }
 
+#[doc(hidden)]
 pub struct DeviceCanvas<'a, Spec: DeviceSpec> {
 	_input: crate::InputDeviceHandler<'a>,
 	output: Spec::Output,
@@ -167,6 +169,7 @@ impl<'a, Spec: DeviceSpec> DeviceCanvas<'a, Spec> {
 	}
 }
 
+#[doc(hidden)] // this is crap workaround and won't be needed by user directly
 pub trait DeviceCanvasTrait {
 	type Spec: DeviceSpec;
 }
@@ -202,7 +205,7 @@ impl<Spec: DeviceSpec> crate::Canvas for DeviceCanvas<'_, Spec> {
 			}
 		}
 
-		if changes.len() > 0 {
+		if !changes.is_empty() {
 			Spec::flush(&mut self.output, &changes)?;
 		}
 

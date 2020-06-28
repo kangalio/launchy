@@ -42,9 +42,8 @@ impl LaunchControlOutput {
 		self.send(&[status, button.code(), light_code])
 	}
 
-	/// The Launch Control interprets this message exactly the same as ```rust
-	/// self.set_button(template, button, Color::Black, DoubleBufferingBehavior::None);
-	/// ```
+	/// The Launch Control interprets this message exactly the same as
+	/// `self.set_button(template, button, Color::Black, DoubleBufferingBehavior::None)`
 	/// 
 	/// The given `template` must match the currently selected template on the Launch Control, or
 	/// nothing will happen.

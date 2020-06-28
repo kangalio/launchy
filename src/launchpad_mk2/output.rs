@@ -1,6 +1,6 @@
 use midir::MidiOutputConnection;
 
-use crate::Button;
+use super::Button;
 use crate::OutputDevice;
 
 

@@ -4,6 +4,8 @@ pub use input::*;
 mod output;
 pub use output::*;
 
+pub use crate::protocols::Button80 as Button;
+
 pub struct Spec;
 
 impl crate::DeviceSpec for Spec {
@@ -24,7 +26,7 @@ impl crate::DeviceSpec for Spec {
 			let (r, g, b) = color.quantize_human(64);
 			let color = RgbColor::new(r, g, b);
 
-			let button = crate::Button::from_abs(x as u8, y as u8);
+			let button = Button::from_abs(x as u8, y as u8);
 
 			return (button, color);
 		});

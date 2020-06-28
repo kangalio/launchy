@@ -1,7 +1,7 @@
 use midir::MidiOutputConnection;
 
 use crate::OutputDevice;
-use crate::Button;
+use super::Button;
 
 pub use crate::protocols::double_buffering::*;
 

@@ -4,6 +4,9 @@ pub use input::*;
 mod output;
 pub use output::*;
 
+pub use crate::protocols::Button80 as Button;
+
+
 pub struct Spec;
 
 impl crate::DeviceSpec for Spec {
@@ -22,7 +25,7 @@ impl crate::DeviceSpec for Spec {
     fn flush(output: &mut Self::Output, changes: &[(u32, u32, crate::Color)]) -> anyhow::Result<()> {
         for &(x, y, color) in changes {
 			let (r, g, _b) = color.quantize(4);
-			output.light(crate::Button::from_abs(x as u8, y as u8), Color::new(r, g))?;
+			output.light(Button::from_abs(x as u8, y as u8), Color::new(r, g))?;
 		}
 
 		return Ok(());
