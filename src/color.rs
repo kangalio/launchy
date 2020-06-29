@@ -69,11 +69,9 @@ impl Color {
 	/// the Launchpad S calls `.quantize(4)` on a given `Color` to derive how that color should be
 	/// represented on the Launchpad S LEDs.
 	pub fn quantize(self, range: u8) -> (u8, u8, u8) {
-		return (
-			((self.r * range as f32) as u8).min(range - 1).max(0),
-			((self.g * range as f32) as u8).min(range - 1).max(0),
-			((self.b * range as f32) as u8).min(range - 1).max(0),
-		);
+		let quant = |f: f32| (f * range as f32).max(0.0).min(range as f32 - 1.0) as u8;
+
+		(quant(self.r), quant(self.g), quant(self.b))
 	}
 
 	/// Mix two colors together. The proportion of the second color is specified by

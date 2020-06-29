@@ -23,6 +23,7 @@ impl crate::DeviceSpec for Spec {
 	
     fn flush(output: &mut Self::Output, changes: &[(u32, u32, crate::Color)]) -> anyhow::Result<()> {
         let changes = changes.iter().map(|&(x, y, color)| {
+			let color = color * (4.0/3.0) - (1.0/3.0); // REMEMBER
 			let (r, g, b) = color.quantize(64);
 			let color = RgbColor::new(r, g, b);
 

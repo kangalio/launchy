@@ -3,7 +3,7 @@
 // comments, so I will keep using tabs in doc comments
 #![allow(clippy::needless_return, clippy::tabs_in_doc_comments)]
 
-mod util;
+pub mod util;
 
 mod protocols;
 

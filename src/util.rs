@@ -47,4 +47,7 @@ impl<T: Default + Copy> Array2d<T> {
 
 		self.vec[y * self.width + x] = value;
 	}
+
+	pub fn width(&self) -> usize { self.width }
+	pub fn height(&self) -> usize { self.height }
 }
