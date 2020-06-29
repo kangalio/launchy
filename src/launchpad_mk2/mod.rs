@@ -23,7 +23,7 @@ impl crate::DeviceSpec for Spec {
 	
     fn flush(output: &mut Self::Output, changes: &[(u32, u32, crate::Color)]) -> anyhow::Result<()> {
         let changes = changes.iter().map(|&(x, y, color)| {
-			let (r, g, b) = color.quantize_human(64);
+			let (r, g, b) = color.quantize(64);
 			let color = RgbColor::new(r, g, b);
 
 			let button = Button::from_abs(x as u8, y as u8);

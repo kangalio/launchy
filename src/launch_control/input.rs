@@ -87,7 +87,6 @@ impl crate::InputDevice for LaunchControlInput {
 	type Message = Message;
 
 	fn decode_message(_timestamp: u64, data: &[u8]) -> Message {
-		println!("{:?}", data);
 		match data.len() {
 			3 => Self::decode_short_message(data),
 			_ => Self::decode_sysex_message(data),
