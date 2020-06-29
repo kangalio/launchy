@@ -7,9 +7,6 @@ pub mod util;
 
 mod protocols;
 
-mod color;
-pub use color::*;
-
 pub mod canvas;
 pub use canvas::*;
 
