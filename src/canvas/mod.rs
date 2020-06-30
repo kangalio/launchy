@@ -26,3 +26,6 @@ pub use color::*;
 #[allow(clippy::module_inception)]
 mod canvas;
 pub use canvas::*;
+
+mod padded;
+pub use padded::*;
