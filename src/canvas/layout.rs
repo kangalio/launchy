@@ -28,12 +28,12 @@ impl std::ops::Neg for Rotation {
 }
 
 impl Rotation {
-	pub fn translate(self, x: u32, y: u32, width: u32, height: u32) -> (u32, u32) {
+	pub fn translate(self, x: i32, y: i32) -> (i32, i32) {
 		match self {
 			Self::None => (x, y),
-			Self::UpsideDown => (width - x - 1, height - y - 1),
-			Self::Left => (y, width - x - 1),
-			Self::Right => (height - y - 1, x),
+			Self::UpsideDown => (-x, -y),
+			Self::Left => (-y, x),
+			Self::Right => (y, -x),
 		}
 	}
 }
@@ -49,14 +49,23 @@ unsafe impl Sync for LayoutDevice<'_> {} // fuck it
 
 impl LayoutDevice<'_> {
 	fn to_local(&self, x: u32, y: u32) -> (u32, u32) {
-		(-self.rotation).translate(x - self.x, y - self.y,
-				self.canvas.bounding_box_width(), self.canvas.bounding_box_height())
+		let x = x as i32;
+		let y = y as i32;
+
+		let (x, y) = (-self.rotation).translate(x - self.x as i32, y - self.y as i32);
+
+		(x as u32, y as u32)
 	}
 
 	fn to_global(&self, x: u32, y: u32) -> (u32, u32) {
-		let (rotated_x, rotated_y) = self.rotation.translate(x, y,
-				self.canvas.bounding_box_width(), self.canvas.bounding_box_height());
-		(rotated_x + self.x, rotated_y + self.y)
+		let x = x as i32;
+		let y = y as i32;
+
+
+		let (x, y) = self.rotation.translate(x, y);
+		let (x, y) = (x + self.x as i32, y + self.y as i32);
+
+		(x as u32, y as u32)
 	}
 }
 
