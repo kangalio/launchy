@@ -11,6 +11,9 @@ pub trait DeviceSpec {
 	const BOUNDING_BOX_WIDTH: u32;
 	/// The height of the smallest rectangle that still fully encapsulates the shape of this device
 	const BOUNDING_BOX_HEIGHT: u32;
+	/// How many different colors can be shown per channel. As an example; the MK2 uses 6 bit color,
+	/// so it supports color values from 0 up to 63 - in total 64 values.
+	const COLOR_PRECISION: u8;
 
 	/// The input handler type
 	type Input: crate::InputDevice;
@@ -21,10 +24,10 @@ pub trait DeviceSpec {
 	fn is_valid(x: u32, y: u32) -> bool;
 	/// Flush the changes, as specified by `changes`, to the given underlying output handler.
 	/// 
-	/// `changes` is a slice of tuples `(u32, u32, Color)`, where the first element in the x
-	/// coordinate, the second element is the y coordinate, and the third element is the new color
-	/// at that point.
-	fn flush(output: &mut Self::Output, changes: &[(u32, u32, crate::Color)]) -> anyhow::Result<()>;
+	/// `changes` is a slice of tuples `(u32, u32, (u8, u8, u8))`, where the first element is the x
+	/// coordinate, the second element is the y coordinate, and the third element is an RGB color
+	/// tuple, according to `COLOR_PRECISION`.
+	fn flush(output: &mut Self::Output, changes: &[(u32, u32, (u8, u8, u8))]) -> anyhow::Result<()>;
 	/// Convert a message from the underlying input handler into an abstract CanvasMessage. If the
 	/// low-level message has no CanvasMessage equivalent, i.e. if it's irrelevant in a canvas
 	/// context, None is returned.
@@ -46,6 +49,8 @@ pub struct DeviceCanvas<'a, Spec: DeviceSpec> {
 	output: Spec::Output,
 	curr_state: crate::util::Array2d<crate::Color>,
 	new_state: crate::util::Array2d<crate::Color>,
+	// This is a debug variable to be able to see how many messages I'm actually spewing out.
+	num_sent_changes: usize,
 }
 
 impl<'a, Spec: DeviceSpec> DeviceCanvas<'a, Spec> {
@@ -72,7 +77,7 @@ impl<'a, Spec: DeviceSpec> DeviceCanvas<'a, Spec> {
 			Spec::BOUNDING_BOX_HEIGHT as usize,
 		);
 
-		Ok(Self { _input, output, curr_state, new_state })
+		Ok(Self { _input, output, curr_state, new_state, num_sent_changes: 0 })
 	}
 }
 
@@ -103,16 +108,25 @@ impl<Spec: DeviceSpec> crate::Canvas for DeviceCanvas<'_, Spec> {
 	}
 
 	fn flush(&mut self) -> anyhow::Result<()> {
-		let mut changes: Vec<(u32, u32, crate::Color)> = Vec::with_capacity(9 * 9);
+		let mut changes: Vec<(u32, u32, (u8, u8, u8))> = Vec::with_capacity(9 * 9);
 
 		for button in self.iter() {
-			if button.get(self) != button.get_old(self) {
-				let color = button.get(self);
-				changes.push((button.x(), button.y(), color));
+			let old = button.get_old(self).quantize(Spec::COLOR_PRECISION);
+			let new = button.get(self).quantize(Spec::COLOR_PRECISION);
+			if new != old {
+				changes.push((button.x(), button.y(), new));
 			}
 		}
 
 		if !changes.is_empty() {
+			// use crate::midi_io::OutputDevice;
+			// self.num_sent_changes += changes.len();
+			// println!("[{}: total {}] Sent {} changes",
+			// 		Spec::Output::MIDI_DEVICE_KEYWORD,
+			// 		self.num_sent_changes,
+			// 		changes.len(),
+			// );
+
 			Spec::flush(&mut self.output, &changes)?;
 		}
 

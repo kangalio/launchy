@@ -11,6 +11,7 @@ pub struct Spec;
 impl crate::DeviceSpec for Spec {
     const BOUNDING_BOX_WIDTH: u32 = 9;
 	const BOUNDING_BOX_HEIGHT: u32 = 9;
+	const COLOR_PRECISION: u8 = 64;
 	
     type Input = LaunchpadMk2Input;
 	type Output = LaunchpadMk2Output;
@@ -21,10 +22,8 @@ impl crate::DeviceSpec for Spec {
 		return true;
 	}
 	
-    fn flush(output: &mut Self::Output, changes: &[(u32, u32, crate::Color)]) -> anyhow::Result<()> {
-        let changes = changes.iter().map(|&(x, y, color)| {
-			let color = color * (4.0/3.0) - (1.0/3.0); // REMEMBER
-			let (r, g, b) = color.quantize(64);
+    fn flush(output: &mut Self::Output, changes: &[(u32, u32, (u8, u8, u8))]) -> anyhow::Result<()> {
+        let changes = changes.iter().map(|&(x, y, (r, g, b))| {
 			let color = RgbColor::new(r, g, b);
 
 			let button = Button::from_abs(x as u8, y as u8);

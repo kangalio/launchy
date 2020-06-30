@@ -89,6 +89,7 @@ pub struct Spec;
 impl crate::DeviceSpec for Spec {
     const BOUNDING_BOX_WIDTH: u32 = 10;
 	const BOUNDING_BOX_HEIGHT: u32 = 2;
+	const COLOR_PRECISION: u8 = 4;
 	
     type Input = LaunchControlInput;
 	type Output = LaunchControlOutput;
@@ -102,10 +103,8 @@ impl crate::DeviceSpec for Spec {
 		output.change_template(0)
 	}
 	
-    fn flush(output: &mut Self::Output, changes: &[(u32, u32, crate::Color)]) -> anyhow::Result<()> {
-        for &(x, y, color) in changes {
-			let (r, g, _b) = color.quantize(4);
-
+    fn flush(output: &mut Self::Output, changes: &[(u32, u32, (u8, u8, u8))]) -> anyhow::Result<()> {
+        for &(x, y, (r, g, _b)) in changes {
 			let button = match (x, y) {
 				(8, 0) => Button::Up,
 				(9, 0) => Button::Down,
