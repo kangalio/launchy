@@ -47,26 +47,57 @@ struct LayoutDevice<'a> {
 
 unsafe impl Sync for LayoutDevice<'_> {} // fuck it
 
+fn to_local(x: u32, y: u32, rot: Rotation, x_offset: u32, y_offset: u32) -> (u32, u32) {
+	let x = x as i32;
+	let y = y as i32;
+
+	let (x, y) = (-rot).translate(x - x_offset as i32, y - y_offset as i32);
+
+	(x as u32, y as u32)
+}
+
+fn to_global(x: u32, y: u32, rot: Rotation, x_offset: u32, y_offset: u32) -> (u32, u32) {
+	let x = x as i32;
+	let y = y as i32;
+
+
+	let (x, y) = rot.translate(x, y);
+	let (x, y) = (x + x_offset as i32, y + y_offset as i32);
+
+	(x as u32, y as u32)
+}
+
 impl LayoutDevice<'_> {
 	fn to_local(&self, x: u32, y: u32) -> (u32, u32) {
-		let x = x as i32;
-		let y = y as i32;
-
-		let (x, y) = (-self.rotation).translate(x - self.x as i32, y - self.y as i32);
-
-		(x as u32, y as u32)
+		to_local(x, y, self.rotation, self.x, self.y)
 	}
 
 	fn to_global(&self, x: u32, y: u32) -> (u32, u32) {
-		let x = x as i32;
-		let y = y as i32;
-
-
-		let (x, y) = self.rotation.translate(x, y);
-		let (x, y) = (x + self.x as i32, y + self.y as i32);
-
-		(x as u32, y as u32)
+		to_global(x, y, self.rotation, self.x, self.y)
 	}
+}
+
+/// Utility to be able to process messages from a CanvasLayout by polling
+pub struct CanvasLayoutPoller {
+	receiver: std::sync::mpsc::Receiver<CanvasMessage>,
+}
+
+impl crate::MsgPollingWrapper for CanvasLayoutPoller {
+	type Message = CanvasMessage;
+
+	fn receiver(&self) -> &std::sync::mpsc::Receiver<Self::Message> { &self.receiver }
+}
+
+struct Pixel {
+	device_index: usize,
+	actual_color: Color,
+	actual_color_old: Color,
+}
+
+fn transform_color(color: Color, threshold: f32, target: f32) -> Color {
+	// this is math :ghost:
+	// and it doesn't work :ghost: nvm it does now
+	(color - 1.0) * (1.0 - target) / (1.0 - threshold) + 1.0
 }
 
 /// Imagine this - you have multiple launchpads, you line them up, and now you use the Launchpads
@@ -90,20 +121,9 @@ impl LayoutDevice<'_> {
 /// ```
 pub struct CanvasLayout<'a> {
 	devices: Vec<LayoutDevice<'a>>,
-	// Maps coordinates to a specific LayoutDevice, specified by an index into the vector
-	coordinate_map: HashMap<(u32, u32), usize>,
+	coordinate_map: HashMap<(u32, u32), Pixel>, // we need to store some stuff for each pixel
 	callback: std::sync::Arc<Box<dyn Fn(CanvasMessage) + Send + Sync + 'a>>,
-}
-
-/// Utility to be able to process messages from a CanvasLayout by polling
-pub struct CanvasLayoutPoller {
-	receiver: std::sync::mpsc::Receiver<CanvasMessage>,
-}
-
-impl crate::MsgPollingWrapper for CanvasLayoutPoller {
-	type Message = CanvasMessage;
-
-	fn receiver(&self) -> &std::sync::mpsc::Receiver<Self::Message> { &self.receiver }
+	lowest_visible_brightness: f32,
 }
 
 impl<'a> CanvasLayout<'a> {
@@ -114,6 +134,7 @@ impl<'a> CanvasLayout<'a> {
 			devices: Vec::with_capacity(10), // HACKJOB HACKJOB HACKJOB I NEED TO PREVENT REALLOCATIONS SO THAT THE CALLBACK WRAPPER DOESNT READ FROM UNINITIALIZED MEM so 10 ought to be enough hopefully
 			coordinate_map: HashMap::new(),
 			callback: std::sync::Arc::new(Box::new(callback)),
+			lowest_visible_brightness: 1.0,
 		};
 	}
 
@@ -147,7 +168,7 @@ impl<'a> CanvasLayout<'a> {
 	/// })?;
 	/// ```
 	/// 
-	/// If you want an easier way to add devices, see `add_by_guess`.
+	/// If you want an easier way to add simple devices, see `add_by_guess`.
 	pub fn add<C: 'a + Canvas, F, E>(&mut self,
 		x_offset: u32,
 		y_offset: u32,
@@ -155,7 +176,7 @@ impl<'a> CanvasLayout<'a> {
 		creator: F
 	) -> Result<(), E>
 		where F: FnOnce(Box<dyn Fn(CanvasMessage) + Send + 'a>) -> Result<C, E> {
-		
+
 		let callback = self.callback.clone();
 		let layout_device_container: std::sync::Arc<std::sync::Mutex<Option<&LayoutDevice>>> = std::sync::Arc::new(std::sync::Mutex::new(None));
 		let layout_device_container_inner = layout_device_container.clone();
@@ -168,24 +189,34 @@ impl<'a> CanvasLayout<'a> {
 				CanvasMessage::Release { .. } => (callback)(CanvasMessage::Release { x, y }),
 			}
 		}))?;
+
+		if canvas.lowest_visible_brightness() < self.lowest_visible_brightness {
+			self.lowest_visible_brightness = canvas.lowest_visible_brightness();
+		}
 		
 		let index = self.devices.len(); // The index of soon-to-be inserted object
+		
+		for btn in canvas.iter() {
+			let translated_coords = to_global(btn.x(), btn.y(), rotation, x_offset, y_offset);
+			let old_value = self.coordinate_map.insert(translated_coords, Pixel {
+				device_index: index,
+				actual_color: btn.get(&canvas),
+				actual_color_old: btn.get_old(&canvas),
+			});
+			
+			// check for overlap
+			if let Some(Pixel { device_index: old_device_index, .. }) = old_value {
+				panic!(
+					"Canvas is overlapping with canvas {} (zero-indexed) at ({}|{})!",
+					old_device_index, translated_coords.0, translated_coords.1
+				);
+			}
+		}
+		
 		let layout_device = LayoutDevice {
 			canvas: Box::new(canvas),
 			rotation, x: x_offset, y: y_offset
 		};
-		
-		for btn in layout_device.canvas.iter() {
-			let translated_coords = layout_device.to_global(btn.x(), btn.y());
-			let old_value = self.coordinate_map.insert(translated_coords, index);
-			
-			// check for overlap
-			if let Some(old_index) = old_value {
-				panic!("Canvas is overlapping with canvas {} (zero-indexed) at ({}|{})!",
-				old_index, translated_coords.0, translated_coords.1);
-			}
-		}
-		
 		self.devices.push(layout_device);
 
 		// TODO: this Arc<Mutex> thing is a very hacky solution
@@ -225,6 +256,8 @@ impl<'a> CanvasLayout<'a> {
 }
 
 impl Canvas for CanvasLayout<'_> {
+	fn lowest_visible_brightness(&self) -> f32 { self.lowest_visible_brightness }
+
 	fn bounding_box_width(&self) -> u32 {
 		return self.devices.iter()
 				.map(|device| device.x + device.canvas.bounding_box_width())
@@ -242,27 +275,41 @@ impl Canvas for CanvasLayout<'_> {
 	}
 	
 	fn get_unchecked(&self, x: u32, y: u32) -> Color {
-		let device = &self.devices[*self.coordinate_map.get(&(x, y)).unwrap()];
-		let (x, y) = device.to_local(x, y);
-		device.canvas.get_unchecked(x, y)
+		let pixel = self.coordinate_map.get(&(x, y)).unwrap();
+		pixel.actual_color
 	}
 	
 	fn set_unchecked(&mut self, x: u32, y: u32, color: Color) {
-		let device = &mut self.devices[*self.coordinate_map.get(&(x, y)).unwrap()];
-		let (x, y) = device.to_local(x, y);
-		device.canvas.set_unchecked(x, y, color)
+		// store the actual pixel color for possible retrieval later
+		let mut pixel = self.coordinate_map.get_mut(&(x, y)).unwrap();
+		pixel.actual_color = color;
+
+		let device = &mut self.devices[pixel.device_index];
+
+		// but send the calibrated version to the actual underlying device
+		let transformed_color = transform_color(
+			color,
+			self.lowest_visible_brightness,
+			device.canvas.lowest_visible_brightness(),
+		);
+		let (local_x, local_y) = device.to_local(x, y);
+		device.canvas.set(local_x, local_y, transformed_color);
 	}
 	
 	fn get_old_unchecked(&self, x: u32, y: u32) -> Color {
-		let device = &self.devices[*self.coordinate_map.get(&(x, y)).unwrap()];
-		let (x, y) = device.to_local(x, y);
-		device.canvas.get_old_unchecked(x, y)
+		let pixel = self.coordinate_map.get(&(x, y)).unwrap();
+		pixel.actual_color_old
 	}
 	
 	fn flush(&mut self) -> anyhow::Result<()> {
 		for device in &mut self.devices {
 			device.canvas.flush()?;
 		}
+
+		for pixel in self.coordinate_map.values_mut() {
+			pixel.actual_color_old = pixel.actual_color;
+		}
+
 		return Ok(());
 	}
 }

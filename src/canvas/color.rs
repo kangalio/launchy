@@ -159,3 +159,15 @@ impl std::ops::Sub<f32> for Color {
 		};
 	}
 }
+
+impl std::ops::Neg for Color {
+	type Output = Self;
+	
+    fn neg(self) -> Self {
+        Self {
+			r: -self.r,
+			g: -self.g,
+			b: -self.b,
+		}
+    }
+}

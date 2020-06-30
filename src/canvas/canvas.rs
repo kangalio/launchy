@@ -48,6 +48,13 @@ pub trait Canvas {
 	/// Flush the accumulated changes to the underlying device
 	fn flush(&mut self) -> anyhow::Result<()>;
 	
+	// These are optional methods
+	
+	/// The lowest visible brightness on this canvas. Used to calibrate brightness across Launchpads
+	fn lowest_visible_brightness(&self) -> f32 {
+		0.0
+	}
+
 	// These are defaut implementations that you get for free
 
 	/// Sets the color at the given location. Returns None if the location is out of bounds

@@ -81,7 +81,7 @@ impl<'a, Spec: DeviceSpec> DeviceCanvas<'a, Spec> {
 	}
 }
 
-#[doc(hidden)] // this is crap workaround and won't be needed by user directly
+#[doc(hidden)] // this is crap workaround and shouldn't be seen by user directly
 pub trait DeviceCanvasTrait {
 	type Spec: DeviceSpec;
 }
@@ -94,6 +94,7 @@ impl<Spec: DeviceSpec> crate::Canvas for DeviceCanvas<'_, Spec> {
 	fn bounding_box_width(&self) -> u32 { Spec::BOUNDING_BOX_WIDTH }
 	fn bounding_box_height(&self) -> u32 { Spec::BOUNDING_BOX_HEIGHT }
 	fn is_valid(&self, x: u32, y: u32) -> bool { Spec::is_valid(x, y) }
+	fn lowest_visible_brightness(&self) -> f32 { 1.0 / Spec::COLOR_PRECISION as f32 }
 
 	fn set_unchecked(&mut self, x: u32, y: u32, color: crate::Color) {
 		self.new_state.set(x as usize, y as usize, color);
@@ -119,13 +120,14 @@ impl<Spec: DeviceSpec> crate::Canvas for DeviceCanvas<'_, Spec> {
 		}
 
 		if !changes.is_empty() {
-			// use crate::midi_io::OutputDevice;
-			// self.num_sent_changes += changes.len();
-			// println!("[{}: total {}] Sent {} changes",
-			// 		Spec::Output::MIDI_DEVICE_KEYWORD,
-			// 		self.num_sent_changes,
-			// 		changes.len(),
-			// );
+			use crate::midi_io::OutputDevice;
+			self.num_sent_changes += changes.len();
+			if self.num_sent_changes / 1000 != (self.num_sent_changes - changes.len()) / 1000 {
+				println!("{}: we're at {} total transmitted changes now",
+						Spec::Output::MIDI_DEVICE_KEYWORD,
+						self.num_sent_changes,
+				);
+			}
 
 			Spec::flush(&mut self.output, &changes)?;
 		}
