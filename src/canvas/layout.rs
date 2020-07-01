@@ -94,10 +94,10 @@ struct Pixel {
 	actual_color_old: Color,
 }
 
-fn transform_color(color: Color, threshold: f32, target: f32) -> Color {
+fn transform_color(color: Color, source: f32, target: f32) -> Color {
 	// this is math :ghost:
 	// and it doesn't work :ghost: nvm it does now
-	(color - 1.0) * (1.0 - target) / (1.0 - threshold) + 1.0
+	(color - 1.0) * (1.0 - target) / (1.0 - source) + 1.0
 }
 
 /// Imagine this - you have multiple launchpads, you line them up, and now you use the Launchpads
@@ -123,7 +123,7 @@ pub struct CanvasLayout<'a> {
 	devices: Vec<LayoutDevice<'a>>,
 	coordinate_map: HashMap<(u32, u32), Pixel>, // we need to store some stuff for each pixel
 	callback: std::sync::Arc<Box<dyn Fn(CanvasMessage) + Send + Sync + 'a>>,
-	lowest_visible_brightness: f32,
+	light_threshold: f32,
 }
 
 impl<'a> CanvasLayout<'a> {
@@ -134,7 +134,7 @@ impl<'a> CanvasLayout<'a> {
 			devices: Vec::with_capacity(10), // HACKJOB HACKJOB HACKJOB I NEED TO PREVENT REALLOCATIONS SO THAT THE CALLBACK WRAPPER DOESNT READ FROM UNINITIALIZED MEM so 10 ought to be enough hopefully
 			coordinate_map: HashMap::new(),
 			callback: std::sync::Arc::new(Box::new(callback)),
-			lowest_visible_brightness: 1.0,
+			light_threshold: 1.0 / 4.0, // good default value? I have, like, no idea
 		};
 	}
 
@@ -148,6 +148,9 @@ impl<'a> CanvasLayout<'a> {
 
 		(canvas, poller)
 	}
+
+	pub fn light_threshold(&self) -> f32 { self.light_threshold }
+	pub fn set_light_threshold(&mut self, value: f32) { self.light_threshold = value }
 
 	/// Add a new device to this canvas layout, at the specified `x` and `y` coordinate.
 	/// 
@@ -189,10 +192,6 @@ impl<'a> CanvasLayout<'a> {
 				CanvasMessage::Release { .. } => (callback)(CanvasMessage::Release { x, y }),
 			}
 		}))?;
-
-		if canvas.lowest_visible_brightness() < self.lowest_visible_brightness {
-			self.lowest_visible_brightness = canvas.lowest_visible_brightness();
-		}
 		
 		let index = self.devices.len(); // The index of soon-to-be inserted object
 		
@@ -256,7 +255,7 @@ impl<'a> CanvasLayout<'a> {
 }
 
 impl Canvas for CanvasLayout<'_> {
-	fn lowest_visible_brightness(&self) -> f32 { self.lowest_visible_brightness }
+	fn lowest_visible_brightness(&self) -> f32 { self.light_threshold }
 
 	fn bounding_box_width(&self) -> u32 {
 		return self.devices.iter()
@@ -289,7 +288,7 @@ impl Canvas for CanvasLayout<'_> {
 		// but send the calibrated version to the actual underlying device
 		let transformed_color = transform_color(
 			color,
-			self.lowest_visible_brightness,
+			self.light_threshold,
 			device.canvas.lowest_visible_brightness(),
 		);
 		let (local_x, local_y) = device.to_local(x, y);
