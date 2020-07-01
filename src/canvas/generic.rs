@@ -22,12 +22,18 @@ pub trait DeviceSpec {
 
 	/// Returns whether the point at the given `x` and `y` coordinates are in bounds
 	fn is_valid(x: u32, y: u32) -> bool;
+	
 	/// Flush the changes, as specified by `changes`, to the given underlying output handler.
 	/// 
 	/// `changes` is a slice of tuples `(u32, u32, (u8, u8, u8))`, where the first element is the x
 	/// coordinate, the second element is the y coordinate, and the third element is an RGB color
 	/// tuple, according to `COLOR_PRECISION`.
-	fn flush(output: &mut Self::Output, changes: &[(u32, u32, (u8, u8, u8))]) -> anyhow::Result<()>;
+	fn flush(
+		canvas: &mut crate::DeviceCanvas<Self>,
+		changes: &[(u32, u32, (u8, u8, u8))])
+	-> anyhow::Result<()>
+		where Self: Sized;
+
 	/// Convert a message from the underlying input handler into an abstract CanvasMessage. If the
 	/// low-level message has no CanvasMessage equivalent, i.e. if it's irrelevant in a canvas
 	/// context, None is returned.
@@ -46,7 +52,7 @@ pub trait DeviceSpec {
 /// `launchy::s::Canvas`.
 pub struct DeviceCanvas<'a, Spec: DeviceSpec> {
 	_input: crate::InputDeviceHandler<'a>,
-	output: Spec::Output,
+	pub(crate) output: Spec::Output,
 	curr_state: crate::util::Array2d<crate::Color>,
 	new_state: crate::util::Array2d<crate::Color>,
 	// This is a debug variable to be able to see how many messages I'm actually spewing out.
@@ -129,7 +135,7 @@ impl<Spec: DeviceSpec> crate::Canvas for DeviceCanvas<'_, Spec> {
 				);
 			}
 
-			Spec::flush(&mut self.output, &changes)?;
+			Spec::flush(self, &changes)?;
 		}
 
 		self.curr_state = self.new_state.clone();

@@ -103,7 +103,11 @@ impl crate::DeviceSpec for Spec {
 		output.change_template(0)
 	}
 	
-    fn flush(output: &mut Self::Output, changes: &[(u32, u32, (u8, u8, u8))]) -> anyhow::Result<()> {
+    fn flush(
+		canvas: &mut crate::DeviceCanvas<Self>,
+		changes: &[(u32, u32, (u8, u8, u8))])
+	-> anyhow::Result<()> {
+
         for &(x, y, (r, g, _b)) in changes {
 			let button = match (x, y) {
 				(8, 0) => Button::Up,
@@ -114,7 +118,7 @@ impl crate::DeviceSpec for Spec {
 				_ => panic!("Unexpected coordinates ({}|{})", x, y),
 			};
 
-			output.light(0, button, Color::new(r, g))?;
+			canvas.output.light(0, button, Color::new(r, g))?;
 		}
 
 		return Ok(());

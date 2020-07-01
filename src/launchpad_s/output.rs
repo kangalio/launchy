@@ -70,7 +70,7 @@ impl LaunchpadSOutput {
 		color2: Color, dbb2: DoubleBufferingBehavior,
 	) -> anyhow::Result<()> {
 		
-		return self.send(&[0xB2, make_color_code(color1, dbb1), make_color_code(color2, dbb2)]);
+		return self.send(&[0x92, make_color_code(color1, dbb1), make_color_code(color2, dbb2)]);
 	}
 
 	/// Turns on all LEDs to a certain brightness, dictated by the `brightness` parameter.
@@ -199,26 +199,3 @@ impl LaunchpadSOutput {
 		return self.send(bytes);
 	}
 }
-
-// TODO: optimize the Launchpad S canvas implementation by utilizing the rapid LED update feature.
-// Basically, I need to check what's more efficient: lighting all LEDs individually, or refreshing
-// the entire screen using rapid update (even if only some lights changes), or rapidly updating a 
-// part of the screen, and individually lighting the rest. To find that out, utilize the code
-// snippets below:
-// 
-// fn x_y_to_rapid_update_index(x: u32, y: u32) -> u32 {
-// 	if y >= 1 && x <= 7 {
-// 		return (y - 1) * 8 + x;
-// 	} else if x == 8 {
-// 		return 64 + (y - 1);
-// 	} else if y == 0 {
-// 		return 72 + x;
-// 	} else {
-// 		panic!("We didn't even do bounds checking but ({}|{}) still managed to fail", x, y);
-// 	}
-// }
-
-// let mut changes: Vec<_> = changes.iter()
-// 				.map(|&(x, y, color)| (x_y_to_rapid_update_index(x, y), x, y, color))
-// 				.collect();
-// 		changes.sort_unstable_by_key(|&(rapid_update_index, ..)| rapid_update_index);

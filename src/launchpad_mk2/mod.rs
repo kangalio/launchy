@@ -22,7 +22,11 @@ impl crate::DeviceSpec for Spec {
 		return true;
 	}
 	
-    fn flush(output: &mut Self::Output, changes: &[(u32, u32, (u8, u8, u8))]) -> anyhow::Result<()> {
+    fn flush(
+		canvas: &mut crate::DeviceCanvas<Self>,
+		changes: &[(u32, u32, (u8, u8, u8))])
+	-> anyhow::Result<()> {
+
         let changes = changes.iter().map(|&(x, y, (r, g, b))| {
 			let color = RgbColor::new(r, g, b);
 
@@ -30,7 +34,7 @@ impl crate::DeviceSpec for Spec {
 
 			return (button, color);
 		});
-		return output.light_multiple_rgb(changes);
+		return canvas.output.light_multiple_rgb(changes);
     }
 	
 	fn convert_message(msg: Message) -> Option<crate::CanvasMessage> {

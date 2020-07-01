@@ -23,10 +23,39 @@ impl crate::DeviceSpec for Spec {
 		return true;
 	}
 	
-    fn flush(output: &mut Self::Output, changes: &[(u32, u32, (u8, u8, u8))]) -> anyhow::Result<()> {
-        for &(x, y, (r, g, _b)) in changes {
-			output.light(Button::from_abs(x as u8, y as u8), Color::new(r, g))?;
+    fn flush(
+		canvas: &mut crate::DeviceCanvas<Self>,
+		changes: &[(u32, u32, (u8, u8, u8))])
+	-> anyhow::Result<()> {
+
+		use crate::Canvas;
+
+		let convert_color = |color: crate::Color| {
+			let (r, g, _b) = color.quantize(Self::COLOR_PRECISION);
+			Color::new(r, g)
+		};
+
+		if changes.len() > 41 {
+			for y in 1..=8 {
+				for x in (0..=7).step_by(2) {
+					canvas.output.set_button_rapid(
+						convert_color(canvas.get_unchecked(x, y)), DoubleBufferingBehavior::Copy,
+						convert_color(canvas.get_unchecked(x + 1, y)), DoubleBufferingBehavior::Copy,
+					)?;
+				}
+			}
+
+			// dummy-light some button just to get out of the rapid update mode
+			canvas.output.light(
+				Button::ControlButton { index: 0 },
+				convert_color(canvas.get_unchecked(0, 0))
+			)?;
+		} else {
+			for &(x, y, (r, g, _b)) in changes {
+				canvas.output.light(Button::from_abs(x as u8, y as u8), Color::new(r, g))?;
+			}
 		}
+
 
 		return Ok(());
     }
