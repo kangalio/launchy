@@ -60,6 +60,25 @@ impl Color {
 		}
 	}
 
+	/// Util function that smoothly interpolates between the following 'keyframes':
+	/// - 0.00 => green
+	/// - 0.25 => yellow
+	/// - 0.50 => red
+	/// - 0.75 => yellow
+	/// - 1.00 => green
+	/// 
+	/// and then the cycle continues.
+	/// 
+	/// This function is useful to create a smooth cycling gradient of colors on non-RGB devices
+	/// such as the Launchpad S.
+	pub fn red_green_color(hue: f32) -> Self {
+		let a = |x| if x < 0.25 { 4.0 * x } else if x >= 0.75 { 4.0 - 4.0 * x } else { 1.0 };
+	
+		let r = a(hue.fract());
+		let g = a((hue + 0.5).fract());
+		return Self::new(r, g, 0.0);
+	}
+
 	/// Return a tuple of color components scaled from 0..=1 to 0..range by doing
 	/// `(component * range).floor().min(range - 1).max(0)` on every component.
 	/// 
