@@ -130,6 +130,23 @@ pub trait InputDevice {
 	}
 }
 
+pub struct IterFor<'a, M> {
+	receiver: &'a std::sync::mpsc::Receiver<M>,
+	deadline: std::time::Instant,
+}
+
+impl<M> Iterator for IterFor<'_, M> {
+	type Item = M;
+
+	fn next(&mut self) -> Option<Self::Item> {
+		let now = std::time::Instant::now();
+
+		if now >= self.deadline { return None }
+
+		self.receiver.recv_timeout(self.deadline - std::time::Instant::now()).ok()
+	}
+}
+
 // I have no idea what I'm doing
 pub trait MsgPollingWrapper {
 	type Message;
@@ -180,6 +197,13 @@ pub trait MsgPollingWrapper {
 	/// For an iteration method that will block, waiting for new messages to arrive, see `iter()`.
 	fn iter_pending(&self) -> std::sync::mpsc::TryIter<Self::Message> {
 		return self.receiver().try_iter();
+	}
+
+	fn iter_for(&self, duration: std::time::Duration) -> IterFor<Self::Message> {
+		IterFor {
+			receiver: self.receiver(),
+			deadline: std::time::Instant::now() + duration,
+		}
 	}
 
 	/// Drain of any pending messages. This is useful on Launchpad startup - the Launchpad has the

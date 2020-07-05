@@ -144,7 +144,7 @@ impl<Spec: DeviceSpec> crate::Canvas for DeviceCanvas<'_, Spec> {
 			let old = button.get_old(self).quantize(Spec::COLOR_PRECISION);
 			let new = button.get(self).quantize(Spec::COLOR_PRECISION);
 			if new != old {
-				changes.push((button.x(), button.y(), new));
+				changes.push((button.x as u32, button.y as u32, new));
 			}
 		}
 

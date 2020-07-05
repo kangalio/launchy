@@ -7,6 +7,52 @@ pub struct Pad {
 	pub y: i32,
 }
 
+impl Pad {
+	pub fn up(self, steps: i32) -> Self {
+		Self { x: self.x, y: self.y - steps }
+	}
+
+	pub fn down(self, steps: i32) -> Self {
+		Self { x: self.x, y: self.y + steps }
+	}
+
+	pub fn left(self, steps: i32) -> Self {
+		Self { x: self.x - steps, y: self.y }
+	}
+
+	pub fn right(self, steps: i32) -> Self {
+		Self { x: self.x + steps, y: self.y }
+	}
+
+	pub fn neighbors_8(self) -> [Self; 8] {
+		[
+			self.up(1),
+			self.up(1).right(1),
+			self.right(1),
+			self.right(1).down(1),
+			self.down(1),
+			self.down(1).left(1),
+			self.left(1),
+			self.left(1).up(1),
+		]
+	}
+
+	/// Get the color of this button in the given canvas
+    pub fn get(self, canvas: &impl Canvas) -> Color {
+		canvas.get(self).expect("Coordinates out of bounds")
+	}
+
+	/// Get the unflushed color of this button in the given canvas
+    pub fn get_old(self, canvas: &impl Canvas) -> Color {
+		canvas.get_old(self).expect("Coordinates out of bounds")
+	}
+
+	/// Set the color of this button in the given canvas
+	pub fn set(self, canvas: &mut impl Canvas, color: Color) {
+		canvas.set(self, color).expect("Coordinates out of bounds");
+	}
+}
+
 /// A trait that abstracts over the specifics of a Launchpad and allows generic access and
 /// manipulation of a Launchpad's LEDs.
 /// 

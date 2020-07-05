@@ -196,7 +196,7 @@ impl<'a> CanvasLayout<'a> {
 		let index = self.devices.len(); // The index of soon-to-be inserted object
 		
 		for btn in canvas.iter() {
-			let translated_coords = to_global(btn.x(), btn.y(), rotation, x_offset, y_offset);
+			let translated_coords = to_global(btn.x as u32, btn.y as u32, rotation, x_offset, y_offset);
 			let old_value = self.coordinate_map.insert(translated_coords, Pixel {
 				device_index: index,
 				actual_color: btn.get(&canvas),
