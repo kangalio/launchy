@@ -292,7 +292,7 @@ impl Canvas for CanvasLayout<'_> {
 			device.canvas.lowest_visible_brightness(),
 		);
 		let (local_x, local_y) = device.to_local(x, y);
-		device.canvas.set(local_x, local_y, transformed_color);
+		device.canvas.set_unchecked(local_x, local_y, transformed_color);
 	}
 	
 	fn get_old_unchecked(&self, x: u32, y: u32) -> Color {

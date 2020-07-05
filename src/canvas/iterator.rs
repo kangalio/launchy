@@ -37,10 +37,7 @@ impl CanvasButton {
 /// `Canvas`.
 /// 
 /// For more information, see `Canvas::iter()`.
-pub struct CanvasIterator {
-	coordinates: Vec<(u32, u32)>, // the list of coordinates that we will iterate through
-	index: usize,
-}
+pub struct CanvasIterator(std::vec::IntoIter<CanvasButton>);
 
 impl CanvasIterator {
 	pub(crate) fn new<C: Canvas + ?Sized>(canvas: &C) -> Self {
@@ -51,15 +48,12 @@ impl CanvasIterator {
 		for y in 0..bb_height {
 			for x in 0..bb_width {
 				if canvas.is_valid(x, y) {
-					coordinates.push((x, y));
+					coordinates.push(CanvasButton { x, y });
 				}
 			}
 		}
 
-		return CanvasIterator {
-			coordinates,
-			index: 0,
-		};
+		return CanvasIterator(coordinates.into_iter());
 	}
 }
 
@@ -67,17 +61,6 @@ impl Iterator for CanvasIterator {
 	type Item = CanvasButton;
 
 	fn next(&mut self) -> Option<Self::Item> {
-		if self.index >= self.coordinates.len() {
-			return None;
-		}
-
-		let value = CanvasButton {
-			x: self.coordinates[self.index].0,
-			y: self.coordinates[self.index].1,
-		};
-
-		self.index += 1;
-
-		return Some(value);
+		self.0.next()
 	}
 }

@@ -1,6 +1,12 @@
 use super::*;
 
 
+#[derive(Copy, Clone, PartialEq, Eq, Debug, Default, Hash)]
+pub struct Pad {
+	pub x: i32,
+	pub y: i32,
+}
+
 /// A trait that abstracts over the specifics of a Launchpad and allows generic access and
 /// manipulation of a Launchpad's LEDs.
 /// 
@@ -58,9 +64,9 @@ pub trait Canvas {
 	// These are defaut implementations that you get for free
 
 	/// Sets the color at the given location. Returns None if the location is out of bounds
-	fn set(&mut self, x: u32, y: u32, color: Color) -> Option<()> {
-		if self.is_valid(x, y) {
-			self.set_unchecked(x, y, color);
+	fn set(&mut self, pad: Pad, color: Color) -> Option<()> {
+		if pad.x >= 0 && pad.y >= 0 && self.is_valid(pad.x as u32, pad.y as u32) {
+			self.set_unchecked(pad.x as u32, pad.y as u32, color);
 			Some(())
 		} else {
 			None
@@ -68,9 +74,9 @@ pub trait Canvas {
 	}
 
 	/// Sets the color at the given location. Returns None if the location is out of bounds
-	fn get(&self, x: u32, y: u32) -> Option<Color> {
-		if self.is_valid(x, y) {
-			Some(self.get_unchecked(x, y))
+	fn get(&self, pad: Pad) -> Option<Color> {
+		if pad.x >= 0 && pad.y >= 0 && self.is_valid(pad.x as u32, pad.y as u32) {
+			Some(self.get_unchecked(pad.x as u32, pad.y as u32))
 		} else {
 			None
 		}
@@ -78,9 +84,9 @@ pub trait Canvas {
 
 	/// Retrieves the old, unflushed color at the given location. Returns None if the location is
 	/// out of bounds
-	fn get_old(&self, x: u32, y: u32) -> Option<Color> {
-		if self.is_valid(x, y) {
-			Some(self.get_old_unchecked(x, y))
+	fn get_old(&self, pad: Pad) -> Option<Color> {
+		if pad.x >= 0 && pad.y >= 0 && self.is_valid(pad.x as u32, pad.y as u32) {
+			Some(self.get_old_unchecked(pad.x as u32, pad.y as u32))
 		} else {
 			None
 		}
@@ -133,11 +139,11 @@ pub trait Canvas {
 	/// 	}
 	/// }
 	/// ```
-	fn toggle(&mut self, x: u32, y: u32, color: Color) -> Option<()> {
-		if self.get(x, y)? == color {
-			self.set(x, y, Color::BLACK)?;
+	fn toggle(&mut self, pad: Pad, color: Color) -> Option<()> {
+		if self.get(pad)? == color {
+			self.set(pad, Color::BLACK)?;
 		} else {
-			self.set(x, y, color)?;
+			self.set(pad, color)?;
 		}
 		Some(())
 	}
@@ -163,17 +169,6 @@ pub trait Canvas {
 	}
 }
 
-/// A message from a `Canvas`.
-/// 
-/// Example:
-/// ```rust
-/// let _canvas = launchy::mk2::Canvas::guess(|msg| {
-/// 	match msg {
-/// 		CanvasMessage::Press { x, y } => println!("Pressed button at ({}|{})", x, y);
-/// 		CanvasMessage::Release { x, y } => println!("Released button at ({}|{})", x, y);
-/// 	}
-/// });
-/// ```
 #[derive(Clone, Eq, PartialEq, Hash, Debug)]
 pub enum CanvasMessage {
 	Press { x: u32, y: u32 },
@@ -197,6 +192,10 @@ impl CanvasMessage {
 			Self::Press { x: _, y } => y,
 			Self::Release { x: _, y } => y,
 		}
+	}
+
+	pub fn pad(&self) -> Pad {
+		Pad { x: self.x() as i32, y: self.y() as i32 }
 	}
 
 	/// Returns whether this is a press message

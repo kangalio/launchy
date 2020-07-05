@@ -63,21 +63,27 @@ impl<C: Canvas> Canvas for PaddingCanvas<C> {
 	}
 	
     fn get_unchecked(&self, x: u32, y: u32) -> Color {
-        self.inner.get(x, y).unwrap_or_else(|| {
+        if self.inner.is_valid(x, y) {
+			self.inner.get_unchecked(x, y)
+		} else {
 			self.new_buf.get(x as usize, y as usize)
-		})
+		}
 	}
 	
     fn set_unchecked(&mut self, x: u32, y: u32, color: Color) {
-        self.inner.set(x, y, color).unwrap_or_else(|| {
-			self.new_buf.set(x as usize, y as usize, color)
-		})
+		if self.inner.is_valid(x, y) {
+			self.inner.set_unchecked(x, y, color);
+		} else {
+			self.new_buf.set(x as usize, y as usize, color);
+		}
 	}
 	
     fn get_old_unchecked(&self, x: u32, y: u32) -> Color {
-        self.inner.get_old(x, y).unwrap_or_else(|| {
+        if self.inner.is_valid(x, y) {
+			self.inner.get_old_unchecked(x, y)
+		} else {
 			self.curr_buf.get(x as usize, y as usize)
-		})
+		}
 	}
 	
     fn flush(&mut self) -> anyhow::Result<()> {
