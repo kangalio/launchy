@@ -46,6 +46,17 @@ pub trait DeviceSpec {
 	}
 }
 
+/// Utility to be able to process messages from a CanvasLayout by polling
+pub struct DeviceCanvasPoller {
+	receiver: std::sync::mpsc::Receiver<CanvasMessage>,
+}
+
+impl crate::MsgPollingWrapper for DeviceCanvasPoller {
+	type Message = CanvasMessage;
+
+	fn receiver(&self) -> &std::sync::mpsc::Receiver<Self::Message> { &self.receiver }
+}
+
 /// A generic `Canvas` implementation for all launchpads, that relies on a `DeviceSpec`. You as a
 /// user of the library don't need to access this struct directly. Use the "Canvas" type aliases
 /// that each launchpad module provides, for example `launchy::mk2::Canvas` or
@@ -84,6 +95,18 @@ impl<'a, Spec: DeviceSpec> DeviceCanvas<'a, Spec> {
 		);
 
 		Ok(Self { _input, output, curr_state, new_state, num_sent_changes: 0 })
+	}
+
+	pub fn guess_polling() -> anyhow::Result<(Self, DeviceCanvasPoller)> {
+		let (sender, receiver) = std::sync::mpsc::channel();
+		let canvas = Self::guess(move |msg| {
+			sender.send(msg)
+				.expect("Message receiver has hung up (this shouldn't happen)")
+		})?;
+		
+		let poller = DeviceCanvasPoller { receiver };
+
+		Ok((canvas, poller))
 	}
 }
 

@@ -141,6 +141,26 @@ pub trait Canvas {
 		}
 		Some(())
 	}
+
+	/// Clear the entire canvas by setting all buttons to black.
+	/// 
+	/// ```rust
+	/// // light a square in the top left, for one second
+	/// 
+	/// canvas.set(0, 0, Color::MAGENTA);
+	/// canvas.set(0, 1, Color::MAGENTA);
+	/// canvas.set(1, 0, Color::MAGENTA);
+	/// canvas.set(1, 1, Color::MAGENTA);
+	/// 
+	/// std::thread::sleep_ms(1000);
+	/// 
+	/// canvas.clear();
+	/// ```
+	fn clear(&mut self) where Self: Sized {
+		for btn in self.iter() {
+			btn.set(self, Color::BLACK);
+		}
+	}
 }
 
 /// A message from a `Canvas`.

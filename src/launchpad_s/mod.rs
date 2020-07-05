@@ -73,6 +73,11 @@ impl crate::DeviceSpec for Spec {
 			_ => None,
 		}
 	}
+
+	fn setup(output: &mut Self::Output) -> anyhow::Result<()> {
+		output.reset()?;
+		Ok(())
+	}
 }
 
 pub type Canvas<'a> = crate::DeviceCanvas<'a, Spec>;
