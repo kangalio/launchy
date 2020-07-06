@@ -29,3 +29,6 @@ pub use canvas::*;
 
 mod padded;
 pub use padded::*;
+
+mod pad;
+pub use pad::*;
