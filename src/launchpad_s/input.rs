@@ -6,6 +6,7 @@ pub enum Message {
 	Press { button: Button },
 	Release { button: Button },
 	TextEndedOrLooped,
+	UnknownShortMessage { bytes: [u8; 3] },
 }
 
 fn decode_grid_button(btn: u8) -> Button {
@@ -41,6 +42,7 @@ impl crate::InputDevice for LaunchpadSInput {
 				}
 			},
 			&[0xB0, 0, 3] => Message::TextEndedOrLooped,
+			&[a, b, c] => Message::UnknownShortMessage { bytes: [a, b, c] },
 			// YES we have no note off message handler here because it's not used by the launchpad.
 			// It sends zero-velocity note-on messages instead.
 			other => panic!("Unexpected midi message: {:?}", other),

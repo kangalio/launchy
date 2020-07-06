@@ -190,3 +190,9 @@ impl std::ops::Neg for Color {
 		}
     }
 }
+
+impl std::iter::Sum for Color {
+    fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
+        iter.fold(Color::BLACK, |a, b| a + b)
+    }
+}

@@ -75,6 +75,13 @@ pub trait Canvas {
 		}
 	}
 
+	/// A very vaguely named method for the sake of brevity. Sorry about that
+	/// 
+	/// Returns the unflushed color at the given location. Panics if the location is out of bounds.
+	fn at(&self, pad: Pad) -> Color {
+		self.get_old(pad).expect("Pad is out of bounds")
+	}
+
 	/// Retrieves the old, unflushed color at the given location. Returns None if the location is
 	/// out of bounds
 	fn get_old(&self, pad: Pad) -> Option<Color> {

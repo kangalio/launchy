@@ -205,6 +205,10 @@ pub trait MsgPollingWrapper {
 			deadline: std::time::Instant::now() + duration,
 		}
 	}
+	
+	fn iter_for_millis(&self, millis: u64) -> IterFor<Self::Message> {
+		self.iter_for(std::time::Duration::from_millis(millis))
+	}
 
 	/// Drain of any pending messages. This is useful on Launchpad startup - the Launchpad has the
 	/// weird property that any button inputs while disconnected queue up and will all be released

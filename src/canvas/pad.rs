@@ -33,8 +33,32 @@ impl Pad {
 		]
 	}
 
+	pub fn neighbors_5(self) -> [Self; 5] {
+		[
+			self,
+			self.up(1),
+			self.right(1),
+			self.down(1),
+			self.left(1),
+		]
+	}
+
 	pub fn neighbors_8(self) -> [Self; 8] {
 		[
+			self.up(1),
+			self.up(1).right(1),
+			self.right(1),
+			self.right(1).down(1),
+			self.down(1),
+			self.down(1).left(1),
+			self.left(1),
+			self.left(1).up(1),
+		]
+	}
+
+	pub fn neighbors_9(self) -> [Self; 9] {
+		[
+			self,
 			self.up(1),
 			self.up(1).right(1),
 			self.right(1),
