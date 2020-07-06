@@ -24,7 +24,7 @@ pub use launch_control as control;
 
 pub mod prelude {
 	pub use crate::midi_io::{OutputDevice, InputDevice, MsgPollingWrapper};
-	pub use crate::canvas::{Canvas, Color};
+	pub use crate::canvas::{Canvas, Color, Pad};
 }
 
 /// Identifier used for e.g. the midi port names etc.

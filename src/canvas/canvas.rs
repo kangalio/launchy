@@ -160,6 +160,10 @@ pub trait Canvas {
 			btn.set(self, Color::BLACK);
 		}
 	}
+
+	fn into_padded(self) -> PaddingCanvas<Self> where Self: Sized {
+		PaddingCanvas::from(self)
+	}
 }
 
 #[derive(Clone, Eq, PartialEq, Hash, Debug)]
