@@ -166,3 +166,5 @@ impl<Spec: DeviceSpec> crate::Canvas for DeviceCanvas<'_, Spec> {
 		return Ok(());
 	}
 }
+
+impl_traits_for_canvas!(<'a, S: DeviceSpec>, DeviceCanvas);

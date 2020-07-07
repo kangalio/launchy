@@ -9,6 +9,11 @@ edition = "2018"
 #midir = { path = "../midir", features = ["jack"] }
 midir = { path = "../midir" }
 anyhow = "1.0"
+embedded-graphics = { version = "0.6", optional = true }
+
+[features]
+default = ["embedded-graphics-support"]
+embedded-graphics-support = ["embedded-graphics"]
 
 [profile.release]
 # lto doesn't properly strip everything on Linux anyway, so we can go all in

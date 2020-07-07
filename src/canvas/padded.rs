@@ -11,8 +11,8 @@ use crate::util::Array2d;
 /// rectangular; there will be gaps and empty spaces all over the place.
 /// 
 /// Sometimes it's a pain to deal with those irregular shapes. For that reason, this struct provides
-/// a `Canvas` wrapper that inserts 'virtual pixels' into all the gaps so that you can work with a
-/// perfectly rectangular grid.
+/// a `Canvas` wrapper that inserts 'virtual pixels' into all the gaps so that you can work with the
+/// Launchpad as if it were a perfectly rectangular grid.
 /// 
 /// Example:
 /// ```rust
@@ -91,3 +91,5 @@ impl<C: Canvas> Canvas for PaddingCanvas<C> {
 		self.inner.flush()
     }
 }
+
+impl_traits_for_canvas!(<C: Canvas>, PaddingCanvas);

@@ -57,6 +57,7 @@ pub trait Canvas {
 	// These are defaut implementations that you get for free
 
 	/// Sets the color at the given location. Returns None if the location is out of bounds
+	#[must_use]
 	fn set(&mut self, pad: Pad, color: Color) -> Option<()> {
 		if pad.x >= 0 && pad.y >= 0 && self.is_valid(pad.x as u32, pad.y as u32) {
 			self.set_unchecked(pad.x as u32, pad.y as u32, color);
@@ -66,7 +67,12 @@ pub trait Canvas {
 		}
 	}
 
+	fn set_at(&mut self, pad: Pad, color: Color) {
+		self.set(pad, color).expect("Pad is out of bounds");
+	}
+
 	/// Sets the color at the given location. Returns None if the location is out of bounds
+	#[must_use]
 	fn get(&self, pad: Pad) -> Option<Color> {
 		if pad.x >= 0 && pad.y >= 0 && self.is_valid(pad.x as u32, pad.y as u32) {
 			Some(self.get_unchecked(pad.x as u32, pad.y as u32))
@@ -84,6 +90,7 @@ pub trait Canvas {
 
 	/// Retrieves the old, unflushed color at the given location. Returns None if the location is
 	/// out of bounds
+	#[must_use]
 	fn get_old(&self, pad: Pad) -> Option<Color> {
 		if pad.x >= 0 && pad.y >= 0 && self.is_valid(pad.x as u32, pad.y as u32) {
 			Some(self.get_old_unchecked(pad.x as u32, pad.y as u32))

@@ -7,7 +7,8 @@ pub mod util;
 
 mod protocols;
 
-pub mod canvas;
+#[macro_use]
+mod canvas;
 pub use canvas::*;
 
 mod midi_io;

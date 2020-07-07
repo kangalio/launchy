@@ -312,3 +312,5 @@ impl Canvas for CanvasLayout<'_> {
 		return Ok(());
 	}
 }
+
+impl_traits_for_canvas!(<'a>, CanvasLayout);
