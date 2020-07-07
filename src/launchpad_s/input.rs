@@ -6,6 +6,9 @@ pub enum Message {
 	Press { button: Button },
 	Release { button: Button },
 	TextEndedOrLooped,
+	/// Every once in a while, the device randomly spews out a weird undocumented MIDI message.
+	/// I have no idea what that is about. It comes relatively regularly though, so I don't want
+	/// to discard those messages either.
 	UnknownShortMessage { bytes: [u8; 3] },
 }
 

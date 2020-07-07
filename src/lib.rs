@@ -22,6 +22,8 @@ pub use launchpad_mk2 as mk2;
 
 pub mod launch_control;
 pub use launch_control as control;
+pub use launch_control as launch_control_xl;
+pub use launch_control as control_xl;
 
 pub mod prelude {
 	pub use crate::midi_io::{OutputDevice, InputDevice, MsgPollingWrapper};

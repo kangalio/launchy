@@ -47,7 +47,10 @@ impl LaunchControlOutput {
 	/// 
 	/// The given `template` must match the currently selected template on the Launch Control, or
 	/// nothing will happen.
-	pub fn turn_off_button(&mut self, template: impl Into<Template>, button: Button) -> anyhow::Result<()> {
+	pub fn turn_off_button(&mut self,
+		template: impl Into<Template>,
+		button: Button
+	) -> anyhow::Result<()> {
 		// velocity byte is ignored, so I'm just setting it to zero
 		match button {
 			Button::Pad(_) => self.send(&[0x80, button.code(), 0]),
@@ -55,13 +58,28 @@ impl LaunchControlOutput {
 		}
 	}
 
-	/// Light a button with a certain color.
+	/// Light multiple buttons with varying colors and double buffering behavior.
 	/// 
 	/// The given `template` must match the currently selected template on the Launch Control, or
 	/// nothing will happen.
-	pub fn light(&mut self, template: impl Into<Template>, button: Button, color: Color) -> anyhow::Result<()> {		
-		let color_code = make_color_code(color, DoubleBufferingBehavior::None);
-		self.send(&[240, 0, 32, 41, 2, 10, 120, template.into().0, button.as_index(), color_code, 247])
+	pub fn light_multiple(&mut self,
+		template: impl Into<Template>,
+		pads: impl IntoIterator<Item = impl std::borrow::Borrow<(
+			Button,
+			Color,
+			DoubleBufferingBehavior
+		)>>,
+	) -> anyhow::Result<()> {
+		let mut bytes = Vec::new();
+		bytes.extend(&[240, 0, 32, 41, 2, 10, 120, template.into().0]);
+		for entry in pads.into_iter() {
+			let &(btn, color, dbb) = entry.borrow();
+
+			bytes.extend(&[btn.as_index(), make_color_code(color, dbb)]);
+		}
+		bytes.push(247);
+
+		self.send(&bytes)
 	}
 
 	// this doesn't seem to do ANYTHING at all /shrug
@@ -83,7 +101,10 @@ impl LaunchControlOutput {
 	/// 
 	/// Btw this function is not really intended for regular use. It's more like a test function to
 	/// check if the device is working correctly, diagnostic stuff like that.
-	pub fn turn_on_all_leds(&mut self, template: impl Into<Template>, brightness: Brightness) -> anyhow::Result<()> {
+	pub fn turn_on_all_leds(&mut self,
+		template: impl Into<Template>,
+		brightness: Brightness
+	) -> anyhow::Result<()> {
 		let brightness_code = match brightness {
 			Brightness::Off => 0,
 			Brightness::Low => 125,
@@ -131,5 +152,18 @@ impl LaunchControlOutput {
 	/// their default values.
 	pub fn reset(&mut self, template: impl Into<Template>) -> anyhow::Result<()> {
 		return self.turn_on_all_leds(template, Brightness::Off);
+	}
+
+	/// Light a button with a certain color.
+	/// 
+	/// The given `template` must match the currently selected template on the Launch Control, or
+	/// nothing will happen.
+	pub fn light(&mut self,
+		template: impl Into<Template>,
+		button: Button,
+		color: Color,
+		dbb: DoubleBufferingBehavior
+	) -> anyhow::Result<()> {		
+		self.light_multiple(template, &[(button, color, dbb)])
 	}
 }

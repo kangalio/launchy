@@ -108,20 +108,20 @@ impl crate::DeviceSpec for Spec {
 		changes: &[(u32, u32, (u8, u8, u8))])
 	-> anyhow::Result<()> {
 
-        for &(x, y, (r, g, _b)) in changes {
-			let button = match (x, y) {
-				(8, 0) => Button::Up,
-				(9, 0) => Button::Down,
-				(8, 1) => Button::Left,
-				(9, 1) => Button::Right,
-				(index, 1) => Button::pad(index as u8),
-				_ => panic!("Unexpected coordinates ({}|{})", x, y),
-			};
-
-			canvas.output.light(0, button, Color::new(r, g))?;
-		}
-
-		return Ok(());
+		canvas.output.light_multiple(0, changes.iter()
+			.map(|&(x, y, (r, g, _b))| {
+				let button = match (x, y) {
+					(8, 0) => Button::Up,
+					(9, 0) => Button::Down,
+					(8, 1) => Button::Left,
+					(9, 1) => Button::Right,
+					(index, 1) => Button::pad(index as u8),
+					_ => panic!("Unexpected coordinates ({}|{})", x, y),
+				};
+	
+				(button, Color::new(r, g), DoubleBufferingBehavior::Copy)
+			})
+		)
     }
 	
 	fn convert_message(msg: Message) -> Option<crate::CanvasMessage> {
