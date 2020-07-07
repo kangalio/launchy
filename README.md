@@ -1,14 +1,18 @@
 # launchy
 An exhaustive Rust API for the Novation Launchpad devices, optimized for maximum expressiveness and minimum boilerplate!
 
-<!--DEMO VIDEO HERE-->
+<a href="https://youtu.be/DHwv7yu5dJc"><img src="https://imgur.com/gBKAjgS.jpg" width="50%"/></a>
 
 ---
 
-Launchy is a library for the Novation Launchpad MIDI devices, written in Rust.
+Launchy is a library for the Novation Launchpad MIDI devices, for the Rust programming language.
+
+## Features
 
 - the **Canvas API** provides a powerful and concise way to control your Launchpads, for games or small lightshows
 - the **direct Input/Output API** provides absolute control over your device and fine-grained access to the entire MIDI API of your device
+- optional support for [`embedded-graphics`](https://github.com/jamwaffles/embedded-graphics)
+- very modular design: it's very easy to add support for new devices or new features to `Canvas`
 
 ## Supported devices
 - [ ] Launchpad
@@ -44,9 +48,114 @@ for msg in input.iter() {
 }
 ```
 
+## Examples
+### Satisfying pulse light effect
+<a href="https://youtu.be/DHwv7yu5dJc"><img src="https://imgur.com/gBKAjgS.jpg" width="50%"/></a>
+
+```rust
+// Setup devices
+let (mut canvas, input) = launchy::CanvasLayout::new_polling();
+canvas.add_by_guess::<launchy::control::Canvas>(0, 2)?;
+canvas.add_by_guess_rotated::<launchy::mk2::Canvas>(8, 12, launchy::Rotation::UpsideDown)?;
+canvas.add_by_guess::<launchy::s::Canvas>(10, 0)?;
+let mut canvas = canvas.into_padded();
+
+// Do the actual animation
+for color in (0u64..).map(|f| Color::red_green_color(f as f32 / 60.0 / 2.5)) {
+	for msg in input.iter_for_millis(17).filter(|msg| msg.is_press()) {
+		canvas.set_at(msg.pad(), color * 60.0);
+	}
+	canvas.flush()?;
+
+	for pad in canvas.iter() {
+		let surrounding_color = pad.neighbors_5().iter()
+				.map(|&p| canvas.get_old(p).unwrap_or(Color::BLACK))
+				.sum::<Color>() / 5.0 / 1.05;
+		
+		canvas.set_at(pad, canvas.at(pad).mix(surrounding_color, 0.4));
+	}
+}
+```
+
+<!--### Snake game
+```rust
+let (mut canvas, poller) = launchy::mk2::Canvas::guess_polling()?;
+
+let mut snake = std::collections::VecDeque::new();
+snake.push_front(Pad { x: 0, y: 1 });
+snake.push_front(Pad { x: 1, y: 1 });
+snake.push_front(Pad { x: 2, y: 1 });
+
+let mut direction = (1, 0);
+let mut pellet = Pad { x: 5, y: 6 };
+
+loop {
+	sleep(500);
+
+	for msg in poller.iter_pending().filter(|msg| msg.is_press()) {
+		match msg.pad() {
+			Pad { x: 0, y: 0 } => direction = (0, -1),
+			Pad { x: 1, y: 0 } => direction = (0, 1),
+			Pad { x: 2, y: 0 } => direction = (-1, 0),
+			Pad { x: 3, y: 0 } => direction = (1, 0),
+			_ => {},
+		}
+	}
+
+	if snake.contains(&(snake[0] + direction)) {
+		break;
+	} else {
+		snake.push_front(snake[0] + direction);
+	}
+
+	if snake[0] == pellet {
+		pellet = Pad { x: (rand::random() * 9) as i32, y: (rand::random() * 9) as i32 };
+	} else {
+		snake.pop_back();
+	}
+
+	canvas.clear();
+	for &pad in &snake {
+		canvas.set_at(pad, Color::YELLOW);
+	}
+	canvas.set_at(pellet, Color::GREEN);
+	canvas.flush()?;
+}
+```-->
+
+### Seamless text scrolling across multiple Launchpads (leveraging `embedded_graphics`)
+<a href="https://youtu.be/BJqoH3p9mhE"><img src="https://imgur.com/Fxe9al9.jpg" width="50%"/></a>
+
+(This image shows the first three letters of the word "Hello")
+
+```rust
+use embedded_graphics::{fonts::{Font6x8, Text}, prelude::{Drawable, Point}, style::TextStyle};
+
+// Setup the Launchpad layout
+let mut canvas = launchy::CanvasLayout::new(|_msg| {});
+canvas.add_by_guess_rotated::<launchy::control::Canvas>(0, 14, launchy::Rotation::Right)?;
+canvas.add_by_guess_rotated::<launchy::mk2::Canvas>(10, 18, launchy::Rotation::UpsideDown)?;
+canvas.add_by_guess_rotated::<launchy::s::Canvas>(2, 8, launchy::Rotation::Right)?;
+
+// Do the text scrolling
+let mut x_offset = 19;
+loop {
+	canvas.clear();
+
+	let t = Text::new("Hello world! :)", Point::new(x_offset, 3))
+		.into_styled(TextStyle::new(Font6x8, Color::RED.into()))
+		.draw(&mut canvas).unwrap();
+	
+	canvas.flush()?;
+
+	sleep(100);
+	x_offset -= 1;
+}
+```
+
 ## Why not just use [launch-rs](https://github.com/jamesmunns/launch-rs)?
 
 - Last commit in 2017
 - Only supports Launchpad MK2
-- Uses the [PortMidi](https://github.com/musitdev/portmidi-rs) crate which is not as actively developed as [midir](https://github.com/Boddlnagg/midir), which Launchy uses
 - Only low-level access to the Launchpad is provided. There is no way to write high-level, concise interfacing code
+- Uses the [PortMidi](https://github.com/musitdev/portmidi-rs) crate which is not as actively developed as [midir](https://github.com/Boddlnagg/midir), which Launchy uses
