@@ -18,8 +18,6 @@ macro_rules! impl_traits_for_canvas {
 		mod eg {
 			pub use embedded_graphics::{prelude::*, DrawTarget, pixelcolor::{Rgb888, RgbColor}};
 		}
-		#[cfg(feature = "embedded-graphics-support")]
-		use eg::RgbColor;
 
 		#[cfg(feature = "embedded-graphics-support")]
         impl<$($a $(: $b)?),+> eg::DrawTarget<eg::Rgb888> for $i<$($a),+> {
@@ -27,17 +25,10 @@ macro_rules! impl_traits_for_canvas {
 		
 			fn draw_pixel(&mut self, pixel: eg::Pixel<eg::Rgb888>) -> Result<(), ()> {
 				let eg::Pixel(coord, color) = pixel;
-				
-				let pad = Pad { x: coord.x, y: coord.y };
-				let color = Color::new(
-					(color.r() as f32 + 0.5) / 256.0,
-					(color.g() as f32 + 0.5) / 256.0,
-					(color.b() as f32 + 0.5) / 256.0,
-				);
 		
 				// discard any potential out of bounds errors. that's just how it's done in
 				// embedded-graphics world
-				let _ = self.set(pad, color);
+				let _ = self.set(Pad { x: coord.x, y: coord.y }, color.into());
 		
 				Ok(())
 			}

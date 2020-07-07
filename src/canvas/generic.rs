@@ -13,7 +13,7 @@ pub trait DeviceSpec {
 	const BOUNDING_BOX_HEIGHT: u32;
 	/// How many different colors can be shown per channel. As an example; the MK2 uses 6 bit color,
 	/// so it supports color values from 0 up to 63 - in total 64 values.
-	const COLOR_PRECISION: u8;
+	const COLOR_PRECISION: u16;
 
 	/// The input handler type
 	type Input: crate::InputDevice;

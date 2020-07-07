@@ -89,7 +89,7 @@ pub struct Spec;
 impl crate::DeviceSpec for Spec {
     const BOUNDING_BOX_WIDTH: u32 = 10;
 	const BOUNDING_BOX_HEIGHT: u32 = 2;
-	const COLOR_PRECISION: u8 = 4;
+	const COLOR_PRECISION: u16 = 4;
 	
     type Input = LaunchControlInput;
 	type Output = LaunchControlOutput;

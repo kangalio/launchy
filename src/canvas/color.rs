@@ -87,7 +87,7 @@ impl Color {
 	/// supports four levels of brightness for its red and green component, respectively. Therefore,
 	/// the Launchpad S calls `.quantize(4)` on a given `Color` to derive how that color should be
 	/// represented on the Launchpad S LEDs.
-	pub fn quantize(self, range: u8) -> (u8, u8, u8) {
+	pub fn quantize(self, range: u16) -> (u8, u8, u8) {
 		let quant = |f: f32| (f * range as f32).max(0.0).min(range as f32 - 1.0) as u8;
 
 		(quant(self.r), quant(self.g), quant(self.b))
@@ -195,4 +195,25 @@ impl std::iter::Sum for Color {
     fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
         iter.fold(Color::BLACK, |a, b| a + b)
     }
+}
+
+#[cfg(feature = "embedded-graphics-support")]
+impl From<Color> for embedded_graphics::pixelcolor::Rgb888 {
+	fn from(color: Color) -> Self {
+		let (r, g, b) = color.quantize(256);
+		Self::new(r, g, b)
+	}
+}
+
+#[cfg(feature = "embedded-graphics-support")]
+impl From<embedded_graphics::pixelcolor::Rgb888> for Color {
+	fn from(color: embedded_graphics::pixelcolor::Rgb888) -> Self {
+		use embedded_graphics::pixelcolor::RgbColor;
+
+		Color::new(
+			(color.r() as f32 + 0.5) / 256.0,
+			(color.g() as f32 + 0.5) / 256.0,
+			(color.b() as f32 + 0.5) / 256.0,
+		)
+	}
 }
