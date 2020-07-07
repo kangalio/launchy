@@ -13,7 +13,7 @@ pub enum Message {
 	FaderChange { index: u8, value: u8 },
 }
 
-pub struct LaunchpadMk2Input;
+pub struct Input;
 
 fn decode_short_message(data: &[u8]) -> Message {
 	assert_eq!(data.len(), 3); // if this function was called, it should be
@@ -95,7 +95,7 @@ fn decode_grid_button(btn: u8) -> Button {
 	return Button::GridButton { x, y };
 }
 
-impl crate::InputDevice for LaunchpadMk2Input {
+impl crate::InputDevice for Input {
 	const MIDI_DEVICE_KEYWORD: &'static str = "Launchpad MK2";
 	const MIDI_CONNECTION_NAME: &'static str = "Launchy Mk2 Input";
 	type Message = Message;

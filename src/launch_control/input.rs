@@ -37,9 +37,9 @@ pub enum Message {
 	KnobChanged { template: Template, knob: Knob, value: u8 },
 }
 
-pub struct LaunchControlInput;
+pub struct Input;
 
-impl LaunchControlInput {
+impl Input {
 	fn decode_short_message(data: &[u8]) -> Message {
 		let status = data[0] & 0xF0;
 		let template = Template(data[0] & 0x0F);
@@ -81,7 +81,7 @@ impl LaunchControlInput {
 	}
 }
 
-impl crate::InputDevice for LaunchControlInput {
+impl crate::InputDevice for Input {
 	const MIDI_CONNECTION_NAME: &'static str = "Launchy Launch Control input";
 	const MIDI_DEVICE_KEYWORD: &'static str = "Launch Control";
 	type Message = Message;

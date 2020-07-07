@@ -33,8 +33,8 @@ In cases where you need direct access to your device's API, the abstraction prov
 
 Say if you wanted to programmatically retrieve the firmware version of your Launchpad MK2:
 ```rust
-let input = launchy::mk2::LaunchpadMk2Input::guess_polling()?;
-let mut output = launchy::mk2::LaunchpadMk2Output::guess()?;
+let input = launchy::mk2::Input::guess_polling()?;
+let mut output = launchy::mk2::Output::guess()?;
 
 output.request_version_inquiry()?;
 for msg in input.iter() {

@@ -6,11 +6,11 @@ use super::{Button, Template};
 #[doc(inline)]
 pub use crate::protocols::double_buffering::*;
 
-pub struct LaunchControlOutput {
+pub struct Output {
 	connection: MidiOutputConnection,
 }
 
-impl crate::OutputDevice for LaunchControlOutput {
+impl crate::OutputDevice for Output {
 	const MIDI_CONNECTION_NAME: &'static str = "Launchy Launch Control output";
 	const MIDI_DEVICE_KEYWORD: &'static str = "Launch Control";
 
@@ -24,7 +24,7 @@ impl crate::OutputDevice for LaunchControlOutput {
 	}
 }
 
-impl LaunchControlOutput {
+impl Output {
 	/// Updates the state for a single LED, specified by `button`. The color, as well as the double
 	/// buffering attributes, are specified in `light_state`.
 	/// 

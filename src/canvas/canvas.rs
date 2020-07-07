@@ -22,8 +22,8 @@ use super::*;
 /// 	}
 /// }
 /// 
-/// // The above function doesn't take a specific low-level object like LaunchpadMk2Output or
-/// // LaunchControlOutput. Instead it utilizes Canvas, so you can call it with _all_ devices!
+/// // The above function doesn't take a specific low-level object like Output or
+/// // Output. Instead it utilizes Canvas, so you can call it with _all_ devices!
 /// 
 /// // Light a connected Launchpad S and Launchpad Mk2 completely white
 /// light_white(&mut launchy::s::Canvas::guess());

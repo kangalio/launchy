@@ -16,9 +16,9 @@ fn decode_grid_button(btn: u8) -> Button {
 	return Button::GridButton { x: btn % 16, y: btn / 16 };
 }
 
-pub struct LaunchpadSInput;
+pub struct Input;
 
-impl crate::InputDevice for LaunchpadSInput {
+impl crate::InputDevice for Input {
 	const MIDI_CONNECTION_NAME: &'static str = "Launchy S input";
 	const MIDI_DEVICE_KEYWORD: &'static str = "Launchpad S";
 	type Message = Message;

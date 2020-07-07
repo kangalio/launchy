@@ -162,14 +162,14 @@ enum Layout {
 /// built-in fader functionality. You can specify for each fader its position, its color, and its
 /// default value.
 /// 
-/// For further documentation and examples, see `LaunchpadMk2Output::enter_fader_mode()`.
+/// For further documentation and examples, see `Output::enter_fader_mode()`.
 pub struct FaderMode {
-	output: LaunchpadMk2Output,
+	output: Output,
 	fader_type: FaderType,
 }
 
 impl FaderMode {
-	fn new(mut output: LaunchpadMk2Output, fader_type: FaderType) -> anyhow::Result<Self> {
+	fn new(mut output: Output, fader_type: FaderType) -> anyhow::Result<Self> {
 		output.change_layout(match fader_type {
 			FaderType::Volume => Layout::Volume,
 			FaderType::Pan => Layout::Pan,
@@ -177,9 +177,9 @@ impl FaderMode {
 		return Ok(Self { output, fader_type });
 	}
 
-	/// Exit fader mode by transforming this FaderMode object back into a LaunchpadMk2Output object.
+	/// Exit fader mode by transforming this FaderMode object back into a Output object.
 	#[must_use="You must use the returned object, or the MIDI connection will be dropped"]
-	pub fn exit(mut self) -> anyhow::Result<LaunchpadMk2Output> {
+	pub fn exit(mut self) -> anyhow::Result<Output> {
 		self.output.change_layout(Layout::Session)?;
 		return Ok(self.output);
 	}
@@ -213,12 +213,12 @@ impl FaderMode {
 }
 
 /// The object handling any messages _to_ the launchpad. To get started, initialize with
-/// `LaunchpadMk2Output::guess()` and then send messages to your liking. The connection to the
+/// `Output::guess()` and then send messages to your liking. The connection to the
 /// launchpad will get closed when this object goes out of scope.
 /// 
 /// For example:
 /// ```
-/// let mut output = LaunchpadMk2Output::guess();
+/// let mut output = Output::guess();
 /// 
 /// output.light_all(PaletteColor::BLACK); // clear screen
 /// 
@@ -231,11 +231,11 @@ impl FaderMode {
 /// // light top left button magenta
 /// output.light(Button::GridButton { x: 0, y: 0 }, PaletteColor::MAGENTA);
 /// ```
-pub struct LaunchpadMk2Output {
+pub struct Output {
 	connection: MidiOutputConnection,
 }
 
-impl crate::OutputDevice for LaunchpadMk2Output {
+impl crate::OutputDevice for Output {
 	const MIDI_CONNECTION_NAME: &'static str = "Launchy Mk2 output";
 	const MIDI_DEVICE_KEYWORD: &'static str = "Launchpad MK2";
 
@@ -251,7 +251,7 @@ impl crate::OutputDevice for LaunchpadMk2Output {
 	}
 }
 
-impl LaunchpadMk2Output {
+impl Output {
 	/// This is a function testing various parts of this API by executing various commands in order
 	/// to find issues either in this library or in your device
 	pub fn test_api(&mut self) -> anyhow::Result<()> {
@@ -324,7 +324,7 @@ impl LaunchpadMk2Output {
 	///
 	/// For example to start a yellow pulse on the leftmost control button:
 	/// ```
-	/// let mut output = LaunchpadMk2Output::guess();
+	/// let mut output = Output::guess();
 	/// 
 	/// let button = Button::ControlButton { index: 0 };
 	/// let color = PaletteColor::YELLOW;
@@ -527,7 +527,7 @@ impl LaunchpadMk2Output {
 	/// be manipulated mid-text. The default speed is 4.
 	/// 
 	/// When the text ends, Launchpad MK2 restores the LEDs to their previous settings. As the text
-	/// either ends or loops, a message will be sent to the LaunchpadMk2Input.
+	/// either ends or loops, a message will be sent to the Input.
 	///
 	/// For example to scroll the text "Hello, world!" in blue; "Hello" scrolling slow and "world"
 	/// fast:
@@ -546,7 +546,7 @@ impl LaunchpadMk2Output {
 		return self.send(bytes);
 	}
 
-	/// Transforms this LaunchpadMk2Output object to go into "fader mode". In fader mode, you have
+	/// Transforms this Output object to go into "fader mode". In fader mode, you have
 	/// the ability to utilize the Mk2's built-in fader functionality.
 	/// 
 	/// Launchpad MK2 has two virtual fader modes, one with volume style faders and one with pan
@@ -557,7 +557,7 @@ impl LaunchpadMk2Output {
 	/// 
 	/// When a button is pressed to change the level of a fader, Launchpad MK2 will move the fader
 	/// to that position and send interim values to smooth the transition. For each interim value, a
-	/// message is sent to LaunchpadMk2Input.
+	/// message is sent to Input.
 	/// 
 	/// See [FaderMode](struct.FaderMode.html) for documentation on FaderMode's methods.
 	/// 

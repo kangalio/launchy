@@ -16,11 +16,11 @@ pub use crate::protocols::double_buffering::*;
 /// visible buffer can alternatively be configured to swap automatically at 280ms intervals in order
 /// to configure LEDs to flash.
 
-pub struct LaunchpadSOutput {
+pub struct Output {
 	connection: MidiOutputConnection,
 }
 
-impl crate::OutputDevice for LaunchpadSOutput {
+impl crate::OutputDevice for Output {
 	const MIDI_CONNECTION_NAME: &'static str = "Launchy S output";
 	const MIDI_DEVICE_KEYWORD: &'static str = "Launchpad S";
 
@@ -34,7 +34,7 @@ impl crate::OutputDevice for LaunchpadSOutput {
 	}
 }
 
-impl LaunchpadSOutput {
+impl Output {
 	/// Updates the state for a single LED, specified by `button`. The color, as well as the double
 	/// buffering attributes, are specified in `light_state`.
 	pub fn set_button(&mut self, button: Button, color: Color, d: DoubleBufferingBehavior)
@@ -178,7 +178,7 @@ fn make_color_code_loopable(color: Color, should_loop: bool)
 	return ((should_loop as u8) << 6) | (color.green() << 4) | color.red();
 }
 
-impl LaunchpadSOutput {
+impl Output {
 	// TODO: fix this
 	// Uncommented because I have no idea to parse the return format
 	// pub fn request_device_inquiry(&mut self) -> anyhow::Result<()> {

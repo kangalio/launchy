@@ -14,8 +14,8 @@ impl crate::DeviceSpec for Spec {
 	const BOUNDING_BOX_HEIGHT: u32 = 9;
 	const COLOR_PRECISION: u16 = 4;
 	
-    type Input = LaunchpadSInput;
-	type Output = LaunchpadSOutput;
+    type Input = Input;
+	type Output = Output;
 	
     fn is_valid(x: u32, y: u32) -> bool {
         if x > 8 || y > 8 { return false }
