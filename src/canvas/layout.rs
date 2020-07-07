@@ -45,8 +45,6 @@ struct LayoutDevice<'a> {
 	y: u32,
 }
 
-unsafe impl Sync for LayoutDevice<'_> {} // fuck it
-
 fn to_local(x: u32, y: u32, rot: Rotation, x_offset: u32, y_offset: u32) -> (u32, u32) {
 	let x = x as i32;
 	let y = y as i32;
@@ -72,9 +70,10 @@ impl LayoutDevice<'_> {
 		to_local(x, y, self.rotation, self.x, self.y)
 	}
 
-	fn to_global(&self, x: u32, y: u32) -> (u32, u32) {
-		to_global(x, y, self.rotation, self.x, self.y)
-	}
+	// not needed rn
+	// fn to_global(&self, x: u32, y: u32) -> (u32, u32) {
+	// 	to_global(x, y, self.rotation, self.x, self.y)
+	// }
 }
 
 /// Utility to be able to process messages from a CanvasLayout by polling
@@ -181,12 +180,8 @@ impl<'a> CanvasLayout<'a> {
 		where F: FnOnce(Box<dyn Fn(CanvasMessage) + Send + 'a>) -> Result<C, E> {
 
 		let callback = self.callback.clone();
-		let layout_device_container: std::sync::Arc<std::sync::Mutex<Option<&LayoutDevice>>> = std::sync::Arc::new(std::sync::Mutex::new(None));
-		let layout_device_container_inner = layout_device_container.clone();
 		let canvas = (creator)(Box::new(move |msg| {
-			let layout_device = if let Some(a) = *layout_device_container_inner.lock().unwrap() { a } else { return };
-
-			let (x, y) = layout_device.to_global(msg.x(), msg.y());
+			let (x, y) = to_global(msg.x(), msg.y(), rotation, x_offset, y_offset);
 			match msg {
 				CanvasMessage::Press { .. } => (callback)(CanvasMessage::Press { x, y }),
 				CanvasMessage::Release { .. } => (callback)(CanvasMessage::Release { x, y }),
@@ -206,8 +201,8 @@ impl<'a> CanvasLayout<'a> {
 			// check for overlap
 			if let Some(Pixel { device_index: old_device_index, .. }) = old_value {
 				panic!(
-					"Canvas is overlapping with canvas {} (zero-indexed) at ({}|{})!",
-					old_device_index, translated_coords.0, translated_coords.1
+					"Found overlap at ({}|{})! with canvas {} while adding canvas {} to layout (zero-indexed)",
+					translated_coords.0, translated_coords.1, old_device_index, self.devices.len(),
 				);
 			}
 		}
@@ -217,11 +212,6 @@ impl<'a> CanvasLayout<'a> {
 			rotation, x: x_offset, y: y_offset
 		};
 		self.devices.push(layout_device);
-
-		// TODO: this Arc<Mutex> thing is a very hacky solution
-		*layout_device_container.lock().unwrap() = Some(unsafe {
-			&*(&self.devices[self.devices.len() - 1] as *const LayoutDevice)
-		});
 
 		return Ok(());
 	}
