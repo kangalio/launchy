@@ -11,8 +11,9 @@ Launchy is a library for the Novation Launchpad MIDI devices, for the Rust progr
 
 - the **Canvas API** provides a powerful and concise way to control your Launchpads, for games or small lightshows
 - the **direct Input/Output API** provides absolute control over your device and fine-grained access to the entire MIDI API of your device
+- it's possible to chain multiple Launchpads together and use them as if it was one single big device
 - optional support for [`embedded-graphics`](https://github.com/jamwaffles/embedded-graphics)
-- very modular design: it's very easy to add support for new devices or new features to `Canvas`
+- very modular design: it's very easy to add support for new devices, or to add new features to `Canvas`
 
 ## Supported devices
 - [ ] Launchpad
