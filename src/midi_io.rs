@@ -1,5 +1,4 @@
 use crate::ok_or_continue;
-use anyhow::{Context, anyhow};
 use midir::{MidiOutput, MidiOutputConnection, MidiInput, MidiInputConnection, MidiInputPort};
 
 
@@ -20,21 +19,15 @@ pub trait OutputDevice where Self: Sized {
 	const MIDI_DEVICE_KEYWORD: &'static str;
 
 	/// Initiate from an existing midir connection.
-	fn from_connection(connection: MidiOutputConnection) -> anyhow::Result<Self>;
+	fn from_connection(connection: MidiOutputConnection) -> Result<Self, crate::MidiError>;
 
-	fn send(&mut self, bytes: &[u8]) -> anyhow::Result<()>;
+	fn send(&mut self, bytes: &[u8]) -> Result<(), crate::MidiError>;
 
-	fn guess() -> anyhow::Result<Self> {
-		let midi_output = MidiOutput::new(crate::APPLICATION_NAME)
-				.context("Couldn't create MidiOutput object")?;
-
+	fn guess() -> Result<Self, crate::MidiError> {
+		let midi_output = MidiOutput::new(crate::APPLICATION_NAME)?;
 		let port = guess_port(&midi_output, Self::MIDI_DEVICE_KEYWORD)
-				.context(format!("No '{}' output device found", Self::MIDI_DEVICE_KEYWORD))?;
-		
-		let connection = midi_output
-				.connect(&port, Self::MIDI_CONNECTION_NAME)
-				.map_err(|_| anyhow!("Failed to connect to port"))?;
-		
+				.ok_or(crate::MidiError::NoPortFound { keyword: Self::MIDI_DEVICE_KEYWORD })?;
+		let connection = midi_output.connect(&port, Self::MIDI_CONNECTION_NAME)?;
 		return Self::from_connection(connection);
 	}
 }
@@ -65,7 +58,7 @@ pub trait InputDevice {
 
 	#[must_use = "If not saved, the connection will be immediately dropped"]
 	fn from_port<'a, F>(midi_input: MidiInput, port: &MidiInputPort, mut user_callback: F)
-			-> anyhow::Result<InputDeviceHandler<'a>>
+			-> Result<InputDeviceHandler<'a>, crate::MidiError>
 			where F: FnMut(Self::Message) + Send + 'a {
 		
 		let midir_callback = move |timestamp: u64, data: &[u8], _: &mut _| {
@@ -73,15 +66,14 @@ pub trait InputDevice {
 			(user_callback)(msg);
 		};
 		
-		let connection = midi_input.connect(port, Self::MIDI_CONNECTION_NAME, midir_callback, ())
-				.map_err(|_| anyhow!("Failed to connect to port"))?;
+		let connection = midi_input.connect(port, Self::MIDI_CONNECTION_NAME, midir_callback, ())?;
 		
 		return Ok(InputDeviceHandler { connection });
 	}
 
 	#[must_use = "If not saved, the connection will be immediately dropped"]
 	fn from_port_polling(midi_input: MidiInput, port: &MidiInputPort)
-			-> anyhow::Result<InputDeviceHandlerPolling<'static, Self::Message>>
+			-> Result<InputDeviceHandlerPolling<'static, Self::Message>, crate::MidiError>
 			where Self::Message: Send + 'static {
 		
 		let (sender, receiver) = std::sync::mpsc::channel();
@@ -95,36 +87,33 @@ pub trait InputDevice {
 			sender.send(msg).expect("Message receiver has hung up (this shouldn't happen)");
 		};
 		
-		let connection = midi_input.connect(port, Self::MIDI_CONNECTION_NAME, midir_callback, ())
-				.map_err(|_| anyhow!("Failed to connect to port"))?;
+		let connection = midi_input.connect(port, Self::MIDI_CONNECTION_NAME, midir_callback, ())?;
 		
 		return Ok(InputDeviceHandlerPolling { connection, receiver });
 	}
 	
 	/// Search the midi devices and choose the first midi device matching the wanted Launchpad type.
 	#[must_use = "If not saved, the connection will be immediately dropped"]
-	fn guess<'a, F>(user_callback: F) -> anyhow::Result<InputDeviceHandler<'a>>
+	fn guess<'a, F>(user_callback: F) -> Result<InputDeviceHandler<'a>, crate::MidiError>
 			where F: FnMut(Self::Message) + Send + 'a {
 		
-		let midi_input = MidiInput::new(crate::APPLICATION_NAME)
-				.context("Couldn't create MidiInput object")?;
+		let midi_input = MidiInput::new(crate::APPLICATION_NAME)?;
 
 		let port = guess_port(&midi_input, Self::MIDI_DEVICE_KEYWORD)
-				.context(format!("No '{}' input device found", Self::MIDI_DEVICE_KEYWORD))?;
+				.ok_or(crate::MidiError::NoPortFound { keyword: Self::MIDI_DEVICE_KEYWORD })?;
 		
 		return Self::from_port(midi_input, &port, user_callback);
 	}
 
 	/// Search the midi devices and choose the first midi device matching the wanted Launchpad type.
 	#[must_use = "If not saved, the connection will be immediately dropped"]
-	fn guess_polling<'a>() -> anyhow::Result<InputDeviceHandlerPolling<'a, Self::Message>>
+	fn guess_polling<'a>() -> Result<InputDeviceHandlerPolling<'a, Self::Message>, crate::MidiError>
 			where Self::Message: Send + 'static {
 		
-		let midi_input = MidiInput::new(crate::APPLICATION_NAME)
-				.context("Couldn't create MidiInput object")?;
+		let midi_input = MidiInput::new(crate::APPLICATION_NAME)?;
 
 		let port = guess_port(&midi_input, Self::MIDI_DEVICE_KEYWORD)
-				.context(format!("No '{}' input device found", Self::MIDI_DEVICE_KEYWORD))?;
+				.ok_or(crate::MidiError::NoPortFound { keyword: Self::MIDI_DEVICE_KEYWORD })?;
 		
 		return Self::from_port_polling(midi_input, &port);
 	}

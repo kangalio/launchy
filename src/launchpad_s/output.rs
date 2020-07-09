@@ -24,11 +24,11 @@ impl crate::OutputDevice for Output {
 	const MIDI_CONNECTION_NAME: &'static str = "Launchy S output";
 	const MIDI_DEVICE_KEYWORD: &'static str = "Launchpad S";
 
-	fn from_connection(connection: MidiOutputConnection) -> anyhow::Result<Self> {
+	fn from_connection(connection: MidiOutputConnection) -> Result<Self, crate::MidiError> {
 		return Ok(Self { connection });
 	}
 
-	fn send(&mut self, bytes: &[u8]) -> anyhow::Result<()> {
+	fn send(&mut self, bytes: &[u8]) -> Result<(), crate::MidiError> {
 		self.connection.send(bytes)?;
 		return Ok(());
 	}
@@ -38,7 +38,7 @@ impl Output {
 	/// Updates the state for a single LED, specified by `button`. The color, as well as the double
 	/// buffering attributes, are specified in `light_state`.
 	pub fn set_button(&mut self, button: Button, color: Color, d: DoubleBufferingBehavior)
-			-> anyhow::Result<()> {
+			-> Result<(), crate::MidiError> {
 		
 		let light_code = make_color_code(color, d);
 
@@ -68,7 +68,7 @@ impl Output {
 	pub fn set_button_rapid(&mut self,
 		color1: Color, dbb1: DoubleBufferingBehavior,
 		color2: Color, dbb2: DoubleBufferingBehavior,
-	) -> anyhow::Result<()> {
+	) -> Result<(), crate::MidiError> {
 		
 		return self.send(&[0x92, make_color_code(color1, dbb1), make_color_code(color2, dbb2)]);
 	}
@@ -80,7 +80,7 @@ impl Output {
 	/// 
 	/// Btw this function is not really intended for regular use. It's more like a test function to
 	/// check if the device is working correctly, diagnostic stuff like that.
-	pub fn turn_on_all_leds(&mut self, brightness: Brightness) -> anyhow::Result<()> {
+	pub fn turn_on_all_leds(&mut self, brightness: Brightness) -> Result<(), crate::MidiError> {
 		let brightness_code = match brightness {
 			Brightness::Off => 0,
 			Brightness::Low => 125,
@@ -106,7 +106,7 @@ impl Output {
 	/// If you are particularly sensitive to strobing lights, please use this command with care when
 	/// working with large areas of low-brightness LEDs: in particular, avoid duty cycles of 1/8 or
 	/// less.
-	pub fn set_duty_cycle(&mut self, numerator: u8, denominator: u8) -> anyhow::Result<()> {
+	pub fn set_duty_cycle(&mut self, numerator: u8, denominator: u8) -> Result<(), crate::MidiError> {
 		assert!(numerator >= 1);
 		assert!(numerator <= 16);
 		assert!(denominator >= 3);
@@ -132,7 +132,7 @@ impl Output {
 	/// - If `flash` is set, continually flip displayed buffers to make selected LEDs flash.
 	/// - `updated`: the new updated buffer
 	/// - `displayed`: the new displayed buffer
-	pub fn control_double_buffering(&mut self, d: DoubleBuffering) -> anyhow::Result<()> {
+	pub fn control_double_buffering(&mut self, d: DoubleBuffering) -> Result<(), crate::MidiError> {
 		let last_byte = 0b00100000
 				| ((d.copy as u8) << 4)
 				| ((d.flash as u8) << 3)
@@ -148,15 +148,15 @@ impl Output {
 
 	/// All LEDs are turned off, and the mapping mode, buffer settings, and duty cycle are reset to
 	/// their default values.
-	pub fn reset(&mut self) -> anyhow::Result<()> {
+	pub fn reset(&mut self) -> Result<(), crate::MidiError> {
 		return self.turn_on_all_leds(Brightness::Off);
 	}
 
-	pub fn light(&mut self, button: Button, color: Color) -> anyhow::Result<()> {
+	pub fn light(&mut self, button: Button, color: Color) -> Result<(), crate::MidiError> {
 		return self.set_button(button, color, DoubleBufferingBehavior::Copy);
 	}
 
-	pub fn light_all(&mut self, color: Color) -> anyhow::Result<()> {
+	pub fn light_all(&mut self, color: Color) -> Result<(), crate::MidiError> {
 		let dbb = DoubleBufferingBehavior::Copy; // this is _probably_ a good default
 
 		for _ in 0..40 {
@@ -181,12 +181,12 @@ fn make_color_code_loopable(color: Color, should_loop: bool)
 impl Output {
 	// TODO: fix this
 	// Uncommented because I have no idea to parse the return format
-	// pub fn request_device_inquiry(&mut self) -> anyhow::Result<()> {
+	// pub fn request_device_inquiry(&mut self) -> Result<(), crate::MidiError> {
 	// 	return self.send(&[240, 126, 127, 6, 1, 247]);
 	// }
 
 	pub fn scroll_text(&mut self, text: &[u8], color: Color, should_loop: bool)
-			-> anyhow::Result<()> {
+			-> Result<(), crate::MidiError> {
 		
 		let color_code = make_color_code_loopable(color, should_loop);
 

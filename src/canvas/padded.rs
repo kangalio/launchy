@@ -82,7 +82,7 @@ impl<C: Canvas> Canvas for PaddingCanvas<C> {
 		}
 	}
 	
-    fn flush(&mut self) -> anyhow::Result<()> {
+    fn flush(&mut self) -> Result<(), crate::MidiError> {
 		self.curr_buf = self.new_buf.clone();
 		self.inner.flush()
     }

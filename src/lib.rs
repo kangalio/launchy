@@ -14,6 +14,9 @@ pub use canvas::*;
 mod midi_io;
 pub use midi_io::*;
 
+mod errors;
+pub use errors::*;
+
 pub mod launchpad_s;
 pub use launchpad_s as s;
 

@@ -5,21 +5,11 @@ authors = ["Kangalioo <jannik.a.schaper@web.de>"]
 edition = "2018"
 
 [dependencies]
-#midir = "0.6"
-#midir = { path = "../midir", features = ["jack"] }
-midir = { path = "../midir" }
-anyhow = "1.0"
+#midir = { path = "../midir" }
+midir = { git = "https://github.com/kangalioo/midir" }
+thiserror = "1.0"
 embedded-graphics = { version = "0.6", optional = true }
 
 [features]
 default = ["embedded-graphics-support"]
 embedded-graphics-support = ["embedded-graphics"]
-
-[profile.release]
-# lto doesn't properly strip everything on Linux anyway, so we can go all in
-# since we have to strip ourselves anyway
-lto = true
-debug = true
-
-[profile.dev.package."*"]
-opt-level = 3

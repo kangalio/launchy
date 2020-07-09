@@ -99,14 +99,14 @@ impl crate::DeviceSpec for Spec {
 		return true;
 	}
 
-	fn setup(output: &mut Self::Output) -> anyhow::Result<()> {
+	fn setup(output: &mut Self::Output) -> Result<(), crate::MidiError> {
 		output.change_template(0)
 	}
 	
     fn flush(
 		canvas: &mut crate::DeviceCanvas<Self>,
 		changes: &[(u32, u32, (u8, u8, u8))])
-	-> anyhow::Result<()> {
+	-> Result<(), crate::MidiError> {
 
 		canvas.output.light_multiple(0, changes.iter()
 			.map(|&(x, y, (r, g, _b))| {

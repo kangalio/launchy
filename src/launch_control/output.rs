@@ -14,11 +14,11 @@ impl crate::OutputDevice for Output {
 	const MIDI_CONNECTION_NAME: &'static str = "Launchy Launch Control output";
 	const MIDI_DEVICE_KEYWORD: &'static str = "Launch Control";
 
-	fn from_connection(connection: MidiOutputConnection) -> anyhow::Result<Self> {
+	fn from_connection(connection: MidiOutputConnection) -> Result<Self, crate::MidiError> {
 		return Ok(Self { connection });
 	}
 
-	fn send(&mut self, bytes: &[u8]) -> anyhow::Result<()> {
+	fn send(&mut self, bytes: &[u8]) -> Result<(), crate::MidiError> {
 		self.connection.send(bytes)?;
 		return Ok(());
 	}
@@ -35,7 +35,7 @@ impl Output {
 		button: Button,
 		color: Color,
 		d: DoubleBufferingBehavior
-	) -> anyhow::Result<()> {
+	) -> Result<(), crate::MidiError> {
 		
 		let light_code = make_color_code(color, d);
 		let status = match button { Button::Pad(_) => 0x90, _ => 0xB0 } + template.into().0;
@@ -50,7 +50,7 @@ impl Output {
 	pub fn turn_off_button(&mut self,
 		template: impl Into<Template>,
 		button: Button
-	) -> anyhow::Result<()> {
+	) -> Result<(), crate::MidiError> {
 		// velocity byte is ignored, so I'm just setting it to zero
 		match button {
 			Button::Pad(_) => self.send(&[0x80, button.code(), 0]),
@@ -69,7 +69,7 @@ impl Output {
 			Color,
 			DoubleBufferingBehavior
 		)>>,
-	) -> anyhow::Result<()> {
+	) -> Result<(), crate::MidiError> {
 		let mut bytes = Vec::new();
 		bytes.extend(&[240, 0, 32, 41, 2, 10, 120, template.into().0]);
 		for entry in pads.into_iter() {
@@ -88,7 +88,9 @@ impl Output {
 	// 	self.send(&[240, 0, 32, 41, 2, 10, 123, template.into().0, button.as_index(), value, 247])
 	// }
 
-	pub fn change_template(&mut self, template: impl Into<Template>) -> anyhow::Result<()> {
+	pub fn change_template(&mut self,
+		template: impl Into<Template>
+	) -> Result<(), crate::MidiError> {
 		self.send(&[240, 0, 32, 41, 2, 10, 119, template.into().0, 247])
 	}
 
@@ -104,7 +106,7 @@ impl Output {
 	pub fn turn_on_all_leds(&mut self,
 		template: impl Into<Template>,
 		brightness: Brightness
-	) -> anyhow::Result<()> {
+	) -> Result<(), crate::MidiError> {
 		let brightness_code = match brightness {
 			Brightness::Off => 0,
 			Brightness::Low => 125,
@@ -133,7 +135,7 @@ impl Output {
 	pub fn control_double_buffering(&mut self,
 		template: impl Into<Template>,
 		d: DoubleBuffering
-	) -> anyhow::Result<()> {
+	) -> Result<(), crate::MidiError> {
 
 		let last_byte = 0b00100000
 				| ((d.copy as u8) << 4)
@@ -150,7 +152,7 @@ impl Output {
 
 	/// All LEDs are turned off, and the mapping mode, buffer settings, and duty cycle are reset to
 	/// their default values.
-	pub fn reset(&mut self, template: impl Into<Template>) -> anyhow::Result<()> {
+	pub fn reset(&mut self, template: impl Into<Template>) -> Result<(), crate::MidiError> {
 		return self.turn_on_all_leds(template, Brightness::Off);
 	}
 
@@ -163,7 +165,7 @@ impl Output {
 		button: Button,
 		color: Color,
 		dbb: DoubleBufferingBehavior
-	) -> anyhow::Result<()> {		
+	) -> Result<(), crate::MidiError> {
 		self.light_multiple(template, &[(button, color, dbb)])
 	}
 }

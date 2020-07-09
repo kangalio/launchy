@@ -48,7 +48,7 @@ pub trait Canvas: std::ops::Index<Pad, Output=Color> + std::ops::IndexMut<Pad, O
 	fn get_new_unchecked_mut(&mut self, x: u32, y: u32) -> &mut Color;
 	
 	/// Flush the accumulated changes to the underlying device
-	fn flush(&mut self) -> anyhow::Result<()>;
+	fn flush(&mut self) -> Result<(), crate::MidiError>;
 	/// The lowest visible brightness on this canvas. Used to calibrate brightness across Launchpads
 	fn lowest_visible_brightness(&self) -> f32;
 	

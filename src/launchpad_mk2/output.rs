@@ -169,7 +169,7 @@ pub struct FaderMode {
 }
 
 impl FaderMode {
-	fn new(mut output: Output, fader_type: FaderType) -> anyhow::Result<Self> {
+	fn new(mut output: Output, fader_type: FaderType) -> Result<Self, crate::MidiError> {
 		output.change_layout(match fader_type {
 			FaderType::Volume => Layout::Volume,
 			FaderType::Pan => Layout::Pan,
@@ -179,13 +179,13 @@ impl FaderMode {
 
 	/// Exit fader mode by transforming this FaderMode object back into a Output object.
 	#[must_use="You must use the returned object, or the MIDI connection will be dropped"]
-	pub fn exit(mut self) -> anyhow::Result<Output> {
+	pub fn exit(mut self) -> Result<Output, crate::MidiError> {
 		self.output.change_layout(Layout::Session)?;
 		return Ok(self.output);
 	}
 
 	/// Place faders on the screen. The faders' properties are specified using the `&[Fader]` slice.
-	pub fn designate_faders(&mut self, faders: &[Fader]) -> anyhow::Result<()> {
+	pub fn designate_faders(&mut self, faders: &[Fader]) -> Result<(), crate::MidiError> {
 		assert!(faders.len() <= 8);
 
 		let fader_type = match self.fader_type {
@@ -204,7 +204,7 @@ impl FaderMode {
 	}
 
 	/// Moves a fader, specified by `index`, to a specific `value`
-	pub fn set_fader(&mut self, index: u8, value: u8) -> anyhow::Result<()> {
+	pub fn set_fader(&mut self, index: u8, value: u8) -> Result<(), crate::MidiError> {
 		assert!(index <= 7);
 		assert!(value <= 127);
 
@@ -239,13 +239,13 @@ impl crate::OutputDevice for Output {
 	const MIDI_CONNECTION_NAME: &'static str = "Launchy Mk2 output";
 	const MIDI_DEVICE_KEYWORD: &'static str = "Launchpad MK2";
 
-	fn from_connection(connection: MidiOutputConnection) -> anyhow::Result<Self> {
+	fn from_connection(connection: MidiOutputConnection) -> Result<Self, crate::MidiError> {
 		let mut self_ = Self { connection };
 		self_.change_layout(Layout::Session)?;
 		return Ok(self_);
 	}
 
-	fn send(&mut self, bytes: &[u8]) -> anyhow::Result<()> {
+	fn send(&mut self, bytes: &[u8]) -> Result<(), crate::MidiError> {
 		self.connection.send(bytes)?;
 		return Ok(());
 	}
@@ -254,7 +254,7 @@ impl crate::OutputDevice for Output {
 impl Output {
 	/// This is a function testing various parts of this API by executing various commands in order
 	/// to find issues either in this library or in your device
-	pub fn test_api(&mut self) -> anyhow::Result<()> {
+	pub fn test_api(&mut self) -> Result<(), crate::MidiError> {
 		self.light_all(PaletteColor::DARK_GRAY)?;
 		std::thread::sleep(std::time::Duration::from_millis(250));
 		self.light_all(PaletteColor::BLACK)?;
@@ -332,7 +332,7 @@ impl Output {
 	/// output.set_button(button, color, light_mode)?;
 	/// ```
 	pub fn set_button(&mut self, button: Button, color: PaletteColor, light_mode: LightMode)
-			-> anyhow::Result<()> {
+			-> Result<(), crate::MidiError> {
 		
 		assert!(color.id <= 127);
 		
@@ -362,7 +362,7 @@ impl Output {
 	pub fn set_buttons(&mut self,
 		buttons: impl IntoIterator<Item = impl std::borrow::Borrow<(Button, PaletteColor)>>,
 		light_mode: LightMode
-	) -> anyhow::Result<()> {
+	) -> Result<(), crate::MidiError> {
 		
 		let msg_type_byte = match light_mode {
 			LightMode::Plain => 10,
@@ -396,7 +396,7 @@ impl Output {
 	/// ```
 	pub fn light_multiple_rgb<I, T>(&mut self,
 		buttons: I,
-	) -> anyhow::Result<()>
+	) -> Result<(), crate::MidiError>
 		where I: IntoIterator<Item = T>,
 			T: std::borrow::Borrow<(Button, RgbColor)>,
 			I::IntoIter: ExactSizeIterator {
@@ -430,7 +430,7 @@ impl Output {
 	/// ```
 	pub fn light_columns(&mut self,
 		buttons: impl IntoIterator<Item = impl std::borrow::Borrow<(u8, PaletteColor)>>,
-	) -> anyhow::Result<()> {
+	) -> Result<(), crate::MidiError> {
 
 		return self.send_multiple(12, false, 9, buttons);
 	}
@@ -447,7 +447,7 @@ impl Output {
 	/// ```
 	pub fn light_rows(&mut self,
 		buttons: impl IntoIterator<Item = impl std::borrow::Borrow<(u8, PaletteColor)>>,
-	) -> anyhow::Result<()> {
+	) -> Result<(), crate::MidiError> {
 
 		return self.send_multiple(13, false, 9, buttons.into_iter()
 				.map(|pair| {
@@ -462,7 +462,7 @@ impl Output {
 	/// ```
 	/// output.light_all(PaletteColor::BLACK)?;
 	/// ```
-	pub fn light_all(&mut self, color: PaletteColor) -> anyhow::Result<()> {
+	pub fn light_all(&mut self, color: PaletteColor) -> Result<(), crate::MidiError> {
 		return self.send(&[240, 0, 32, 41, 2, 24, 14, color.id, 247]);
 	}
 
@@ -486,7 +486,7 @@ impl Output {
 	/// 	std::thread::sleep(clock_tick_interval);
 	/// }
 	/// ```
-	pub fn send_clock_tick(&mut self) -> anyhow::Result<()> {
+	pub fn send_clock_tick(&mut self) -> Result<(), crate::MidiError> {
 		return self.send(&[248, 0, 0]);
 	}
 
@@ -495,7 +495,7 @@ impl Output {
 	/// 
 	/// In order to be able to receive the Launchpad Mk2's response to this request,
 	/// you must have a Launchpad Mk2 input object set up.
-	pub fn request_device_inquiry(&mut self, query: DeviceIdQuery) -> anyhow::Result<()> {
+	pub fn request_device_inquiry(&mut self, query: DeviceIdQuery) -> Result<(), crate::MidiError> {
 		const QUERY_DEVICE_ID_FOR_ANY: u8 = 127;
 		
 		let query_device_id = match query {
@@ -515,7 +515,7 @@ impl Output {
 	/// 
 	/// In order to be able to receive the Launchpad Mk2's response to this request,
 	/// you must have a Launchpad Mk2 input object set up.
-	pub fn request_version_inquiry(&mut self) -> anyhow::Result<()> {
+	pub fn request_version_inquiry(&mut self) -> Result<(), crate::MidiError> {
 		return self.send(&[240, 0, 32, 41, 0, 112, 247]);
 	}
 
@@ -535,7 +535,7 @@ impl Output {
 	/// output.scroll_text(b"\x01Hello, \x07world!", PaletteColor::BLUE, false)?;
 	/// ```
 	pub fn scroll_text(&mut self, text: &[u8], color: PaletteColor, should_loop: bool)
-			-> anyhow::Result<()> {
+			-> Result<(), crate::MidiError> {
 		
 		let bytes = &[
 			&[240, 0, 32, 41, 2, 24, 20, color.id(), should_loop as u8],
@@ -577,16 +577,16 @@ impl Output {
 	/// let mut output = fader_setup.exit()?;
 	/// ```
 	#[must_use="If you don't use the returned object, the MIDI connection will be dropped immediately"]
-	pub fn enter_fader_mode(self, fader_type: FaderType) -> anyhow::Result<FaderMode> {
+	pub fn enter_fader_mode(self, fader_type: FaderType) -> Result<FaderMode, crate::MidiError> {
 		return FaderMode::new(self, fader_type);
 	}
 
 	/// Force the Launchpad MK2 into bootloader mode
-	pub fn enter_bootloader(&mut self) -> anyhow::Result<()> {
+	pub fn enter_bootloader(&mut self) -> Result<(), crate::MidiError> {
 		return self.send(&[240, 0, 32, 41, 0, 113, 0, 105, 247]);
 	}
 
-	fn change_layout(&mut self, layout: Layout) -> anyhow::Result<()> {
+	fn change_layout(&mut self, layout: Layout) -> Result<(), crate::MidiError> {
 		let layout = match layout {
 			Layout::Session => 0,
 			Layout::User1 => 1,
@@ -604,7 +604,7 @@ impl Output {
 		insert_null_bytes: bool,
 		max_packets: usize,
 		pair_iterator: impl IntoIterator<Item = impl std::borrow::Borrow<(u8, PaletteColor)>>,
-	) -> anyhow::Result<()> {
+	) -> Result<(), crate::MidiError> {
 		
 		let pair_iterator = pair_iterator.into_iter();
 
@@ -654,7 +654,7 @@ impl Output {
 	/// ```
 	/// output.light(Button::VOLUME, PaletteColor::CYAN)?;
 	/// ```
-	pub fn light(&mut self, button: Button, color: PaletteColor) -> anyhow::Result<()> {
+	pub fn light(&mut self, button: Button, color: PaletteColor) -> Result<(), crate::MidiError> {
 		return self.set_button(button, color, LightMode::Plain);
 	}
 
@@ -668,7 +668,7 @@ impl Output {
 	/// ```
 	/// output.flash(Button::UP, PaletteColor::RED)?;
 	/// ```
-	pub fn flash(&mut self, button: Button, color: PaletteColor) -> anyhow::Result<()> {
+	pub fn flash(&mut self, button: Button, color: PaletteColor) -> Result<(), crate::MidiError> {
 		return self.set_button(button, color, LightMode::Flash);
 	}
 
@@ -679,7 +679,7 @@ impl Output {
 	/// ```
 	/// output.pulse(Button::GridButton { x: 7, y: 0 }, PaletteColor::MAGENTA)?;
 	/// ```
-	pub fn pulse(&mut self, button: Button, color: PaletteColor) -> anyhow::Result<()> {
+	pub fn pulse(&mut self, button: Button, color: PaletteColor) -> Result<(), crate::MidiError> {
 		return self.set_button(button, color, LightMode::Pulse);
 	}
 
@@ -690,7 +690,7 @@ impl Output {
 	/// output.light_column(8, PaletteColor::WHITE)?;
 	/// ```
 	pub fn light_column(&mut self, column: u8, color: PaletteColor)
-			-> anyhow::Result<()> {
+			-> Result<(), crate::MidiError> {
 		
 		return self.light_columns(&[(column, color)]);
 	}
@@ -703,7 +703,7 @@ impl Output {
 	/// output.light_row(1, PaletteColor::GREEN)?;
 	/// ```
 	pub fn light_row(&mut self, row: u8, color: PaletteColor)
-			-> anyhow::Result<()> {
+			-> Result<(), crate::MidiError> {
 		
 		return self.light_rows(&[(row, color)]);
 	}
@@ -714,7 +714,7 @@ impl Output {
 	/// ```
 	/// output.light_rgb(Button::GridButton { x: 7, y: 7 }, RgbColor::new(0, 63, 63))?;
 	/// ```
-	pub fn light_rgb(&mut self, button: Button, color: RgbColor) -> anyhow::Result<()> {
+	pub fn light_rgb(&mut self, button: Button, color: RgbColor) -> Result<(), crate::MidiError> {
 		return self.light_multiple_rgb(&[(button, color)]);
 	}
 
@@ -730,7 +730,7 @@ impl Output {
 	/// ```
 	pub fn light_multiple(&mut self,
 		buttons: impl IntoIterator<Item = impl std::borrow::Borrow<(Button, PaletteColor)>>,
-	) -> anyhow::Result<()> {
+	) -> Result<(), crate::MidiError> {
 
 		return self.set_buttons(buttons, LightMode::Plain);
 	}
@@ -747,7 +747,7 @@ impl Output {
 	/// ```
 	pub fn flash_multiple(&mut self,
 		buttons: impl IntoIterator<Item = impl std::borrow::Borrow<(Button, PaletteColor)>>,
-	) -> anyhow::Result<()> {
+	) -> Result<(), crate::MidiError> {
 
 		return self.set_buttons(buttons, LightMode::Flash);
 	}
@@ -764,13 +764,13 @@ impl Output {
 	/// ```
 	pub fn pulse_multiple(&mut self,
 		buttons: impl IntoIterator<Item = impl std::borrow::Borrow<(Button, PaletteColor)>>,
-	) -> anyhow::Result<()> {
+	) -> Result<(), crate::MidiError> {
 		
 		return self.set_buttons(buttons, LightMode::Pulse);
 	}
 
 	/// Clears the entire field of buttons. Equivalent to `output.light_all(PaletteColor::BLACK)`.
-	pub fn clear(&mut self) -> anyhow::Result<()> {
+	pub fn clear(&mut self) -> Result<(), crate::MidiError> {
 		return self.light_all(PaletteColor::BLACK);
 	}
 }

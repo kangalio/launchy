@@ -26,7 +26,7 @@ impl crate::DeviceSpec for Spec {
     fn flush(
 		canvas: &mut crate::DeviceCanvas<Self>,
 		changes: &[(u32, u32, (u8, u8, u8))])
-	-> anyhow::Result<()> {
+	-> Result<(), crate::MidiError> {
 
 		use crate::Canvas;
 
@@ -74,7 +74,7 @@ impl crate::DeviceSpec for Spec {
 		}
 	}
 
-	fn setup(output: &mut Self::Output) -> anyhow::Result<()> {
+	fn setup(output: &mut Self::Output) -> Result<(), crate::MidiError> {
 		output.reset()?;
 		Ok(())
 	}

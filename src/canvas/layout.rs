@@ -230,7 +230,7 @@ impl<'a> CanvasLayout<'a> {
 	/// ```
 	pub fn add_by_guess<E: 'a + DeviceCanvasTrait>(&mut self,
 		x: u32, y: u32,
-	) -> anyhow::Result<()> {
+	) -> Result<(), crate::MidiError> {
 
 		self.add(x, y, Rotation::None, DeviceCanvas::<E::Spec>::guess)
 	}
@@ -238,7 +238,7 @@ impl<'a> CanvasLayout<'a> {
 	/// Like `add_by_guess`, but with a parameter for the rotation of the Launchpad.
 	pub fn add_by_guess_rotated<E: 'a + DeviceCanvasTrait>(&mut self,
 		x: u32, y: u32, rotation: Rotation,
-	) -> anyhow::Result<()> {
+	) -> Result<(), crate::MidiError> {
 
 		self.add(x, y, rotation, DeviceCanvas::<E::Spec>::guess)
 	}
@@ -279,7 +279,7 @@ impl Canvas for CanvasLayout<'_> {
 		&pixel.color_old
 	}
 	
-	fn flush(&mut self) -> anyhow::Result<()> {
+	fn flush(&mut self) -> Result<(), crate::MidiError> {
 		for (&(global_x, global_y), pixel) in self.coordinate_map.iter_mut() {
 			let device = &mut self.devices[pixel.device_index];
 

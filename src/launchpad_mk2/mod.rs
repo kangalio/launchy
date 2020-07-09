@@ -25,7 +25,7 @@ impl crate::DeviceSpec for Spec {
     fn flush(
 		canvas: &mut crate::DeviceCanvas<Self>,
 		changes: &[(u32, u32, (u8, u8, u8))])
-	-> anyhow::Result<()> {
+	-> Result<(), crate::MidiError> {
 
         let changes = changes.iter().map(|&(x, y, (r, g, b))| {
 			let color = RgbColor::new(r, g, b);

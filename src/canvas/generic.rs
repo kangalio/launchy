@@ -31,7 +31,7 @@ pub trait DeviceSpec {
 	fn flush(
 		canvas: &mut crate::DeviceCanvas<Self>,
 		changes: &[(u32, u32, (u8, u8, u8))])
-	-> anyhow::Result<()>
+	-> Result<(), crate::MidiError>
 		where Self: Sized;
 
 	/// Convert a message from the underlying input handler into an abstract CanvasMessage. If the
@@ -40,7 +40,7 @@ pub trait DeviceSpec {
 	fn convert_message(msg: <Self::Input as crate::InputDevice>::Message) -> Option<CanvasMessage>;
 
 	/// Optional code to setup this device for canvas usage
-	fn setup(output: &mut Self::Output) -> anyhow::Result<()> {
+	fn setup(output: &mut Self::Output) -> Result<(), crate::MidiError> {
 		let _ = output;
 		Ok(())
 	}
@@ -74,7 +74,9 @@ impl<'a, Spec: DeviceSpec> DeviceCanvas<'a, Spec> {
 	/// Create a new canvas by guessing both input and output MIDI connection by their name. If you
 	/// need precise control over the specific MIDI connections that will be used, use
 	/// `DeviceCanvas::from_ports()` instead // TODO: not implemented yet
-	pub fn guess(mut callback: impl FnMut(CanvasMessage) + Send + 'a) -> anyhow::Result<Self> {
+	pub fn guess(
+		mut callback: impl FnMut(CanvasMessage) + Send + 'a
+	) -> Result<Self, crate::MidiError> {
 		use crate::midi_io::{InputDevice, OutputDevice};
 
 		let _input = Spec::Input::guess(move |msg| {
@@ -97,7 +99,7 @@ impl<'a, Spec: DeviceSpec> DeviceCanvas<'a, Spec> {
 		Ok(Self { _input, output, curr_state, new_state, num_sent_changes: 0 })
 	}
 
-	pub fn guess_polling() -> anyhow::Result<(Self, DeviceCanvasPoller)> {
+	pub fn guess_polling() -> Result<(Self, DeviceCanvasPoller), crate::MidiError> {
 		let (sender, receiver) = std::sync::mpsc::channel();
 		let canvas = Self::guess(move |msg| {
 			sender.send(msg)
@@ -139,7 +141,7 @@ impl<Spec: DeviceSpec> crate::Canvas for DeviceCanvas<'_, Spec> {
 		self.new_state.get_ref(x as usize, y as usize)
 	}
 
-	fn flush(&mut self) -> anyhow::Result<()> {
+	fn flush(&mut self) -> Result<(), crate::MidiError> {
 		let mut changes: Vec<(u32, u32, (u8, u8, u8))> = Vec::with_capacity(9 * 9);
 
 		for pad in self.iter() {
