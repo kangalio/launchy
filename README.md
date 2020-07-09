@@ -55,25 +55,25 @@ for msg in input.iter() {
 
 ```rust
 // Setup devices
-let (mut canvas, input) = launchy::CanvasLayout::new_polling();
-canvas.add_by_guess::<launchy::control::Canvas>(0, 2)?;
-canvas.add_by_guess_rotated::<launchy::mk2::Canvas>(8, 12, launchy::Rotation::UpsideDown)?;
-canvas.add_by_guess::<launchy::s::Canvas>(10, 0)?;
+let (mut canvas, poller) = launchy::CanvasLayout::new_polling();
+canvas.add_by_guess_rotated::<launchy::control::Canvas>(0, 14, launchy::Rotation::Right)?;
+canvas.add_by_guess_rotated::<launchy::mk2::Canvas>(10, 18, launchy::Rotation::UpsideDown)?;
+canvas.add_by_guess_rotated::<launchy::s::Canvas>(2, 8, launchy::Rotation::Right)?;
 let mut canvas = canvas.into_padded();
 
 // Do the actual animation
 for color in (0u64..).map(|f| Color::red_green_color(f as f32 / 60.0 / 2.5)) {
-	for msg in input.iter_for_millis(17).filter(|msg| msg.is_press()) {
-		canvas.set_at(msg.pad(), color * 60.0);
+	for msg in poller.iter_for_millis(17).filter(|msg| msg.is_press()) {
+		canvas[msg.pad()] = color * 60.0;
 	}
 	canvas.flush()?;
 
 	for pad in canvas.iter() {
 		let surrounding_color = pad.neighbors_5().iter()
-				.map(|&p| canvas.get_old(p).unwrap_or(Color::BLACK))
+				.map(|&p| canvas.get(p).unwrap_or(Color::BLACK))
 				.sum::<Color>() / 5.0 / 1.05;
 		
-		canvas.set_at(pad, canvas.at(pad).mix(surrounding_color, 0.4));
+		canvas[pad] = canvas[pad].mix(surrounding_color, 0.4);
 	}
 }
 ```
@@ -82,18 +82,18 @@ for color in (0u64..).map(|f| Color::red_green_color(f as f32 / 60.0 / 2.5)) {
 ```rust
 let (mut canvas, poller) = launchy::mk2::Canvas::guess_polling()?;
 
+// Initialize snake
 let mut snake = std::collections::VecDeque::new();
 snake.push_front(Pad { x: 0, y: 1 });
 snake.push_front(Pad { x: 1, y: 1 });
 snake.push_front(Pad { x: 2, y: 1 });
 
+// Set initial snake direction and pellet position
 let mut direction = (1, 0);
 let mut pellet = Pad { x: 5, y: 6 };
 
 loop {
-	sleep(500);
-
-	for msg in poller.iter_pending().filter(|msg| msg.is_press()) {
+	for msg in poller.iter_for(Duration::from_millis(500)).filter(|msg| msg.is_press()) {
 		match msg.pad() {
 			Pad { x: 0, y: 0 } => direction = (0, -1),
 			Pad { x: 1, y: 0 } => direction = (0, 1),
@@ -117,9 +117,9 @@ loop {
 
 	canvas.clear();
 	for &pad in &snake {
-		canvas.set_at(pad, Color::YELLOW);
+		canvas[pad] = Color::YELLOW;
 	}
-	canvas.set_at(pellet, Color::GREEN);
+	canvas[pellet] = Color::GREEN;
 	canvas.flush()?;
 }
 ```-->
