@@ -29,7 +29,7 @@ use super::*;
 /// light_white(&mut launchy::s::Canvas::guess());
 /// light_white(&mut launchy::mk2::Canvas::guess());
 /// ```
-pub trait Canvas {
+pub trait Canvas: std::ops::Index<Pad, Output=Color> + std::ops::IndexMut<Pad, Output=Color> {
 	// These are the methods that _need_ to be implemented by the implementor
 
 	/// The width of the smallest rectangle that still fully encapsulates the shape of this canvas
@@ -38,65 +38,84 @@ pub trait Canvas {
 	fn bounding_box_height(&self) -> u32;
 	/// Check if the location is in bounds
 	fn is_valid(&self, x: u32, y: u32) -> bool;
-	/// Retrieves the current color at the given location. No bounds checking
-	fn get_unchecked(&self, x: u32, y: u32) -> Color;
-	/// Sets the color at the given location. No bounds checking
-	fn set_unchecked(&mut self, x: u32, y: u32, color: Color);
-	/// Retrieves the old, unflushed color at the given location. No bounds checking
-	fn get_old_unchecked(&self, x: u32, y: u32) -> Color;
+	
+	/// Returns a reference to the color at the given position. No bounds checking
+	fn get_old_unchecked_ref(&self, x: u32, y: u32) -> &Color;
+	/// Returns a reference to the in-buffer/unflushed color at the given position. No bounds
+	/// checking
+	fn get_new_unchecked_ref(&self, x: u32, y: u32) -> &Color;
+	/// Returns a mutable reference to the color at the given position. No bounds checking
+	fn get_new_unchecked_mut(&mut self, x: u32, y: u32) -> &mut Color;
+	
 	/// Flush the accumulated changes to the underlying device
 	fn flush(&mut self) -> anyhow::Result<()>;
-	
-	// These are optional methods
-	
 	/// The lowest visible brightness on this canvas. Used to calibrate brightness across Launchpads
-	fn lowest_visible_brightness(&self) -> f32 {
-		0.0
-	}
+	fn lowest_visible_brightness(&self) -> f32;
+	
 
 	// These are defaut implementations that you get for free
 
-	/// Sets the color at the given location. Returns None if the location is out of bounds
-	#[must_use]
-	fn set(&mut self, pad: Pad, color: Color) -> Option<()> {
-		if pad.x >= 0 && pad.y >= 0 && self.is_valid(pad.x as u32, pad.y as u32) {
-			self.set_unchecked(pad.x as u32, pad.y as u32, color);
-			Some(())
-		} else {
-			None
-		}
-	}
-
-	fn set_at(&mut self, pad: Pad, color: Color) {
-		self.set(pad, color).expect("Pad is out of bounds");
-	}
-
-	/// Sets the color at the given location. Returns None if the location is out of bounds
-	#[must_use]
+	// Returns the color at the given position, or None if out of bounds
 	fn get(&self, pad: Pad) -> Option<Color> {
 		if pad.x >= 0 && pad.y >= 0 && self.is_valid(pad.x as u32, pad.y as u32) {
-			Some(self.get_unchecked(pad.x as u32, pad.y as u32))
+			Some(*self.get_old_unchecked_ref(pad.x as u32, pad.y as u32))
 		} else {
 			None
 		}
 	}
 
-	/// A very vaguely named method for the sake of brevity. Sorry about that
-	/// 
-	/// Returns the unflushed color at the given location. Panics if the location is out of bounds.
-	fn at(&self, pad: Pad) -> Color {
-		self.get_old(pad).expect("Pad is out of bounds")
+	// Returns the color at the given position. No bounds checking
+	fn get_old_unchecked(&self, x: u32, y: u32) -> Color {
+		*self.get_old_unchecked_ref(x, y)
 	}
 
-	/// Retrieves the old, unflushed color at the given location. Returns None if the location is
-	/// out of bounds
-	#[must_use]
-	fn get_old(&self, pad: Pad) -> Option<Color> {
+	// Returns the in-buffer/unflushed color at the given position. No bounds checking
+	fn get_new_unchecked(&self, x: u32, y: u32) -> Color {
+		*self.get_new_unchecked_ref(x, y)
+	}
+
+	// Set the color at the given position. No bounds checking
+	fn set_unchecked(&mut self, x: u32, y: u32, color: Color) {
+		*self.get_new_unchecked_mut(x, y) = color;
+	}
+
+	// Returns a reference to the color at the given position, or None if out of bounds
+	fn get_ref(&self, pad: Pad) -> Option<&Color> {
 		if pad.x >= 0 && pad.y >= 0 && self.is_valid(pad.x as u32, pad.y as u32) {
-			Some(self.get_old_unchecked(pad.x as u32, pad.y as u32))
+			Some(self.get_old_unchecked_ref(pad.x as u32, pad.y as u32))
 		} else {
 			None
 		}
+	}
+
+	// Returns a mutable reference to the color at the given position, or None if out of bounds
+	fn get_mut(&mut self, pad: Pad) -> Option<&mut Color> {
+		if pad.x >= 0 && pad.y >= 0 && self.is_valid(pad.x as u32, pad.y as u32) {
+			Some(self.get_new_unchecked_mut(pad.x as u32, pad.y as u32))
+		} else {
+			None
+		}
+	}
+
+	/// Returns the old, unflushed color at the given location, or None if out of bounds
+	fn get_new(&self, pad: Pad) -> Option<Color> {
+		if pad.x >= 0 && pad.y >= 0 && self.is_valid(pad.x as u32, pad.y as u32) {
+			Some(*self.get_new_unchecked_ref(pad.x as u32, pad.y as u32))
+		} else {
+			None
+		}
+	}
+
+	/// Returns the old, unflushed color at the given location. Panics if out of bounds
+	fn at_new(&self, pad: Pad) -> Color {
+		self.get_new(pad).expect("Pad coordinates out of bounds")
+	}
+
+	// Sets the color at the given position. Returns None if out of bounds
+	#[must_use]
+	fn set(&mut self, pad: Pad, color: Color) -> Option<()> {
+		*self.get_mut(pad)? = color;
+		Some(())
 	}
 
 	/// An iterator over the buttons of a given Canvas. Create an iterator by calling `.iter()` on a
@@ -170,8 +189,8 @@ pub trait Canvas {
 	/// canvas.clear();
 	/// ```
 	fn clear(&mut self) where Self: Sized {
-		for btn in self.iter() {
-			btn.set(self, Color::BLACK);
+		for pad in self.iter() {
+			self[pad] = Color::BLACK;
 		}
 	}
 

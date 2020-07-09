@@ -39,8 +39,8 @@ impl crate::DeviceSpec for Spec {
 			for y in 1..=8 {
 				for x in (0..=7).step_by(2) {
 					canvas.output.set_button_rapid(
-						convert_color(canvas.get_unchecked(x, y)), DoubleBufferingBehavior::Copy,
-						convert_color(canvas.get_unchecked(x + 1, y)), DoubleBufferingBehavior::Copy,
+						convert_color(canvas.get_new_unchecked(x, y)), DoubleBufferingBehavior::Copy,
+						convert_color(canvas.get_new_unchecked(x + 1, y)), DoubleBufferingBehavior::Copy,
 					)?;
 				}
 			}
@@ -48,7 +48,7 @@ impl crate::DeviceSpec for Spec {
 			// dummy-light some button just to get out of the rapid update mode
 			canvas.output.light(
 				Button::ControlButton { index: 0 },
-				convert_color(canvas.get_unchecked(0, 0))
+				convert_color(canvas.get_new_unchecked(0, 0))
 			)?;
 		} else {
 			for &(x, y, (r, g, _b)) in changes {

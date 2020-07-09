@@ -119,32 +119,34 @@ impl<S: DeviceSpec> DeviceCanvasTrait for DeviceCanvas<'_, S> {
 	type Spec = S;
 }
 
+impl_traits_for_canvas!(<'a, S: DeviceSpec>, DeviceCanvas);
+
 impl<Spec: DeviceSpec> crate::Canvas for DeviceCanvas<'_, Spec> {
 	fn bounding_box_width(&self) -> u32 { Spec::BOUNDING_BOX_WIDTH }
 	fn bounding_box_height(&self) -> u32 { Spec::BOUNDING_BOX_HEIGHT }
 	fn is_valid(&self, x: u32, y: u32) -> bool { Spec::is_valid(x, y) }
 	fn lowest_visible_brightness(&self) -> f32 { 1.0 / Spec::COLOR_PRECISION as f32 }
 
-	fn set_unchecked(&mut self, x: u32, y: u32, color: crate::Color) {
-		self.new_state.set(x as usize, y as usize, color);
+	fn get_old_unchecked_ref(&self, x: u32, y: u32) -> &Color {
+		self.curr_state.get_ref(x as usize, y as usize)
 	}
 
-	fn get_unchecked(&self, x: u32, y: u32) -> crate::Color {
-		return self.new_state.get(x as usize, y as usize);
+	fn get_new_unchecked_mut(&mut self, x: u32, y: u32) -> &mut Color {
+		self.new_state.get_mut(x as usize, y as usize)
 	}
 
-	fn get_old_unchecked(&self, x: u32, y: u32) -> crate::Color {
-		return self.curr_state.get(x as usize, y as usize);
+	fn get_new_unchecked_ref(&self, x: u32, y: u32) -> &Color {
+		self.new_state.get_ref(x as usize, y as usize)
 	}
 
 	fn flush(&mut self) -> anyhow::Result<()> {
 		let mut changes: Vec<(u32, u32, (u8, u8, u8))> = Vec::with_capacity(9 * 9);
 
-		for button in self.iter() {
-			let old = button.get_old(self).quantize(Spec::COLOR_PRECISION);
-			let new = button.get(self).quantize(Spec::COLOR_PRECISION);
+		for pad in self.iter() {
+			let old = self[pad].quantize(Spec::COLOR_PRECISION);
+			let new = self.at_new(pad).quantize(Spec::COLOR_PRECISION);
 			if new != old {
-				changes.push((button.x as u32, button.y as u32, new));
+				changes.push((pad.x as u32, pad.y as u32, new));
 			}
 		}
 
@@ -166,5 +168,3 @@ impl<Spec: DeviceSpec> crate::Canvas for DeviceCanvas<'_, Spec> {
 		return Ok(());
 	}
 }
-
-impl_traits_for_canvas!(<'a, S: DeviceSpec>, DeviceCanvas);

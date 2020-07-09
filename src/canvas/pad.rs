@@ -1,4 +1,4 @@
-use super::*;
+// use super::*;
 
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug, Default, Hash)]
@@ -68,21 +68,6 @@ impl Pad {
 			self.left(1),
 			self.left(1).up(1),
 		]
-	}
-
-	/// Get the color of this button in the given canvas
-    pub fn get(self, canvas: &impl Canvas) -> Color {
-		canvas.get(self).expect("Coordinates out of bounds")
-	}
-
-	/// Get the unflushed color of this button in the given canvas
-    pub fn get_old(self, canvas: &impl Canvas) -> Color {
-		canvas.get_old(self).expect("Coordinates out of bounds")
-	}
-
-	/// Set the color of this button in the given canvas
-	pub fn set(self, canvas: &mut impl Canvas, color: Color) {
-		canvas.set(self, color).expect("Coordinates out of bounds");
 	}
 }
 

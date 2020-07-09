@@ -89,8 +89,8 @@ impl crate::MsgPollingWrapper for CanvasLayoutPoller {
 
 struct Pixel {
 	device_index: usize,
-	actual_color: Color,
-	actual_color_old: Color,
+	color_new: Color,
+	color_old: Color,
 }
 
 fn transform_color(color: Color, source: f32, target: f32) -> Color {
@@ -130,7 +130,7 @@ impl<'a> CanvasLayout<'a> {
 	/// implement `Fn` because it may be called from multiple devices concurrently.
 	pub fn new(callback: impl Fn(CanvasMessage) + Send + Sync + 'a) -> Self {
 		return Self {
-			devices: Vec::with_capacity(10), // HACKJOB HACKJOB HACKJOB I NEED TO PREVENT REALLOCATIONS SO THAT THE CALLBACK WRAPPER DOESNT READ FROM UNINITIALIZED MEM so 10 ought to be enough hopefully
+			devices: Vec::new(),
 			coordinate_map: HashMap::new(),
 			callback: std::sync::Arc::new(Box::new(callback)),
 			light_threshold: 1.0 / 4.0, // good default value? I have, like, no idea
@@ -190,12 +190,12 @@ impl<'a> CanvasLayout<'a> {
 		
 		let index = self.devices.len(); // The index of soon-to-be inserted object
 		
-		for btn in canvas.iter() {
-			let translated_coords = to_global(btn.x as u32, btn.y as u32, rotation, x_offset, y_offset);
+		for pad in canvas.iter() {
+			let translated_coords = to_global(pad.x as u32, pad.y as u32, rotation, x_offset, y_offset);
 			let old_value = self.coordinate_map.insert(translated_coords, Pixel {
 				device_index: index,
-				actual_color: btn.get(&canvas),
-				actual_color_old: btn.get_old(&canvas),
+				color_new: canvas.at_new(pad),
+				color_old: canvas[pad],
 			});
 			
 			// check for overlap
@@ -263,40 +263,41 @@ impl Canvas for CanvasLayout<'_> {
 		return self.coordinate_map.contains_key(&(x, y));
 	}
 	
-	fn get_unchecked(&self, x: u32, y: u32) -> Color {
+	fn get_new_unchecked_ref(&self, x: u32, y: u32) -> &Color {
 		let pixel = self.coordinate_map.get(&(x, y)).unwrap();
-		pixel.actual_color
+		&pixel.color_new
 	}
 	
-	fn set_unchecked(&mut self, x: u32, y: u32, color: Color) {
+	fn get_new_unchecked_mut(&mut self, x: u32, y: u32) -> &mut Color {
 		// store the actual pixel color for possible retrieval later
-		let mut pixel = self.coordinate_map.get_mut(&(x, y)).unwrap();
-		pixel.actual_color = color;
-
-		let device = &mut self.devices[pixel.device_index];
-
-		// but send the calibrated version to the actual underlying device
-		let transformed_color = transform_color(
-			color,
-			self.light_threshold,
-			device.canvas.lowest_visible_brightness(),
-		);
-		let (local_x, local_y) = device.to_local(x, y);
-		device.canvas.set_unchecked(local_x, local_y, transformed_color);
+		let pixel = self.coordinate_map.get_mut(&(x, y)).unwrap();
+		&mut pixel.color_new
 	}
 	
-	fn get_old_unchecked(&self, x: u32, y: u32) -> Color {
+	fn get_old_unchecked_ref(&self, x: u32, y: u32) -> &Color {
 		let pixel = self.coordinate_map.get(&(x, y)).unwrap();
-		pixel.actual_color_old
+		&pixel.color_old
 	}
 	
 	fn flush(&mut self) -> anyhow::Result<()> {
-		for device in &mut self.devices {
-			device.canvas.flush()?;
+		for (&(global_x, global_y), pixel) in self.coordinate_map.iter_mut() {
+			let device = &mut self.devices[pixel.device_index];
+
+			let transformed_color = transform_color(
+				pixel.color_new,
+				self.light_threshold,
+				device.canvas.lowest_visible_brightness(),
+			);
+
+			let (local_x, local_y) = device.to_local(global_x, global_y);
+
+			device.canvas.set_unchecked(local_x, local_y, transformed_color);
+
+			pixel.color_old = pixel.color_new;
 		}
 
-		for pixel in self.coordinate_map.values_mut() {
-			pixel.actual_color_old = pixel.actual_color;
+		for device in &mut self.devices {
+			device.canvas.flush()?;
 		}
 
 		return Ok(());

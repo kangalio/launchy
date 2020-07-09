@@ -14,6 +14,20 @@
 // duplicate the trait implementations for each Canvas implementor. For that, I made this macro.
 macro_rules! impl_traits_for_canvas {
 	(<$($a:tt $(: $b:tt)?),+>, $i:ident) => {
+		impl<$($a $(: $b)?),+> std::ops::Index<Pad> for $i<$($a),+> {
+			type Output = Color;
+		
+			fn index(&self, pad: Pad) -> &Color {
+				self.get_ref(pad).expect("Pad coordinates out of bounds")
+			}
+		}
+		
+		impl<$($a $(: $b)?),+> std::ops::IndexMut<Pad> for $i<$($a),+> {
+			fn index_mut(&mut self, pad: Pad) -> &mut Color {
+				self.get_mut(pad).expect("Pad coordinates out of bounds")
+			}
+		}
+
 		#[cfg(feature = "embedded-graphics-support")]
 		mod eg {
 			pub use embedded_graphics::{prelude::*, DrawTarget, pixelcolor::{Rgb888, RgbColor}};

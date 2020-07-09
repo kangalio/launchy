@@ -50,39 +50,35 @@ impl<C: Canvas> PaddingCanvas<C> {
 }
 
 impl<C: Canvas> Canvas for PaddingCanvas<C> {
-    fn bounding_box_width(&self) -> u32 {
-        self.inner.bounding_box_width()
-	}
-	
-    fn bounding_box_height(&self) -> u32 {
-        self.inner.bounding_box_height()
-	}
+    fn bounding_box_width(&self) -> u32 { self.inner.bounding_box_width() }
+	fn bounding_box_height(&self) -> u32 { self.inner.bounding_box_height() }
+	fn lowest_visible_brightness(&self) -> f32 { self.inner.lowest_visible_brightness() }
 	
     fn is_valid(&self, x: u32, y: u32) -> bool {
         x < self.bounding_box_width() && y < self.bounding_box_height()
 	}
 	
-    fn get_unchecked(&self, x: u32, y: u32) -> Color {
+    fn get_old_unchecked_ref(&self, x: u32, y: u32) -> &Color {
         if self.inner.is_valid(x, y) {
-			self.inner.get_unchecked(x, y)
+			self.inner.get_old_unchecked_ref(x, y)
 		} else {
-			self.new_buf.get(x as usize, y as usize)
+			self.curr_buf.get_ref(x as usize, y as usize)
 		}
 	}
 	
-    fn set_unchecked(&mut self, x: u32, y: u32, color: Color) {
-		if self.inner.is_valid(x, y) {
-			self.inner.set_unchecked(x, y, color);
+    fn get_new_unchecked_ref(&self, x: u32, y: u32) -> &Color {
+        if self.inner.is_valid(x, y) {
+			self.inner.get_new_unchecked_ref(x, y)
 		} else {
-			self.new_buf.set(x as usize, y as usize, color);
+			self.new_buf.get_ref(x as usize, y as usize)
 		}
 	}
-	
-    fn get_old_unchecked(&self, x: u32, y: u32) -> Color {
+
+    fn get_new_unchecked_mut(&mut self, x: u32, y: u32) -> &mut Color {
         if self.inner.is_valid(x, y) {
-			self.inner.get_old_unchecked(x, y)
+			self.inner.get_new_unchecked_mut(x, y)
 		} else {
-			self.curr_buf.get(x as usize, y as usize)
+			self.new_buf.get_mut(x as usize, y as usize)
 		}
 	}
 	
