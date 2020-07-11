@@ -10,8 +10,7 @@ keywords = ["novation", "launchpad", "midi", "midi-controller", "lightshow"]
 categories = ["api-bindings", "games", "graphics", "rendering", "multimedia::images"]
 
 [dependencies]
-#midir = { path = "../midir" }
-midir = { git = "https://github.com/kangalioo/midir" }
+midir = "0.6"
 thiserror = "1.0"
 embedded-graphics = { version = "0.6", optional = true }
 

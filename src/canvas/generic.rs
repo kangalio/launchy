@@ -61,8 +61,8 @@ impl crate::MsgPollingWrapper for DeviceCanvasPoller {
 /// user of the library don't need to access this struct directly. Use the "Canvas" type aliases
 /// that each launchpad module provides, for example `launchy::mk2::Canvas` or
 /// `launchy::s::Canvas`.
-pub struct DeviceCanvas<'a, Spec: DeviceSpec> {
-	_input: crate::InputDeviceHandler<'a>,
+pub struct DeviceCanvas<Spec: DeviceSpec> {
+	_input: crate::InputDeviceHandler,
 	pub(crate) output: Spec::Output,
 	curr_state: crate::util::Array2d<crate::Color>,
 	new_state: crate::util::Array2d<crate::Color>,
@@ -70,12 +70,12 @@ pub struct DeviceCanvas<'a, Spec: DeviceSpec> {
 	num_sent_changes: usize,
 }
 
-impl<'a, Spec: DeviceSpec> DeviceCanvas<'a, Spec> {
+impl<Spec: DeviceSpec> DeviceCanvas<Spec> {
 	/// Create a new canvas by guessing both input and output MIDI connection by their name. If you
 	/// need precise control over the specific MIDI connections that will be used, use
 	/// [`DeviceCanvas::from_ports`] instead // TODO: not implemented yet
 	pub fn guess(
-		mut callback: impl FnMut(CanvasMessage) + Send + 'a
+		mut callback: impl FnMut(CanvasMessage) + Send + 'static
 	) -> Result<Self, crate::MidiError> {
 		use crate::midi_io::{InputDevice, OutputDevice};
 
@@ -117,13 +117,13 @@ pub trait DeviceCanvasTrait {
 	type Spec: DeviceSpec;
 }
 
-impl<S: DeviceSpec> DeviceCanvasTrait for DeviceCanvas<'_, S> {
+impl<S: DeviceSpec> DeviceCanvasTrait for DeviceCanvas<S> {
 	type Spec = S;
 }
 
-impl_traits_for_canvas!(<'a, S: DeviceSpec>, DeviceCanvas);
+impl_traits_for_canvas!(<S: DeviceSpec>, DeviceCanvas);
 
-impl<Spec: DeviceSpec> crate::Canvas for DeviceCanvas<'_, Spec> {
+impl<Spec: DeviceSpec> crate::Canvas for DeviceCanvas<Spec> {
 	fn bounding_box_width(&self) -> u32 { Spec::BOUNDING_BOX_WIDTH }
 	fn bounding_box_height(&self) -> u32 { Spec::BOUNDING_BOX_HEIGHT }
 	fn is_valid(&self, x: u32, y: u32) -> bool { Spec::is_valid(x, y) }

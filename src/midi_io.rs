@@ -36,19 +36,19 @@ pub trait OutputDevice where Self: Sized {
 
 /// A handler for a Launchpad input connection. This variant is used when an input connection is
 /// initiated with callback
-pub struct InputDeviceHandler<'a> {
-	_connection: MidiInputConnection<'a, ()>
+pub struct InputDeviceHandler {
+	_connection: MidiInputConnection<()>
 }
 
 /// A handler for a Launchpad input connection that can be polled for new messages. The actual
 /// polling methods are implemented inside [MsgPollingWrapper](crate::MsgPollingWrapper). Look there
 /// for documentation on how to poll messages.
-pub struct InputDeviceHandlerPolling<'a, Message> {
-	_connection: MidiInputConnection<'a, ()>,
+pub struct InputDeviceHandlerPolling<Message> {
+	_connection: MidiInputConnection<()>,
 	receiver: std::sync::mpsc::Receiver<Message>,
 }
 
-impl<Message> crate::MsgPollingWrapper for InputDeviceHandlerPolling<'_, Message> {
+impl<Message> crate::MsgPollingWrapper for InputDeviceHandlerPolling<Message> {
 	type Message = Message;
 
 	fn receiver(&self) -> &std::sync::mpsc::Receiver<Self::Message> { &self.receiver }
@@ -62,9 +62,9 @@ pub trait InputDevice {
 	fn decode_message(timestamp: u64, data: &[u8]) -> Self::Message;
 
 	#[must_use = "If not saved, the connection will be immediately dropped"]
-	fn from_port<'a, F>(midi_input: MidiInput, port: &MidiInputPort, mut user_callback: F)
-			-> Result<InputDeviceHandler<'a>, crate::MidiError>
-			where F: FnMut(Self::Message) + Send + 'a {
+	fn from_port<F>(midi_input: MidiInput, port: &MidiInputPort, mut user_callback: F)
+			-> Result<InputDeviceHandler, crate::MidiError>
+			where F: FnMut(Self::Message) + Send + 'static {
 		
 		let midir_callback = move |timestamp: u64, data: &[u8], _: &mut _| {
 			let msg = Self::decode_message(timestamp, data);
@@ -78,7 +78,7 @@ pub trait InputDevice {
 
 	#[must_use = "If not saved, the connection will be immediately dropped"]
 	fn from_port_polling(midi_input: MidiInput, port: &MidiInputPort)
-			-> Result<InputDeviceHandlerPolling<'static, Self::Message>, crate::MidiError>
+			-> Result<InputDeviceHandlerPolling<Self::Message>, crate::MidiError>
 			where Self::Message: Send + 'static {
 		
 		let (sender, receiver) = std::sync::mpsc::channel();
@@ -99,8 +99,8 @@ pub trait InputDevice {
 	
 	/// Search the midi devices and choose the first midi device matching the wanted Launchpad type.
 	#[must_use = "If not saved, the connection will be immediately dropped"]
-	fn guess<'a, F>(user_callback: F) -> Result<InputDeviceHandler<'a>, crate::MidiError>
-			where F: FnMut(Self::Message) + Send + 'a {
+	fn guess<F>(user_callback: F) -> Result<InputDeviceHandler, crate::MidiError>
+			where F: FnMut(Self::Message) + Send + 'static {
 		
 		let midi_input = MidiInput::new(crate::APPLICATION_NAME)?;
 
@@ -112,7 +112,7 @@ pub trait InputDevice {
 
 	/// Search the midi devices and choose the first midi device matching the wanted Launchpad type.
 	#[must_use = "If not saved, the connection will be immediately dropped"]
-	fn guess_polling<'a>() -> Result<InputDeviceHandlerPolling<'a, Self::Message>, crate::MidiError>
+	fn guess_polling() -> Result<InputDeviceHandlerPolling<Self::Message>, crate::MidiError>
 			where Self::Message: Send + 'static {
 		
 		let midi_input = MidiInput::new(crate::APPLICATION_NAME)?;

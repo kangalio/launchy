@@ -121,14 +121,14 @@ fn transform_color(color: Color, source: f32, target: f32) -> Color {
 pub struct CanvasLayout<'a> {
 	devices: Vec<LayoutDevice<'a>>,
 	coordinate_map: HashMap<(u32, u32), Pixel>, // we need to store some stuff for each pixel
-	callback: std::sync::Arc<Box<dyn Fn(CanvasMessage) + Send + Sync + 'a>>,
+	callback: std::sync::Arc<Box<dyn Fn(CanvasMessage) + Send + Sync + 'static>>,
 	light_threshold: f32,
 }
 
 impl<'a> CanvasLayout<'a> {
 	/// Create a new CanvasLayout that sends messages to the provided callback. The callback must
 	/// implement `Fn` because it may be called from multiple devices concurrently.
-	pub fn new(callback: impl Fn(CanvasMessage) + Send + Sync + 'a) -> Self {
+	pub fn new(callback: impl Fn(CanvasMessage) + Send + Sync + 'static) -> Self {
 		return Self {
 			devices: Vec::new(),
 			coordinate_map: HashMap::new(),
@@ -177,7 +177,7 @@ impl<'a> CanvasLayout<'a> {
 		rotation: Rotation,
 		creator: F
 	) -> Result<(), E>
-		where F: FnOnce(Box<dyn Fn(CanvasMessage) + Send + 'a>) -> Result<C, E> {
+		where F: FnOnce(Box<dyn Fn(CanvasMessage) + Send + Sync + 'static>) -> Result<C, E> {
 
 		let callback = self.callback.clone();
 		let canvas = (creator)(Box::new(move |msg| {

@@ -156,4 +156,4 @@ impl crate::DeviceSpec for Spec {
 	}
 }
 
-pub type Canvas<'a> = crate::DeviceCanvas<'a, Spec>;
+pub type Canvas<'a> = crate::DeviceCanvas<Spec>;
