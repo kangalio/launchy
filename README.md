@@ -1,4 +1,9 @@
 # launchy
+
+[![docs.rs](https://docs.rs/launchy/badge.svg)](https://docs.rs/launchy)
+[![crates.io](https://img.shields.io/crates/v/launchy)](https://crates.io/crates/launchy)
+[![License](https://img.shields.io/badge/license-MIT-blue)](https://github.com/kangalioo/launchy/blob/master/LICENSE)
+
 An exhaustive Rust API for the Novation Launchpad devices, optimized for maximum expressiveness and minimum boilerplate!
 
 <a href="https://youtu.be/DHwv7yu5dJc"><img src="https://imgur.com/gBKAjgS.jpg" width="50%"/></a>
