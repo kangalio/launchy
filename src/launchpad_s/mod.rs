@@ -1,3 +1,9 @@
+/*!
+# Launchpad S low-level API
+
+![Picture](https://imgur.com/NzwlsRh.png)
+*/
+
 mod input;
 pub use input::*;
 
@@ -7,6 +13,7 @@ pub use output::*;
 pub use crate::protocols::Button80 as Button;
 
 
+#[doc(hidden)]
 pub struct Spec;
 
 impl crate::DeviceSpec for Spec {

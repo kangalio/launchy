@@ -2,9 +2,13 @@ use super::Button;
 
 
 #[derive(Debug, Eq, PartialEq, Hash, Clone)]
+/// The Launchpad S input message enum
 pub enum Message {
+	// A button has been pressed
 	Press { button: Button },
+	// A button has been released
 	Release { button: Button },
+	/// Emitted after a text scroll was initiated
 	TextEndedOrLooped,
 	/// Every once in a while, the device randomly spews out a weird undocumented MIDI message.
 	/// I have no idea what that is about. It comes relatively regularly though, so I don't want
@@ -16,6 +20,7 @@ fn decode_grid_button(btn: u8) -> Button {
 	return Button::GridButton { x: btn % 16, y: btn / 16 };
 }
 
+/// The Launchpad S input connection creator.
 pub struct Input;
 
 impl crate::InputDevice for Input {

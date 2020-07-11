@@ -1,27 +1,5 @@
-#[macro_export]
-macro_rules! ok_or_continue {
-	( $e:expr ) => (
-		match $e {
-			Ok(value) => value,
-			Err(_e) => {
-				continue;
-			},
-		}
-	)
-}
-
-#[macro_export]
-macro_rules! some_or_continue {
-	( $e:expr ) => (
-		match $e {
-			Some(value) => value,
-			None => {
-				continue
-			},
-		}
-	)
-}
-
+/// An ad-hoc 2d array. This is used internally for buffering light state changes.
+#[doc(hidden)] // people probably don't need this, or even _want_ to use this
 #[derive(Clone, Eq, PartialEq, Debug, Hash)]
 pub struct Array2d<T: Default + Copy> {
 	width: usize,

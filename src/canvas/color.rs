@@ -83,9 +83,9 @@ impl Color {
 	/// `(component * range).floor().min(range - 1).max(0)` on every component.
 	/// 
 	/// This function is used by the Canvas implementation of the Launchpads to downscale the
-	/// high-precision `Color`s to their respective color width. For example the Launchpad S only
+	/// high-precision [`Color`]s to their respective color width. For example the Launchpad S only
 	/// supports four levels of brightness for its red and green component, respectively. Therefore,
-	/// the Launchpad S calls `.quantize(4)` on a given `Color` to derive how that color should be
+	/// the Launchpad S calls `.quantize(4)` on a given [`Color`] to derive how that color should be
 	/// represented on the Launchpad S LEDs.
 	pub fn quantize(self, range: u16) -> (u8, u8, u8) {
 		let quant = |f: f32| (f * range as f32).max(0.0).min(range as f32 - 1.0) as u8;

@@ -5,17 +5,20 @@ use super::Button;
 
 pub use crate::protocols::double_buffering::*;
 
-/// ## Double buffering
-/// To make more economical use of data, the Launchpad has a feature called double buffering.
-/// Essentially, Launchpad manages two sets of LED data - buffers - for each pad. By default, these
-/// are configured so that the buffer that is updated by incoming MIDI messages is the same as the
-/// one that is visible, so that note-on messages immediately change their respective pads. However,
-/// the buffers can also be configured so that Launchpad’s LED status is updated invisibly. With a
-/// single command, these buffers can then be swapped. The pads will instantly update to show their
-/// pre-programmed state, while the pads can again be updated invisibly ready for the next swap. The
-/// visible buffer can alternatively be configured to swap automatically at 280ms intervals in order
-/// to configure LEDs to flash.
+/**
+The Launchpad S output connection handler.
 
+# Double buffering
+To make more economical use of data, the Launchpad has a feature called double buffering.
+Essentially, Launchpad manages two sets of LED data - buffers - for each pad. By default, these
+are configured so that the buffer that is updated by incoming MIDI messages is the same as the
+one that is visible, so that note-on messages immediately change their respective pads. However,
+the buffers can also be configured so that Launchpad’s LED status is updated invisibly. With a
+single command, these buffers can then be swapped. The pads will instantly update to show their
+pre-programmed state, while the pads can again be updated invisibly ready for the next swap. The
+visible buffer can alternatively be configured to swap automatically at 280ms intervals in order
+to configure LEDs to flash.
+*/
 pub struct Output {
 	connection: MidiOutputConnection,
 }
@@ -142,43 +145,6 @@ impl Output {
 		return self.send(&[0xB0, 0, last_byte]);
 	}
 
-	// ------------------------------------------------------
-	// Below here are shorthand functions
-	// ------------------------------------------------------
-
-	/// All LEDs are turned off, and the mapping mode, buffer settings, and duty cycle are reset to
-	/// their default values.
-	pub fn reset(&mut self) -> Result<(), crate::MidiError> {
-		return self.turn_on_all_leds(Brightness::Off);
-	}
-
-	pub fn light(&mut self, button: Button, color: Color) -> Result<(), crate::MidiError> {
-		return self.set_button(button, color, DoubleBufferingBehavior::Copy);
-	}
-
-	pub fn light_all(&mut self, color: Color) -> Result<(), crate::MidiError> {
-		let dbb = DoubleBufferingBehavior::Copy; // this is _probably_ a good default
-
-		for _ in 0..40 {
-			self.set_button_rapid(color, dbb, color, dbb)?;
-		}
-		
-		return Ok(());
-	}
-}
-
-fn make_color_code_loopable(color: Color, should_loop: bool)
-		-> u8 {
-	
-	// Bit 6 - Loop - If 1: loop the text
-	// Bit 5..4 - Green LED brightness
-	// Bit 3..2 - uhhhh, I think these should probably be empty?
-	// Bit 1..0 - Red LED brightness
-	
-	return ((should_loop as u8) << 6) | (color.green() << 4) | color.red();
-}
-
-impl Output {
 	// TODO: fix this
 	// Uncommented because I have no idea to parse the return format
 	// pub fn request_device_inquiry(&mut self) -> Result<(), crate::MidiError> {
@@ -198,4 +164,39 @@ impl Output {
 
 		return self.send(bytes);
 	}
+
+	// ------------------------------------------------------
+	// Below here are shorthand functions
+	// ------------------------------------------------------
+
+	/// All LEDs are turned off, and the mapping mode, buffer settings, and duty cycle are reset to
+	/// their default values.
+	pub fn reset(&mut self) -> Result<(), crate::MidiError> {
+		return self.turn_on_all_leds(Brightness::Off);
+	}
+
+	pub fn light(&mut self, button: Button, color: Color) -> Result<(), crate::MidiError> {
+		return self.set_button(button, color, DoubleBufferingBehavior::Copy);
+	}
+
+	pub fn light_all_rapid(&mut self, color: Color) -> Result<(), crate::MidiError> {
+		let dbb = DoubleBufferingBehavior::None; // this allows for double buffering shenanigans
+
+		for _ in 0..40 {
+			self.set_button_rapid(color, dbb, color, dbb)?;
+		}
+		
+		return Ok(());
+	}
+}
+
+fn make_color_code_loopable(color: Color, should_loop: bool)
+		-> u8 {
+	
+	// Bit 6 - Loop - If 1: loop the text
+	// Bit 5..4 - Green LED brightness
+	// Bit 3..2 - uhhhh, I think these should probably be empty?
+	// Bit 1..0 - Red LED brightness
+	
+	return ((should_loop as u8) << 6) | (color.green() << 4) | color.red();
 }

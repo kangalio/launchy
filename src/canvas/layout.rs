@@ -100,9 +100,9 @@ fn transform_color(color: Color, source: f32, target: f32) -> Color {
 }
 
 /// Imagine this - you have multiple launchpads, you line them up, and now you use the Launchpads
-/// as if they were a single device?! You can do that, with `CanvasLayout`.
+/// as if they were a single device?! You can do that, with [`CanvasLayout`].
 /// 
-/// Create a layout, add `Canvas`es to it at the position where they appear on your table, and
+/// Create a layout, add [`Canvas`]es to it at the position where they appear on your table, and
 /// you're ready to rock!
 /// 
 /// Example:
@@ -154,10 +154,10 @@ impl<'a> CanvasLayout<'a> {
 	/// Add a new device to this canvas layout, at the specified `x` and `y` coordinate.
 	/// 
 	/// The usage of this method is a bit awkward out of necessity. You need to provide a closure
-	/// which, when called with a message callback, is expected to return a `Canvas` that is set up
+	/// which, when called with a message callback, is expected to return a [`Canvas`] that is set up
 	/// to deliver messsages to the provided message callback.
 	/// 
-	/// Any `Error`s from the closure will be propagated.
+	/// The `Result` which the closure returns will be propagated.
 	/// 
 	/// Example:
 	/// ```rust

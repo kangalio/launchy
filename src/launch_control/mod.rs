@@ -1,3 +1,9 @@
+/*!
+# Launch Control low-level API
+
+![Picture](https://imgur.com/G9CjohH.png)
+*/
+
 mod input;
 pub use input::*;
 
@@ -84,6 +90,7 @@ impl Button {
 	}
 }
 
+#[doc(hidden)]
 pub struct Spec;
 
 impl crate::DeviceSpec for Spec {

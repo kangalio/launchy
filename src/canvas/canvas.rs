@@ -5,20 +5,20 @@ use super::*;
 /// 
 /// # How do you use a canvas?
 /// 
-/// `Canvas`es work by first accumulating LED changes, and finally flushing all LED state changes
+/// [`Canvas`]es work by first accumulating LED changes, and finally flushing all LED state changes
 /// in an efficient manner by calling `.flush()`.
 /// 
-/// Every `Canvas` maintains two buffers: the unflushed one, and the edited one. Therefore, you
+/// Every [`Canvas`] maintains two buffers: the unflushed one, and the edited one. Therefore, you
 /// can access both the unflushed and the buffered state of the button, using `get_old` and `get`,
 /// respectively.
 /// 
 /// Example:
 /// ```rust
 /// fn light_white(canvas: &mut impl Canvas) -> Result<()> {
-/// 	// Iterate through all buttons in the canvas. See the documentation on `CanvasIterator` for
+/// 	// Iterate through all buttons in the canvas. See the documentation on [`CanvasIterator`] for
 /// 	// more info
-/// 	for button in canvas.iter() {
-/// 		button.set(canvas, Color::WHITE);
+/// 	for pad in canvas.iter() {
+/// 		canvas[pad] = Color::WHITE;
 /// 	}
 /// }
 /// 
@@ -33,10 +33,29 @@ pub trait Canvas: std::ops::Index<Pad, Output=Color> + std::ops::IndexMut<Pad, O
 	// These are the methods that _need_ to be implemented by the implementor
 
 	/// The width of the smallest rectangle that still fully encapsulates the shape of this canvas
+	/// 
+	/// ```rust
+	/// let canvas = launchy::mk2::Canvas::guess(|_| {})?;
+	/// 
+	/// assert_eq!(canvas.bounding_box_width(), 9);
+	/// ```
 	fn bounding_box_width(&self) -> u32;
 	/// The height of the smallest rectangle that still fully encapsulates the shape of this canvas
+	/// 
+	/// ```rust
+	/// let canvas = launchy::mk2::Canvas::guess(|_| {})?;
+	/// 
+	/// assert_eq!(canvas.bounding_box_height(), 9);
+	/// ```
 	fn bounding_box_height(&self) -> u32;
 	/// Check if the location is in bounds
+	/// 
+	/// ```rust
+	/// let canvas = launchy::mk2::Canvas::guess(|_| {})?;
+	/// 
+	/// assert!(canvas.is_valid(7, 0));
+	/// assert!(!canvas.is_valid(8, 0));
+	/// ```
 	fn is_valid(&self, x: u32, y: u32) -> bool;
 	
 	/// Returns a reference to the color at the given position. No bounds checking
@@ -48,14 +67,39 @@ pub trait Canvas: std::ops::Index<Pad, Output=Color> + std::ops::IndexMut<Pad, O
 	fn get_new_unchecked_mut(&mut self, x: u32, y: u32) -> &mut Color;
 	
 	/// Flush the accumulated changes to the underlying device
+	/// 
+	/// ```rust
+	/// let mut canvas = launchy::mk2::Canvas::guess(|_| {})?;
+	/// 
+	/// canvas[Pad { x: 0, y: 0 }] = Color::RED;
+	/// canvas[Pad { x: 1, y: 0 }] = Color::GREEN;
+	/// canvas[Pad { x: 2, y: 0 }] = Color::RED;
+	/// canvas[Pad { x: 3, y: 0 }] = Color::GREEN;
+	/// 
+	/// // The changes are only transmitted when they are flushed
+	/// canvas.flush()?;
+	/// ```
 	fn flush(&mut self) -> Result<(), crate::MidiError>;
-	/// The lowest visible brightness on this canvas. Used to calibrate brightness across Launchpads
+	/// The lowest visible brightness on this canvas. Used to calibrate brightness across
+	/// Launchpads; users of the library probably don't need to worry about this
 	fn lowest_visible_brightness(&self) -> f32;
 	
 
 	// These are defaut implementations that you get for free
 
-	// Returns the color at the given position, or None if out of bounds
+	/// Returns the currently displayed color at the given position, or None if out of bounds
+	/// 
+	/// ```rust
+	/// let canvas = launchy::mk2::Canvas::guess(|_| {})?;
+	/// 
+	/// assert_eq!(canvas.get(Pad { x: 5, y: 5 }), Some(Color::BLACK));
+	/// 
+	/// canvas[Pad { x: 5, y: 5 }] = Color::RED;
+	/// assert_eq!(canvas.get(Pad { x: 5, y: 5 }), Some(Color::BLACK));
+	/// 
+	/// canvas.flush()?;
+	/// assert_eq!(canvas.get(Pad { x: 5, y: 5 }), Some(Color::RED));
+	/// ```
 	fn get(&self, pad: Pad) -> Option<Color> {
 		if pad.x >= 0 && pad.y >= 0 && self.is_valid(pad.x as u32, pad.y as u32) {
 			Some(*self.get_old_unchecked_ref(pad.x as u32, pad.y as u32))
@@ -64,22 +108,22 @@ pub trait Canvas: std::ops::Index<Pad, Output=Color> + std::ops::IndexMut<Pad, O
 		}
 	}
 
-	// Returns the color at the given position. No bounds checking
+	/// Returns the color at the given position. No bounds checking
 	fn get_old_unchecked(&self, x: u32, y: u32) -> Color {
 		*self.get_old_unchecked_ref(x, y)
 	}
 
-	// Returns the in-buffer/unflushed color at the given position. No bounds checking
+	/// Returns the in-buffer/unflushed color at the given position. No bounds checking
 	fn get_new_unchecked(&self, x: u32, y: u32) -> Color {
 		*self.get_new_unchecked_ref(x, y)
 	}
 
-	// Set the color at the given position. No bounds checking
+	/// Set the color at the given position. No bounds checking
 	fn set_unchecked(&mut self, x: u32, y: u32, color: Color) {
 		*self.get_new_unchecked_mut(x, y) = color;
 	}
 
-	// Returns a reference to the color at the given position, or None if out of bounds
+	/// Returns a reference to the color at the given position, or None if out of bounds
 	fn get_ref(&self, pad: Pad) -> Option<&Color> {
 		if pad.x >= 0 && pad.y >= 0 && self.is_valid(pad.x as u32, pad.y as u32) {
 			Some(self.get_old_unchecked_ref(pad.x as u32, pad.y as u32))
@@ -88,7 +132,7 @@ pub trait Canvas: std::ops::Index<Pad, Output=Color> + std::ops::IndexMut<Pad, O
 		}
 	}
 
-	// Returns a mutable reference to the color at the given position, or None if out of bounds
+	/// Returns a mutable reference to the color at the given position, or None if out of bounds
 	fn get_mut(&mut self, pad: Pad) -> Option<&mut Color> {
 		if pad.x >= 0 && pad.y >= 0 && self.is_valid(pad.x as u32, pad.y as u32) {
 			Some(self.get_new_unchecked_mut(pad.x as u32, pad.y as u32))
@@ -111,7 +155,7 @@ pub trait Canvas: std::ops::Index<Pad, Output=Color> + std::ops::IndexMut<Pad, O
 		self.get_new(pad).expect("Pad coordinates out of bounds")
 	}
 
-	// Sets the color at the given position. Returns None if out of bounds
+	/// Sets the color at the given position. Returns None if out of bounds
 	#[must_use]
 	fn set(&mut self, pad: Pad, color: Color) -> Option<()> {
 		*self.get_mut(pad)? = color;
@@ -119,31 +163,29 @@ pub trait Canvas: std::ops::Index<Pad, Output=Color> + std::ops::IndexMut<Pad, O
 	}
 
 	/// An iterator over the buttons of a given Canvas. Create an iterator by calling `.iter()` on a
-	/// `Canvas`.
+	/// [`Canvas`].
 	/// 
-	/// This iterator returns `CanvasButton`s, which are a view on a single button on the canvas. See
-	/// the documentation on `CanvasButton` for more information.
+	/// This iterator returns [`Pad`]s, which are a view on a single button on the canvas. See
+	/// the documentation on [`Pad`] for more information.
 	/// 
 	/// For example to light the entire canvas white:
 	/// ```rust
-	/// for button in canvas.iter() {
-	/// 	button.set(&mut canvas, Color::WHITE);
+	/// for pad in canvas.iter() {
+	/// 	canvas[pad] = Color::WHITE;
 	/// }
-	/// 
-	/// canvas.flush();
+	/// canvas.flush()?;
 	/// ```
 	/// 
 	/// Or, if you want to move the entire contents of the canvas one pixel to the right:
 	/// ```rust
-	/// for button in canvas.iter() {
-	/// 	let (x, y) = (button.x(), button.y());
-	/// 	if canvas.is_valid(x - 1, y) { // if there is a pixel to the left of this one
-	/// 		// Get the unflushed color from the left pixel and move it to this pixel
-	/// 		canvas.set(x, y, canvas.get_old(x - 1, y))
+	/// for pad in canvas.iter() {
+	/// 	// If there's a pad to the left
+	/// 	if let Some(color) = canvas[pad.left(1)] {
+	/// 		// Move the color of the left pad to this pad
+	/// 		canvas[pad] = color;
 	/// 	}
 	/// }
-	/// 
-	/// canvas.flush();
+	/// canvas.flush()?;
 	/// ```
 	fn iter(&self) -> CanvasIterator {
 		return CanvasIterator::new(self);
@@ -162,6 +204,7 @@ pub trait Canvas: std::ops::Index<Pad, Output=Color> + std::ops::IndexMut<Pad, O
 	/// for msg in poller.iter() {
 	/// 	if let CanvasMessage::Press { x, y } = msg {
 	/// 		canvas.toggle(x, y, Color::WHITE);
+	/// 		canvas.flush()?;
 	/// 	}
 	/// }
 	/// ```
@@ -187,6 +230,7 @@ pub trait Canvas: std::ops::Index<Pad, Output=Color> + std::ops::IndexMut<Pad, O
 	/// std::thread::sleep_ms(1000);
 	/// 
 	/// canvas.clear();
+	/// canvas.flush()?;
 	/// ```
 	fn clear(&mut self) where Self: Sized {
 		for pad in self.iter() {

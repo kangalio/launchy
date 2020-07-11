@@ -4,15 +4,23 @@ use super::Button;
 
 
 #[derive(Debug, Eq, PartialEq, Hash, Clone)]
+/// A Launchpad MK2 input message
 pub enum Message {
+	/// A button was pressed
 	Press { button: Button },
+	/// A button was released
 	Release { button: Button },
+	/// Emitted after a text scroll was initiated
 	TextEndedOrLooped,
+	/// The response to a [device inquiry request](super::Output::request_device_inquiry)
 	DeviceInquiry { device_id: u8, firmware_revision: u32 },
+	/// The response to a [version inquiry request](super::Output::request_version_inquiry)
 	VersionInquiry { bootloader_version: u32, firmware_version: u32 },
+	/// Emitted when a fader was changed by the user, in [fader mode](super::Output::enter_fader_mode)
 	FaderChange { index: u8, value: u8 },
 }
 
+/// The Launchpad MK2 input connection creator.
 pub struct Input;
 
 fn decode_short_message(data: &[u8]) -> Message {

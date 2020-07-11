@@ -1,9 +1,9 @@
 use super::*;
 
 /// An iterator over the buttons of a given Canvas. Create an iterator by calling `.iter()` on a
-/// `Canvas`.
+/// [`Canvas`].
 /// 
-/// For more information, see `Canvas::iter()`.
+/// For more information, see [`Canvas::iter`].
 pub struct CanvasIterator(std::vec::IntoIter<Pad>);
 
 impl CanvasIterator {

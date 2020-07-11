@@ -1,6 +1,9 @@
 use super::*;
 use crate::util::Array2d;
 
+/// A canvas wrapper that fills holes and other irregularities to provide a perfectly rectangular
+/// grid.
+/// 
 /// Launchpads traditionally have non-rectangular shapes:
 /// - Most Launchpads are _almost_ 9x9 - just one pixel is missing
 /// - The Launchpad Pro is _almost_ 10x10, except each corner has a pixel missing
@@ -11,7 +14,7 @@ use crate::util::Array2d;
 /// rectangular; there will be gaps and empty spaces all over the place.
 /// 
 /// Sometimes it's a pain to deal with those irregular shapes. For that reason, this struct provides
-/// a `Canvas` wrapper that inserts 'virtual pixels' into all the gaps so that you can work with the
+/// a [`Canvas`] wrapper that inserts 'virtual pixels' into all the gaps so that you can work with the
 /// Launchpad as if it were a perfectly rectangular grid.
 /// 
 /// Example:

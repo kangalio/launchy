@@ -3,13 +3,6 @@ use midir::MidiOutputConnection;
 use super::Button;
 use crate::OutputDevice;
 
-
-/// The Launchpad Mk2 has two different ways to represent color. You can either use one of the 128
-/// built-in palette colors, or you can create a custom color with custom rgb components.
-/// Why would you choose the palette colors when you can just create your required colors yourself?
-/// Well some operations on the Mk2 only support palette colors. Besides, sending palette color midi
-/// messages is simply faster. Therefore you should aim to use the palette colors when possible.
-
 /// A color from the Mk2 color palette. See the "Launchpad MK2 Programmers Reference Manual"
 /// to see the palette, or [see here](http://launchpaddr.com/mk2palette/).
 /// 
@@ -162,7 +155,7 @@ enum Layout {
 /// built-in fader functionality. You can specify for each fader its position, its color, and its
 /// default value.
 /// 
-/// For further documentation and examples, see `Output::enter_fader_mode()`.
+/// For further documentation and examples, see [`Output::enter_fader_mode`].
 pub struct FaderMode {
 	output: Output,
 	fader_type: FaderType,
@@ -213,7 +206,7 @@ impl FaderMode {
 }
 
 /// The object handling any messages _to_ the launchpad. To get started, initialize with
-/// `Output::guess()` and then send messages to your liking. The connection to the
+/// [(`Output::guess`)[OutputDevice::guess]] and then send messages to your liking. The connection to the
 /// launchpad will get closed when this object goes out of scope.
 /// 
 /// For example:
@@ -231,6 +224,13 @@ impl FaderMode {
 /// // light top left button magenta
 /// output.light(Button::GridButton { x: 0, y: 0 }, PaletteColor::MAGENTA);
 /// ```
+/// 
+/// # Representing color
+/// The Launchpad Mk2 has two different ways to represent color. You can either use one of the 128
+/// built-in palette colors, or you can create a custom color with custom rgb components.
+/// Why would you choose the palette colors when you can just create your required colors yourself?
+/// Well some operations on the Mk2 only support palette colors. Besides, sending palette color midi
+/// messages is simply faster. Therefore you should aim to use the palette colors when possible.
 pub struct Output {
 	connection: MidiOutputConnection,
 }

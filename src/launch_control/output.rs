@@ -6,6 +6,7 @@ use super::{Button, Template};
 #[doc(inline)]
 pub use crate::protocols::double_buffering::*;
 
+/// The Launch Control output connection handler.
 pub struct Output {
 	connection: MidiOutputConnection,
 }
@@ -88,6 +89,7 @@ impl Output {
 	// 	self.send(&[240, 0, 32, 41, 2, 10, 123, template.into().0, button.as_index(), value, 247])
 	// }
 
+	/// Change the template that will be displayed and edited on
 	pub fn change_template(&mut self,
 		template: impl Into<Template>
 	) -> Result<(), crate::MidiError> {

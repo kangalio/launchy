@@ -1,15 +1,20 @@
 use super::{Button, Template};
 
 #[derive(Copy, Clone, Eq, PartialEq, Debug, Hash)]
+/// One of the 16 knobs on the Launch COntrol
 pub struct Knob(u8);
 
 impl Knob {
+	/// Create a new knob from the given index, where indices 0-7 correspond to the top row and
+	/// indices 8-15 corresopnd to the bottom row
 	pub fn new(index: u8) -> Self {
 		assert!(index < 16);
 		Self(index)
 	}
 
+	/// Create a new knob in the upper row. `index` must be below 8
 	pub fn upper(index: u8) -> Self { Self::new(index) }
+	/// Create a new knob in the lower row. `index` must be below 8
 	pub fn lower(index: u8) -> Self { Self::new(index + 8) }
 }
 
@@ -37,6 +42,7 @@ pub enum Message {
 	KnobChanged { template: Template, knob: Knob, value: u8 },
 }
 
+/// The Launch Control input connection creator.
 pub struct Input;
 
 impl Input {

@@ -1,10 +1,12 @@
-use crate::ok_or_continue;
 use midir::{MidiOutput, MidiOutputConnection, MidiInput, MidiInputConnection, MidiInputPort};
 
 
 fn guess_port<T: midir::MidiIO>(midi_io: &T, keyword: &str) -> Option<T::Port> {
 	for port in midi_io.ports() {
-		let name = ok_or_continue!(midi_io.port_name(&port));
+		let name = match midi_io.port_name(&port) {
+			Ok(name) => name,
+			Err(_) => continue,
+		};
 		
 		if name.contains(keyword) {
 			return Some(port);
@@ -32,14 +34,17 @@ pub trait OutputDevice where Self: Sized {
 	}
 }
 
+/// A handler for a Launchpad input connection. This variant is used when an input connection is
+/// initiated with callback
 pub struct InputDeviceHandler<'a> {
-	#[allow(dead_code)]
-	connection: MidiInputConnection<'a, ()>
+	_connection: MidiInputConnection<'a, ()>
 }
 
+/// A handler for a Launchpad input connection that can be polled for new messages. The actual
+/// polling methods are implemented inside [MsgPollingWrapper](crate::MsgPollingWrapper). Look there
+/// for documentation on how to poll messages.
 pub struct InputDeviceHandlerPolling<'a, Message> {
-	#[allow(dead_code)]
-	connection: MidiInputConnection<'a, ()>,
+	_connection: MidiInputConnection<'a, ()>,
 	receiver: std::sync::mpsc::Receiver<Message>,
 }
 
@@ -68,7 +73,7 @@ pub trait InputDevice {
 		
 		let connection = midi_input.connect(port, Self::MIDI_CONNECTION_NAME, midir_callback, ())?;
 		
-		return Ok(InputDeviceHandler { connection });
+		return Ok(InputDeviceHandler { _connection: connection });
 	}
 
 	#[must_use = "If not saved, the connection will be immediately dropped"]
@@ -89,7 +94,7 @@ pub trait InputDevice {
 		
 		let connection = midi_input.connect(port, Self::MIDI_CONNECTION_NAME, midir_callback, ())?;
 		
-		return Ok(InputDeviceHandlerPolling { connection, receiver });
+		return Ok(InputDeviceHandlerPolling { _connection: connection, receiver });
 	}
 	
 	/// Search the midi devices and choose the first midi device matching the wanted Launchpad type.
@@ -119,6 +124,8 @@ pub trait InputDevice {
 	}
 }
 
+/// An iterator that yields canvas input messages for some user-defined time duration. For more
+/// information, see [MsgPollingWrapper::iter_for]
 pub struct IterFor<'a, M> {
 	receiver: &'a std::sync::mpsc::Receiver<M>,
 	deadline: std::time::Instant,
@@ -138,11 +145,15 @@ impl<M> Iterator for IterFor<'_, M> {
 
 // I have no idea what I'm doing
 pub trait MsgPollingWrapper {
+	/// The type of message that is yielded
 	type Message;
 
+	/// Returns a [std::sync::mpsc::Receiver] that yields messages, where the type of messages is
+	/// described by the associated [`Self::Message`] type
 	fn receiver(&self) -> &std::sync::mpsc::Receiver<Self::Message>;
 
-	/// Wait for a message to arrive, and return that. For a non-block variant, see `try_recv()`.
+	/// Wait for a message to arrive, and return that. For a non-block variant, see
+	/// [`Self::try_recv`].
 	fn recv(&self) -> Self::Message {
 		return self.receiver().recv()
 				.expect("Message sender has hung up - please report a bug");
@@ -175,7 +186,7 @@ pub trait MsgPollingWrapper {
 	/// MIDI connection has been dropped.
 	/// 
 	/// For an iteration method that doesn't block, but returns immediately when there are no more
-	/// pending messages, see `iter_pending`.
+	/// pending messages, see [`Self::iter_pending`].
 	fn iter(&self) -> std::sync::mpsc::Iter<Self::Message> {
 		return self.receiver().iter();
 	}
@@ -183,11 +194,17 @@ pub trait MsgPollingWrapper {
 	/// Returns an iterator over the currently pending messages. As soon as all pending messages
 	/// have been iterated over, the iterator will return.
 	/// 
-	/// For an iteration method that will block, waiting for new messages to arrive, see `iter()`.
+	/// For an iteration method that will block, waiting for new messages to arrive, see
+	/// [`Self::iter`].
 	fn iter_pending(&self) -> std::sync::mpsc::TryIter<Self::Message> {
 		return self.receiver().try_iter();
 	}
 
+	/// Returns an iterator that yields all arriving messages for a specified amount of time. After
+	/// the specified `duration` has passed, the iterator will stop and not yield any more messages.
+	/// 
+	/// For a shorthand of this function that accepts the duration in milliseconds, see
+	/// [`Self::iter_for_millis`]
 	fn iter_for(&self, duration: std::time::Duration) -> IterFor<Self::Message> {
 		IterFor {
 			receiver: self.receiver(),
@@ -195,6 +212,11 @@ pub trait MsgPollingWrapper {
 		}
 	}
 	
+	/// Returns an iterator that yields all arriving messages for a specified amount of time. After
+	/// the specified `duration` has passed, the iterator will stop and not yield any more messages.
+	/// 
+	/// For a more general version of this function that accepts any [std::time::Duration], see
+	/// [`Self::iter_for`]
 	fn iter_for_millis(&self, millis: u64) -> IterFor<Self::Message> {
 		self.iter_for(std::time::Duration::from_millis(millis))
 	}

@@ -1,8 +1,8 @@
 use super::*;
 
 
-/// Launchpad's implement this trait to signify how they can be used as a `Canvas`. Based on this
-/// specification, `DeviceCanvas` provides a generic `Canvas` implemention that can be used for all
+/// Launchpad's implement this trait to signify how they can be used as a [`Canvas`]. Based on this
+/// specification, [`DeviceCanvas`] provides a generic [`Canvas`] implemention that can be used for all
 /// devices.
 /// 
 /// You as a user of this library will not need to use this trait directly.
@@ -57,7 +57,7 @@ impl crate::MsgPollingWrapper for DeviceCanvasPoller {
 	fn receiver(&self) -> &std::sync::mpsc::Receiver<Self::Message> { &self.receiver }
 }
 
-/// A generic `Canvas` implementation for all launchpads, that relies on a `DeviceSpec`. You as a
+/// A generic [`Canvas`] implementation for all launchpads, that relies on a [`DeviceSpec`]. You as a
 /// user of the library don't need to access this struct directly. Use the "Canvas" type aliases
 /// that each launchpad module provides, for example `launchy::mk2::Canvas` or
 /// `launchy::s::Canvas`.
@@ -73,7 +73,7 @@ pub struct DeviceCanvas<'a, Spec: DeviceSpec> {
 impl<'a, Spec: DeviceSpec> DeviceCanvas<'a, Spec> {
 	/// Create a new canvas by guessing both input and output MIDI connection by their name. If you
 	/// need precise control over the specific MIDI connections that will be used, use
-	/// `DeviceCanvas::from_ports()` instead // TODO: not implemented yet
+	/// [`DeviceCanvas::from_ports`] instead // TODO: not implemented yet
 	pub fn guess(
 		mut callback: impl FnMut(CanvasMessage) + Send + 'a
 	) -> Result<Self, crate::MidiError> {

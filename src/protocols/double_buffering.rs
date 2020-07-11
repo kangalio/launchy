@@ -1,3 +1,4 @@
+/// A 2-bit color, with only red and green components
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Default, Hash)]
 pub struct Color {
 	red: u8,
@@ -10,6 +11,9 @@ impl Color {
 	pub const GREEN: Color = Color { red: 0, green: 3 };
 	pub const YELLOW: Color = Color { red: 3, green: 3 };
 
+	/// Create a new color from the given red and green components.
+	/// 
+	/// Both values must be less than 4 (they are 2-bit values)
 	pub fn new(red: u8, green: u8) -> Color {
 		assert!(red < 4);
 		assert!(green < 4);
@@ -31,10 +35,11 @@ pub enum Brightness {
 #[derive(Debug, Eq, PartialEq, Hash, Copy, Clone)]
 #[repr(u8)]
 pub enum Buffer {
-	Buffer0 = 0,
-	Buffer1 = 1,
+	A = 0,
+	B = 1,
 }
 
+/// This enum specifies how a light state change should affect the other buffer, if at all
 #[derive(Debug, Hash, Eq, PartialEq, Copy, Clone)]
 pub enum DoubleBufferingBehavior {
 	/// Only write to the currently edited buffer

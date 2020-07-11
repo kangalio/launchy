@@ -3,6 +3,11 @@ name = "launchy"
 version = "0.1.0"
 authors = ["Kangalioo <jannik.a.schaper@web.de>"]
 edition = "2018"
+description = "Low-level bindings and high-level abstractions for the Novation Launchpad MIDI devices"
+readme = "README.md"
+repository = "https://github.com/kangalioo/launchy"
+keywords = ["novation", "launchpad", "midi", "midi-controller", "lightshow"]
+categories = ["api-bindings", "games", "graphics", "rendering", "multimedia::images"]
 
 [dependencies]
 #midir = { path = "../midir" }

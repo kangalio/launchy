@@ -13,7 +13,7 @@ Launchy is a library for the Novation Launchpad MIDI devices, for the Rust progr
 - the **direct Input/Output API** provides absolute control over your device and fine-grained access to the entire MIDI API of your device
 - it's possible to chain multiple Launchpads together and use them as if it was one single big device
 - optional support for [`embedded-graphics`](https://github.com/jamwaffles/embedded-graphics)
-- very modular design: it's very easy to add support for new devices, or to add new features to `Canvas`
+- very modular design: it's very easy to add support for new devices, or to add new features to [`Canvas`]
 
 ## Supported devices
 - [ ] Launchpad
@@ -160,3 +160,4 @@ loop {
 - Only supports Launchpad MK2
 - Only low-level access to the Launchpad is provided. There is no way to write high-level, concise interfacing code
 - Uses the [PortMidi](https://github.com/musitdev/portmidi-rs) crate which is not as actively developed as [midir](https://github.com/Boddlnagg/midir), which Launchy uses
+- Doesn't have any of the advanced features that Launchy provides

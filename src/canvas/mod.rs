@@ -4,12 +4,12 @@
 //! 2009, the Launchpad MK2, or even the 12 buttons on a Launch Control!
 //! 
 //! Additionally, you can chain multiple devices together as if they were a single device, using
-//! `CanvasLayout`.
+//! [`CanvasLayout`].
 //! 
-//! **Please look into the documentation of `Canvas`, `CanvasIterator` and `CanvasLayout` for
+//! **Please look into the documentation of [`Canvas`], [`CanvasIterator`] and [`CanvasLayout`] for
 //! detailed documentation and examples!**
 
-// I want to have certain traits implemented for all `Canvas`es. Unfortunately, I can't use blanket
+// I want to have certain traits implemented for all [`Canvas`]es. Unfortunately, I can't use blanket
 // implementations for this purpose (orphan rules forbid it). For that reason, I have to manually
 // duplicate the trait implementations for each Canvas implementor. For that, I made this macro.
 macro_rules! impl_traits_for_canvas {
