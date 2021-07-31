@@ -23,7 +23,7 @@ Launchy is a library for the Novation Launchpad MIDI devices, for the Rust progr
 ## Supported devices
 - [ ] Launchpad
 - [x] Launchpad S
-- [ ] Launchpad Mini
+- [x] Launchpad Mini
 - [x] Launchpad Control
 - [x] Launchpad Control XL
 - [ ] Launchpad Pro
@@ -33,7 +33,7 @@ Launchy is a library for the Novation Launchpad MIDI devices, for the Rust progr
 - [ ] Launchpad Pro MK2
 
 ## Canvas API
-Launchy provides a `Canvas` trait that allows you to abstract over the hardware-specific details of your Launchpad and write concise, performant and 
+Launchy provides a `Canvas` trait that allows you to abstract over the hardware-specific details of your Launchpad and write concise, performant and
 Launchpad-agnostic code.
 
 The `Canvas` API even allows you to chain multiple Launchpads together and use them as if they were a single device. See `CanvasLayout` for that.
@@ -77,7 +77,7 @@ for color in (0u64..).map(|f| Color::red_green_color(f as f32 / 60.0 / 2.5)) {
 		let surrounding_color = pad.neighbors_5().iter()
 				.map(|&p| canvas.get(p).unwrap_or(Color::BLACK))
 				.sum::<Color>() / 5.0 / 1.05;
-		
+
 		canvas[pad] = canvas[pad].mix(surrounding_color, 0.4);
 	}
 }
@@ -151,7 +151,7 @@ loop {
 	let t = Text::new("Hello world! :)", Point::new(x_offset, 3))
 		.into_styled(TextStyle::new(Font6x8, Color::RED.into()))
 		.draw(&mut canvas).unwrap();
-	
+
 	canvas.flush()?;
 
 	sleep(100);
