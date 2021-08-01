@@ -89,6 +89,15 @@ impl Pad {
             self.left(1).up(1),
         ]
     }
+
+    /// Attempts to convert the X and Y coordinates from i32 to u32, if they are non-negative.
+    pub fn to_u32(self) -> Option<(u32, u32)> {
+        if self.x >= 0 && self.y >= 0 {
+            Some((self.x as u32, self.y as u32))
+        } else {
+            None
+        }
+    }
 }
 
 impl std::ops::Add<(i32, i32)> for Pad {

@@ -209,7 +209,7 @@ impl<'a> CanvasLayout<'a> {
                 translated_coords,
                 Pixel {
                     device_index: index,
-                    color_new: canvas.at_new(pad),
+                    color_new: canvas.get_pending(pad).unwrap(),
                     color_old: canvas[pad],
                 },
             );
@@ -274,40 +274,34 @@ impl Canvas for CanvasLayout<'_> {
         self.light_threshold
     }
 
-    fn bounding_box_width(&self) -> u32 {
-        self.devices
-            .iter()
-            .map(|device| device.x + device.canvas.bounding_box_width())
-            .max()
-            .unwrap_or(0)
+    fn bounding_box(&self) -> (u32, u32) {
+        let mut width = 0;
+        let mut height = 0;
+
+        for device in &self.devices {
+            let (device_width, device_height) = device.canvas.bounding_box();
+
+            width = u32::max(width, device_width);
+            height = u32::max(height, device_height);
+        }
+
+        (width, height)
     }
 
-    fn bounding_box_height(&self) -> u32 {
-        self.devices
-            .iter()
-            .map(|device| device.y + device.canvas.bounding_box_height())
-            .max()
-            .unwrap_or(0)
+    fn low_level_get_pending(&self, x: u32, y: u32) -> Option<&Color> {
+        let pixel = self.coordinate_map.get(&(x, y))?;
+        Some(&pixel.color_new)
     }
 
-    fn is_valid(&self, x: u32, y: u32) -> bool {
-        self.coordinate_map.contains_key(&(x, y))
-    }
-
-    fn get_new_unchecked_ref(&self, x: u32, y: u32) -> &Color {
-        let pixel = self.coordinate_map.get(&(x, y)).unwrap();
-        &pixel.color_new
-    }
-
-    fn get_new_unchecked_mut(&mut self, x: u32, y: u32) -> &mut Color {
+    fn low_level_get_pending_mut(&mut self, x: u32, y: u32) -> Option<&mut Color> {
         // store the actual pixel color for possible retrieval later
-        let pixel = self.coordinate_map.get_mut(&(x, y)).unwrap();
-        &mut pixel.color_new
+        let pixel = self.coordinate_map.get_mut(&(x, y))?;
+        Some(&mut pixel.color_new)
     }
 
-    fn get_old_unchecked_ref(&self, x: u32, y: u32) -> &Color {
-        let pixel = self.coordinate_map.get(&(x, y)).unwrap();
-        &pixel.color_old
+    fn low_level_get(&self, x: u32, y: u32) -> Option<&Color> {
+        let pixel = self.coordinate_map.get(&(x, y))?;
+        Some(&pixel.color_old)
     }
 
     fn flush(&mut self) -> Result<(), crate::MidiError> {
@@ -322,9 +316,10 @@ impl Canvas for CanvasLayout<'_> {
 
             let (local_x, local_y) = device.to_local(global_x, global_y);
 
-            device
+            *device
                 .canvas
-                .set_unchecked(local_x, local_y, transformed_color);
+                .low_level_get_pending_mut(local_x, local_y)
+                .unwrap() = transformed_color;
 
             pixel.color_old = pixel.color_new;
         }

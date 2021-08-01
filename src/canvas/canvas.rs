@@ -34,39 +34,22 @@ pub trait Canvas:
 {
     // These are the methods that _need_ to be implemented by the implementor
 
-    /// The width of the smallest rectangle that still fully encapsulates the shape of this canvas
+    /// The width and height of the smallest rectangle that still fully encapsulates the shape of
+    /// this canvas
     ///
     /// ```rust
     /// let canvas = launchy::mk2::Canvas::guess(|_| {})?;
     ///
-    /// assert_eq!(canvas.bounding_box_width(), 9);
+    /// assert_eq!(canvas.bounding_box_width(), (9, 9));
     /// ```
-    fn bounding_box_width(&self) -> u32;
-    /// The height of the smallest rectangle that still fully encapsulates the shape of this canvas
-    ///
-    /// ```rust
-    /// let canvas = launchy::mk2::Canvas::guess(|_| {})?;
-    ///
-    /// assert_eq!(canvas.bounding_box_height(), 9);
-    /// ```
-    fn bounding_box_height(&self) -> u32;
-    /// Check if the location is in bounds
-    ///
-    /// ```rust
-    /// let canvas = launchy::mk2::Canvas::guess(|_| {})?;
-    ///
-    /// assert!(canvas.is_valid(7, 0));
-    /// assert!(!canvas.is_valid(8, 0));
-    /// ```
-    fn is_valid(&self, x: u32, y: u32) -> bool;
+    fn bounding_box(&self) -> (u32, u32);
 
-    /// Returns a reference to the color at the given position. No bounds checking
-    fn get_old_unchecked_ref(&self, x: u32, y: u32) -> &Color;
-    /// Returns a reference to the in-buffer/unflushed color at the given position. No bounds
-    /// checking
-    fn get_new_unchecked_ref(&self, x: u32, y: u32) -> &Color;
-    /// Returns a mutable reference to the color at the given position. No bounds checking
-    fn get_new_unchecked_mut(&mut self, x: u32, y: u32) -> &mut Color;
+    /// Returns a reference to the currently displayed color at the given position
+    fn low_level_get(&self, x: u32, y: u32) -> Option<&Color>;
+    /// Returns a reference to the in-buffer/unflushed color at the given position
+    fn low_level_get_pending(&self, x: u32, y: u32) -> Option<&Color>;
+    /// Returns a mutable reference to the in-buffer/unflushed color at the given position
+    fn low_level_get_pending_mut(&mut self, x: u32, y: u32) -> Option<&mut Color>;
 
     /// Flush the accumulated changes to the underlying device
     ///
@@ -91,75 +74,48 @@ pub trait Canvas:
     /// Returns the currently displayed color at the given position, or None if out of bounds
     ///
     /// ```rust
-    /// let canvas = launchy::mk2::Canvas::guess(|_| {})?;
-    ///
-    /// assert_eq!(canvas.get(Pad { x: 5, y: 5 }), Some(Color::BLACK));
-    ///
+    /// # let canvas = launchy::mk2::Canvas::guess(|_| {})?;
     /// canvas[Pad { x: 5, y: 5 }] = Color::RED;
-    /// assert_eq!(canvas.get(Pad { x: 5, y: 5 }), Some(Color::BLACK));
     ///
+    /// assert_eq!(canvas.get(Pad { x: 5, y: 5 }), Some(Color::BLACK));
     /// canvas.flush()?;
     /// assert_eq!(canvas.get(Pad { x: 5, y: 5 }), Some(Color::RED));
     /// ```
+    ///
+    /// Use `canvas[pad]` for a simpler, panicking version
     fn get(&self, pad: Pad) -> Option<Color> {
-        if pad.x >= 0 && pad.y >= 0 && self.is_valid(pad.x as u32, pad.y as u32) {
-            Some(*self.get_old_unchecked_ref(pad.x as u32, pad.y as u32))
-        } else {
-            None
-        }
+        let (x, y) = pad.to_u32()?;
+        self.low_level_get(x, y).copied()
     }
 
-    /// Returns the color at the given position. No bounds checking
-    fn get_old_unchecked(&self, x: u32, y: u32) -> Color {
-        *self.get_old_unchecked_ref(x, y)
-    }
-
-    /// Returns the in-buffer/unflushed color at the given position. No bounds checking
-    fn get_new_unchecked(&self, x: u32, y: u32) -> Color {
-        *self.get_new_unchecked_ref(x, y)
-    }
-
-    /// Set the color at the given position. No bounds checking
-    fn set_unchecked(&mut self, x: u32, y: u32, color: Color) {
-        *self.get_new_unchecked_mut(x, y) = color;
-    }
-
-    /// Returns a reference to the color at the given position, or None if out of bounds
-    fn get_ref(&self, pad: Pad) -> Option<&Color> {
-        if pad.x >= 0 && pad.y >= 0 && self.is_valid(pad.x as u32, pad.y as u32) {
-            Some(self.get_old_unchecked_ref(pad.x as u32, pad.y as u32))
-        } else {
-            None
-        }
-    }
-
-    /// Returns a mutable reference to the color at the given position, or None if out of bounds
-    fn get_mut(&mut self, pad: Pad) -> Option<&mut Color> {
-        if pad.x >= 0 && pad.y >= 0 && self.is_valid(pad.x as u32, pad.y as u32) {
-            Some(self.get_new_unchecked_mut(pad.x as u32, pad.y as u32))
-        } else {
-            None
-        }
-    }
-
-    /// Returns the old, unflushed color at the given location, or None if out of bounds
-    fn get_new(&self, pad: Pad) -> Option<Color> {
-        if pad.x >= 0 && pad.y >= 0 && self.is_valid(pad.x as u32, pad.y as u32) {
-            Some(*self.get_new_unchecked_ref(pad.x as u32, pad.y as u32))
-        } else {
-            None
-        }
-    }
-
-    /// Returns the old, unflushed color at the given location. Panics if out of bounds
-    fn at_new(&self, pad: Pad) -> Color {
-        self.get_new(pad).expect("Pad coordinates out of bounds")
+    /// Returns the buffered/unflushed color at the given position, or None if out of bounds
+    ///
+    /// ```rust
+    /// # let canvas = launchy::mk2::Canvas::guess(|_| {})?;
+    ///
+    /// assert_eq!(canvas.get_pending(Pad { x: 5, y: 5 }), Some(Color::BLACK));
+    /// canvas[Pad { x: 5, y: 5 }] = Color::RED;
+    /// assert_eq!(canvas.get_pending(Pad { x: 5, y: 5 }), Some(Color::RED));
+    ///
+    /// canvas.flush()?;
+    /// assert_eq!(canvas.get_pending(Pad { x: 5, y: 5 }), Some(Color::RED)); // didn't change
+    /// ```
+    fn get_pending(&self, pad: Pad) -> Option<Color> {
+        let (x, y) = pad.to_u32()?;
+        self.low_level_get_pending(x, y).copied()
     }
 
     /// Sets the color at the given position. Returns None if out of bounds
-    #[must_use]
+    ///
+    /// ```rust
+    /// canvas.set()
+    /// ```
+    ///
+    /// Use `canvas[pad] = color` for a simpler, panicking version
     fn set(&mut self, pad: Pad, color: Color) -> Option<()> {
-        *self.get_mut(pad)? = color;
+        let (x, y) = pad.to_u32()?;
+        *self.low_level_get_pending_mut(x, y)? = color;
+
         Some(())
     }
 
@@ -210,11 +166,15 @@ pub trait Canvas:
     /// }
     /// ```
     fn toggle(&mut self, pad: Pad, color: Color) -> Option<()> {
-        if self.get(pad)? == color {
-            self.set(pad, Color::BLACK)?;
+        let (x, y) = pad.to_u32()?;
+        let current_color = self.low_level_get_pending_mut(x, y)?;
+
+        if *current_color == color {
+            *current_color = Color::BLACK;
         } else {
-            self.set(pad, color)?;
+            *current_color = color;
         }
+
         Some(())
     }
 
@@ -242,6 +202,7 @@ pub trait Canvas:
         }
     }
 
+    /// See [`PaddingCanvas`] for more details
     fn into_padded(self) -> PaddingCanvas<Self>
     where
         Self: Sized,

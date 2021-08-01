@@ -41,51 +41,43 @@ pub struct PaddingCanvas<C: Canvas> {
 impl<C: Canvas> PaddingCanvas<C> {
     /// Wrap the given canvas in a PaddingCanvas
     pub fn from(inner: C) -> Self {
-        let width = inner.bounding_box_width() as usize;
-        let height = inner.bounding_box_height() as usize;
+        let (width, height) = inner.bounding_box();
 
         Self {
             inner,
-            curr_buf: Array2d::new(width, height),
-            new_buf: Array2d::new(width, height),
+            curr_buf: Array2d::new(width as usize, height as usize),
+            new_buf: Array2d::new(width as usize, height as usize),
         }
     }
 }
 
 impl<C: Canvas> Canvas for PaddingCanvas<C> {
-    fn bounding_box_width(&self) -> u32 {
-        self.inner.bounding_box_width()
-    }
-    fn bounding_box_height(&self) -> u32 {
-        self.inner.bounding_box_height()
+    fn bounding_box(&self) -> (u32, u32) {
+        self.inner.bounding_box()
     }
     fn lowest_visible_brightness(&self) -> f32 {
         self.inner.lowest_visible_brightness()
     }
 
-    fn is_valid(&self, x: u32, y: u32) -> bool {
-        x < self.bounding_box_width() && y < self.bounding_box_height()
-    }
-
-    fn get_old_unchecked_ref(&self, x: u32, y: u32) -> &Color {
-        if self.inner.is_valid(x, y) {
-            self.inner.get_old_unchecked_ref(x, y)
+    fn low_level_get(&self, x: u32, y: u32) -> Option<&Color> {
+        if let Some(color) = self.inner.low_level_get(x, y) {
+            Some(color)
         } else {
-            self.curr_buf.get_ref(x as usize, y as usize)
+            self.curr_buf.get(x as usize, y as usize)
         }
     }
 
-    fn get_new_unchecked_ref(&self, x: u32, y: u32) -> &Color {
-        if self.inner.is_valid(x, y) {
-            self.inner.get_new_unchecked_ref(x, y)
+    fn low_level_get_pending(&self, x: u32, y: u32) -> Option<&Color> {
+        if let Some(color) = self.inner.low_level_get_pending(x, y) {
+            Some(color)
         } else {
-            self.new_buf.get_ref(x as usize, y as usize)
+            self.new_buf.get(x as usize, y as usize)
         }
     }
 
-    fn get_new_unchecked_mut(&mut self, x: u32, y: u32) -> &mut Color {
-        if self.inner.is_valid(x, y) {
-            self.inner.get_new_unchecked_mut(x, y)
+    fn low_level_get_pending_mut(&mut self, x: u32, y: u32) -> Option<&mut Color> {
+        if let Some(color) = self.inner.low_level_get_pending_mut(x, y) {
+            Some(color)
         } else {
             self.new_buf.get_mut(x as usize, y as usize)
         }

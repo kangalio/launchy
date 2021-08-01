@@ -52,9 +52,9 @@ impl crate::DeviceSpec for Spec {
             for y in 1..=8 {
                 for x in (0..=7).step_by(2) {
                     canvas.output.set_button_rapid(
-                        convert_color(canvas.get_new_unchecked(x, y)),
+                        convert_color(*canvas.low_level_get_pending(x, y).unwrap()),
                         DoubleBufferingBehavior::Copy,
-                        convert_color(canvas.get_new_unchecked(x + 1, y)),
+                        convert_color(*canvas.low_level_get_pending(x + 1, y).unwrap()),
                         DoubleBufferingBehavior::Copy,
                     )?;
                 }
@@ -63,9 +63,9 @@ impl crate::DeviceSpec for Spec {
             // Set the scene launch buttons (x = 8)
             for y in (1..=8).step_by(2) {
                 canvas.output.set_button_rapid(
-                    convert_color(canvas.get_new_unchecked(8, y)),
+                    convert_color(*canvas.low_level_get_pending(8, y).unwrap()),
                     DoubleBufferingBehavior::Copy,
-                    convert_color(canvas.get_new_unchecked(8, y + 1)),
+                    convert_color(*canvas.low_level_get_pending(8, y + 1).unwrap()),
                     DoubleBufferingBehavior::Copy,
                 )?;
             }
@@ -73,9 +73,9 @@ impl crate::DeviceSpec for Spec {
             // Set the Automap/live buttons (y = 0)
             for x in (0..=7).step_by(2) {
                 canvas.output.set_button_rapid(
-                    convert_color(canvas.get_new_unchecked(x, 0)),
+                    convert_color(*canvas.low_level_get_pending(x, 0).unwrap()),
                     DoubleBufferingBehavior::Copy,
-                    convert_color(canvas.get_new_unchecked(x + 1, 0)),
+                    convert_color(*canvas.low_level_get_pending(x + 1, 0).unwrap()),
                     DoubleBufferingBehavior::Copy,
                 )?;
             }
@@ -83,7 +83,7 @@ impl crate::DeviceSpec for Spec {
             // dummy-light some button just to get out of the rapid update mode
             canvas.output.light(
                 Button::ControlButton { index: 0 },
-                convert_color(canvas.get_new_unchecked(0, 0)),
+                convert_color(*canvas.low_level_get_pending(0, 0).unwrap()),
             )?;
         } else {
             for &(x, y, (r, g, _b)) in changes {

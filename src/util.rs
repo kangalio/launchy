@@ -20,26 +20,20 @@ impl<T: Default + Copy> Array2d<T> {
         x < self.width && y < self.height
     }
 
-    pub fn get(&self, x: usize, y: usize) -> T {
-        assert!(self.is_valid(x, y));
+    pub fn get(&self, x: usize, y: usize) -> Option<&T> {
+        if !self.is_valid(x, y) {
+            return None;
+        }
 
-        self.vec[y * self.width + x]
+        self.vec.get(y * self.width + x)
     }
 
-    pub fn get_ref(&self, x: usize, y: usize) -> &T {
-        assert!(self.is_valid(x, y));
+    pub fn get_mut(&mut self, x: usize, y: usize) -> Option<&mut T> {
+        if !self.is_valid(x, y) {
+            return None;
+        }
 
-        &self.vec[y * self.width + x]
-    }
-
-    pub fn get_mut(&mut self, x: usize, y: usize) -> &mut T {
-        assert!(self.is_valid(x, y));
-
-        &mut self.vec[y * self.width + x]
-    }
-
-    pub fn set(&mut self, x: usize, y: usize, value: T) {
-        *self.get_mut(x, y) = value;
+        self.vec.get_mut(y * self.width + x)
     }
 
     pub fn width(&self) -> usize {

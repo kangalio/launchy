@@ -133,37 +133,47 @@ impl<S: DeviceSpec> DeviceCanvasTrait for DeviceCanvas<S> {
 impl_traits_for_canvas!(<S: DeviceSpec>, DeviceCanvas);
 
 impl<Spec: DeviceSpec> crate::Canvas for DeviceCanvas<Spec> {
-    fn bounding_box_width(&self) -> u32 {
-        Spec::BOUNDING_BOX_WIDTH
-    }
-    fn bounding_box_height(&self) -> u32 {
-        Spec::BOUNDING_BOX_HEIGHT
-    }
-    fn is_valid(&self, x: u32, y: u32) -> bool {
-        Spec::is_valid(x, y)
+    fn bounding_box(&self) -> (u32, u32) {
+        (Spec::BOUNDING_BOX_WIDTH, Spec::BOUNDING_BOX_HEIGHT)
     }
     fn lowest_visible_brightness(&self) -> f32 {
         1.0 / Spec::COLOR_PRECISION as f32
     }
 
-    fn get_old_unchecked_ref(&self, x: u32, y: u32) -> &Color {
-        self.curr_state.get_ref(x as usize, y as usize)
+    fn low_level_get(&self, x: u32, y: u32) -> Option<&Color> {
+        if !Spec::is_valid(x, y) {
+            return None;
+        }
+
+        self.curr_state.get(x as usize, y as usize)
     }
 
-    fn get_new_unchecked_mut(&mut self, x: u32, y: u32) -> &mut Color {
+    fn low_level_get_pending_mut(&mut self, x: u32, y: u32) -> Option<&mut Color> {
+        if !Spec::is_valid(x, y) {
+            return None;
+        }
+
         self.new_state.get_mut(x as usize, y as usize)
     }
 
-    fn get_new_unchecked_ref(&self, x: u32, y: u32) -> &Color {
-        self.new_state.get_ref(x as usize, y as usize)
+    fn low_level_get_pending(&self, x: u32, y: u32) -> Option<&Color> {
+        if !Spec::is_valid(x, y) {
+            return None;
+        }
+
+        self.new_state.get(x as usize, y as usize)
     }
 
     fn flush(&mut self) -> Result<(), crate::MidiError> {
         let mut changes: Vec<(u32, u32, (u8, u8, u8))> = Vec::with_capacity(9 * 9);
 
         for pad in self.iter() {
-            let old = self[pad].quantize(Spec::COLOR_PRECISION);
-            let new = self.at_new(pad).quantize(Spec::COLOR_PRECISION);
+            let old = self.get(pad).unwrap();
+            let new = self.get_pending(pad).unwrap();
+
+            let old = old.quantize(Spec::COLOR_PRECISION);
+            let new = new.quantize(Spec::COLOR_PRECISION);
+
             if new != old {
                 changes.push((pad.x as u32, pad.y as u32, new));
             }

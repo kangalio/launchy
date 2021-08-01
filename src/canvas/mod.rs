@@ -19,13 +19,15 @@ macro_rules! impl_traits_for_canvas {
             type Output = Color;
 
             fn index(&self, pad: Pad) -> &Color {
-                self.get_ref(pad).expect("Pad coordinates out of bounds")
+                let (x, y) = pad.to_u32().expect("Pad coordinates out of bounds");
+                self.low_level_get(x, y).expect("Pad coordinates out of bounds")
             }
         }
 
         impl<$($a $(: $b)?),+> std::ops::IndexMut<Pad> for $i<$($a),+> {
             fn index_mut(&mut self, pad: Pad) -> &mut Color {
-                self.get_mut(pad).expect("Pad coordinates out of bounds")
+                let (x, y) = pad.to_u32().expect("Pad coordinates out of bounds");
+                self.low_level_get_pending_mut(x, y).expect("Pad coordinates out of bounds")
             }
         }
 
@@ -45,7 +47,7 @@ macro_rules! impl_traits_for_canvas {
             fn bounding_box(&self) -> eg::Rectangle {
                 eg::Rectangle::new(
                     eg::Point::new(0, 0),
-                    eg::Size::new(self.bounding_box_width(), self.bounding_box_height()),
+                    eg::Size::from(Canvas::bounding_box(self)),
                 )
             }
         }

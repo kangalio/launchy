@@ -8,13 +8,12 @@ pub struct CanvasIterator(std::vec::IntoIter<Pad>);
 
 impl CanvasIterator {
     pub(crate) fn new<C: Canvas + ?Sized>(canvas: &C) -> Self {
-        let bb_height = canvas.bounding_box_height();
-        let bb_width = canvas.bounding_box_width();
+        let (bb_width, bb_height) = canvas.bounding_box();
 
         let mut coordinates = Vec::with_capacity((bb_width * bb_height) as usize);
         for y in 0..bb_height {
             for x in 0..bb_width {
-                if canvas.is_valid(x, y) {
+                if canvas.low_level_get(x, y).is_some() {
                     coordinates.push(Pad {
                         x: x as i32,
                         y: y as i32,
