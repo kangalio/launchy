@@ -1,24 +1,18 @@
 use super::Button;
 
+/// A Launchpad S input message
 #[derive(Debug, Eq, PartialEq, Hash, Clone)]
-/// The Launchpad S input message enum
 pub enum Message {
-    // A button has been pressed
-    Press {
-        button: Button,
-    },
-    // A button has been released
-    Release {
-        button: Button,
-    },
+    /// A button was pressed
+    Press { button: Button },
+    /// A button was released
+    Release { button: Button },
     /// Emitted after a text scroll was initiated
     TextEndedOrLooped,
     /// Every once in a while, the device randomly spews out a weird undocumented MIDI message.
     /// I have no idea what that is about. It comes relatively regularly though, so I don't want
     /// to discard those messages either.
-    UnknownShortMessage {
-        bytes: [u8; 3],
-    },
+    UnknownShortMessage { bytes: [u8; 3] },
 }
 
 fn decode_grid_button(btn: u8) -> Button {
@@ -38,9 +32,9 @@ impl crate::InputDevice for Input {
 
     fn decode_message(_timestamp: u64, data: &[u8]) -> Message {
         // first byte of a launchpad midi message is the message type
-        return match data {
+        match data {
+            // Note on
             &[0x90, button, velocity] => {
-                // Note on
                 let button = decode_grid_button(button);
 
                 match velocity {
@@ -49,8 +43,8 @@ impl crate::InputDevice for Input {
                     other => panic!("Unexpected grid note-on velocity {}", other),
                 }
             }
+            // Controller change
             &[0xB0, number @ 104..=111, velocity] => {
-                // Controller change
                 let button = Button::ControlButton {
                     index: number - 104,
                 };
@@ -66,6 +60,6 @@ impl crate::InputDevice for Input {
             // YES we have no note off message handler here because it's not used by the launchpad.
             // It sends zero-velocity note-on messages instead.
             other => panic!("Unexpected midi message: {:?}", other),
-        };
+        }
     }
 }

@@ -60,12 +60,10 @@ fn decode_short_message(data: &[u8]) -> Message {
                         other => panic!("Unexpected control note-on velocity {}", other),
                     }
                 }
-                21..=28 => {
-                    Message::FaderChange {
-                        index: data[1] - 21,
-                        value: data[2],
-                    }
-                }
+                21..=28 => Message::FaderChange {
+                    index: data[1] - 21,
+                    value: data[2],
+                },
                 _ => panic!("Unexpected data byte 1. {:?}", data),
             }
         }
@@ -80,7 +78,7 @@ fn decode_short_message(data: &[u8]) -> Message {
 }
 
 fn decode_sysex_message(data: &[u8]) -> Message {
-    return match data {
+    match data {
         &[240, 0, 32, 41, 2, 24, 21, 247] => Message::TextEndedOrLooped,
         &[240, 126, device_id, 6, 2, 0, 32, 41, 105, 0, 0, 0, fr1, fr2, fr3, fr4, 247] => {
             let firmware_revision = u32::from_be_bytes([fr1, fr2, fr3, fr4]);
@@ -115,7 +113,7 @@ fn decode_sysex_message(data: &[u8]) -> Message {
             }
         }
         other => panic!("Unexpected sysex message: {:?}", other),
-    };
+    }
 }
 
 fn decode_grid_button(btn: u8) -> Button {

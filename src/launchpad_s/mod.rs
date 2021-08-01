@@ -44,7 +44,11 @@ impl crate::DeviceSpec for Spec {
             Color::new(r, g)
         };
 
-        if changes.len() > 41 {
+        // Because rapid-update mode lets us set 2 LEDs per instruction, if we
+        // have more than 40 updates, it's faster to use rapid-update mode to
+        // re-write the whole canvas
+        if changes.len() > 40 {
+            // Set the main body
             for y in 1..=8 {
                 for x in (0..=7).step_by(2) {
                     canvas.output.set_button_rapid(

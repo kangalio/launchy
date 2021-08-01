@@ -1,7 +1,7 @@
 use super::Button;
 
-#[derive(Debug, Eq, PartialEq, Hash, Clone)]
 /// A Launchpad Mini input message
+#[derive(Debug, Eq, PartialEq, Hash, Clone)]
 pub enum Message {
     /// A button was pressed
     Press { button: Button },
@@ -9,14 +9,15 @@ pub enum Message {
     Release { button: Button },
 }
 
+fn decode_grid_button(btn: u8) -> Button {
+    Button::GridButton {
+        x: btn % 16,
+        y: btn / 16,
+    }
+}
+
 /// The Launchpad Mini input connection creator.
 pub struct Input;
-
-fn decode_grid_button(btn: u8) -> Button {
-    let x = btn % 16;
-    let y = btn / 16;
-    Button::GridButton { x, y }
-}
 
 impl crate::InputDevice for Input {
     const MIDI_DEVICE_KEYWORD: &'static str = "Launchpad Mini";
@@ -25,7 +26,7 @@ impl crate::InputDevice for Input {
 
     fn decode_message(_timestamp: u64, data: &[u8]) -> Message {
         // first byte of a launchpad midi message is the message type
-        return match data {
+        match data {
             // Note on
             &[0x90, button, velocity] => {
                 let button = decode_grid_button(button);
@@ -51,6 +52,6 @@ impl crate::InputDevice for Input {
             // YES we have no note off message handler here because it's not used by the launchpad.
             // It sends zero-velocity note-on messages instead.
             other => panic!("Unexpected midi message: {:?}", other),
-        };
+        }
     }
 }

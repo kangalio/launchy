@@ -96,7 +96,7 @@ impl Button {
 pub struct Spec;
 
 impl crate::DeviceSpec for Spec {
-    const BOUNDING_BOX_WIDTH: u32 = 10;
+    const BOUNDING_BOX_WIDTH: u32 = 10; // TODO: shouldn't this be 9?
     const BOUNDING_BOX_HEIGHT: u32 = 2;
     const COLOR_PRECISION: u16 = 4;
 

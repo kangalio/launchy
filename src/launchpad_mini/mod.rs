@@ -1,5 +1,7 @@
 /*!
 # Launchpad Mini low-level API
+
+![Picture](https://imgur.com/sdLy3XK.png)
 */
 
 mod input;
@@ -44,8 +46,7 @@ impl crate::DeviceSpec for Spec {
 
         // Because rapid-update mode lets us set 2 LEDs per instruction, if we
         // have more than 40 updates, it's faster to use rapid-update mode to
-        // re-write the whole canvas (the whole canvas is 81 lights, so anything
-        // > 81/2 will be faster).
+        // re-write the whole canvas
         if changes.len() > 40 {
             // Set the main body
             for y in 1..=8 {

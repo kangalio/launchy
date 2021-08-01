@@ -85,13 +85,13 @@ impl Output {
         ])
     }
 
-    /// Turns on all LEDs to a certain brightness, dictated by the `brightness` parameter.
-    /// According to the Launchpad documentation, sending this command resets various configuration
-    /// settings - see `reset()` for more information. However, in my experience, that only
-    /// sometimes happens. Weird.
+    /// Turns on all LEDs to a certain brightness, dictated by the `brightness` parameter. According
+    /// to the Launchpad documentation, sending this command resets various configuration settings -
+    /// see `reset()` for more information. However, in my experience, that only sometimes happens.
+    /// Weird.
     ///
-    /// Btw this function is not really intended for regular use. It's more like a test function to
-    /// check if the device is working correctly, diagnostic stuff like that.
+    /// This function is primarily intended as a diagnostics tool to verify that the library and the
+    /// device is working correctly.
     pub fn turn_on_all_leds(&mut self, brightness: Brightness) -> Result<(), crate::MidiError> {
         let brightness_code = match brightness {
             Brightness::Off => 0,
@@ -107,14 +107,17 @@ impl Output {
     /// faster than the eye can see: a technique known as multiplexing. This command provides a way
     /// of altering the proportion of time for which the LEDs are on while they are in low- and
     /// medium-brightness modes. This proportion is known as the duty cycle.
+    ///
     /// Manipulating this is useful for fade effects, for adjusting contrast, and for creating
     /// custom palettes.
+    ///
     /// The default duty cycle is 1/5 meaning that low-brightness LEDs are on for only every fifth
-    /// multiplex pass, and medium-brightness LEDs are on for two passes in every five.
-    /// Generally, lower duty cycles (numbers closer to zero) will increase contrast between
-    /// different brightness settings but will also increase flicker; higher ones will eliminate
-    /// flicker, but will also reduce contrast. Note that using less simple ratios (such as 3/17 or
-    /// 2/11) can also increase perceived flicker.
+    /// multiplex pass, and medium-brightness LEDs are on for two passes in every five. Generally,
+    /// lower duty cycles (numbers closer to zero) will increase contrast between different
+    /// brightness settings but will also increase flicker; higher ones will eliminate flicker, but
+    /// will also reduce contrast. Note that using less simple ratios (such as 3/17 or 2/11) can
+    /// also increase perceived flicker.
+    ///
     /// If you are particularly sensitive to strobing lights, please use this command with care when
     /// working with large areas of low-brightness LEDs: in particular, avoid duty cycles of 1/8 or
     /// less.
@@ -144,7 +147,7 @@ impl Output {
     /// all the Launchpads connected to a system.
     ///
     /// - If `copy` is set, copy the LED states from the new displayed buffer to the new updating
-    /// buffer.
+    ///   buffer.
     /// - If `flash` is set, continually flip displayed buffers to make selected LEDs flash.
     /// - `updated`: the new updated buffer
     /// - `displayed`: the new displayed buffer
@@ -161,7 +164,7 @@ impl Output {
     // TODO: fix this
     // Uncommented because I have no idea to parse the return format
     // pub fn request_device_inquiry(&mut self) -> Result<(), crate::MidiError> {
-    //     return self.send(&[240, 126, 127, 6, 1, 247]);
+    //     self.send(&[240, 126, 127, 6, 1, 247])
     // }
 
     pub fn scroll_text(
@@ -177,9 +180,9 @@ impl Output {
         self.send(bytes)
     }
 
-    // ------------------------------------------------------
-    // Below here are shorthand functions
-    // ------------------------------------------------------
+    // -----------------------------
+    // Shorthand functions:
+    // -----------------------------
 
     /// All LEDs are turned off, and the mapping mode, buffer settings, and duty cycle are reset to
     /// their default values.
@@ -192,7 +195,7 @@ impl Output {
     }
 
     pub fn light_all_rapid(&mut self, color: Color) -> Result<(), crate::MidiError> {
-        let dbb = DoubleBufferingBehavior::None; // this allows for double buffering shenanigans
+        let dbb = DoubleBufferingBehavior::None;
 
         for _ in 0..40 {
             self.set_button_rapid(color, dbb, color, dbb)?;

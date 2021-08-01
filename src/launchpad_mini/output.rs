@@ -3,7 +3,6 @@ use midir::MidiOutputConnection;
 use super::Button;
 use crate::OutputDevice;
 
-#[doc(inline)]
 pub use crate::protocols::double_buffering::*;
 
 #[allow(dead_code)] // to prevent "variant is never constructed" warning
@@ -66,18 +65,15 @@ impl Output {
         Ok(())
     }
 
-    /// In order to make maximum use of the original Launchpad's slow midi
-    /// speeds, a rapid LED lighting mode was invented which allows the lighting
-    /// of two leds in just a single message. To use this mode, simply start
-    /// sending these message and the Launchpad will update the 8x8 grid in
-    /// left-to-right, top-to-bottom order, then the eight scene launch buttons
-    /// in top-to-bottom order, and finally the eight Automap/Live buttons in
-    /// left-to-right order (these are otherwise inaccessible using note-on
-    /// messages). Overflowing data will be ignored.
+    /// In order to make maximum use of the original Launchpad's slow midi speeds, a rapid LED
+    /// lighting mode was invented which allows the lighting of two leds in just a single message.
+    /// To use this mode, simply start sending these message and the Launchpad will update the 8x8
+    /// grid in left-to-right, top-to-bottom order, then the eight scene launch buttons in
+    /// top-to-bottom order, and finally the eight Automap/Live buttons in left-to-right order
+    /// (these are otherwise inaccessible using note-on messages). Overflowing data will be ignored.
     ///
-    /// To leave the mode, simply send any other message. Sending another kind
-    /// of message and then re-sending this message will reset the cursor to the
-    /// top left of the grid.
+    /// To leave the mode, simply send any other message. Sending another kind of message and then
+    /// re-sending this message will reset the cursor to the top left of the grid.
     pub fn set_button_rapid(
         &mut self,
         color1: Color,
@@ -92,15 +88,13 @@ impl Output {
         ])
     }
 
-    /// Turns on all LEDs to a certain brightness, dictated by the `brightness`
-    /// parameter. According to the Launchpad documentation, sending this
-    /// command resets various configuration settings - see `reset()` for more
-    /// information. However, in my experience, that only sometimes happens.
+    /// Turns on all LEDs to a certain brightness, dictated by the `brightness` parameter. According
+    /// to the Launchpad documentation, sending this command resets various configuration settings -
+    /// see `reset()` for more information. However, in my experience, that only sometimes happens.
     /// Weird.
     ///
-    /// This function is not intended for regular use. It's more like a test
-    /// function to check if the device is working correctly, diagnostic stuff
-    /// like that.
+    /// This function is primarily intended as a diagnostics tool to verify that the library and the
+    /// device is working correctly.
     pub fn turn_on_all_leds(&mut self, brightness: Brightness) -> Result<(), crate::MidiError> {
         let brightness_code = match brightness {
             Brightness::Off => 0,
@@ -112,25 +106,24 @@ impl Output {
         self.send(&[0xB0, 0, brightness_code])
     }
 
-    /// Launchpad controls the brightness of its LEDs by continually switching
-    /// them on and off faster than the eye can see: a technique known as
-    /// multiplexing. This command provides a way of altering the proportion of
-    /// time for which the LEDs are on while they are in low- and
+    /// Launchpad controls the brightness of its LEDs by continually switching them on and off
+    /// faster than the eye can see: a technique known as multiplexing. This command provides a way
+    /// of altering the proportion of time for which the LEDs are on while they are in low- and
     /// medium-brightness modes. This proportion is known as the duty cycle.
-    /// Manipulating this is useful for fade effects, for adjusting contrast,
-    /// and for creating custom palettes.
     ///
-    /// The default duty cycle is 1/5 meaning that low-brightness LEDs are on
-    /// for only every fifth multiplex pass, and medium-brightness LEDs are on
-    /// for two passes in every five. Generally, lower duty cycles (numbers
-    /// closer to zero) will increase contrast between different brightness
-    /// settings but will also increase flicker; higher ones will eliminate
-    /// flicker, but will also reduce contrast. Note that using less simple
-    /// ratios (such as 3/17 or 2/11) can also increase perceived flicker.
+    /// Manipulating this is useful for fade effects, for adjusting contrast, and for creating
+    /// custom palettes.
     ///
-    /// If you are particularly sensitive to strobing lights, please use this
-    /// command with care when working with large areas of low-brightness LEDs:
-    /// in particular, avoid duty cycles of 1/8 or less.
+    /// The default duty cycle is 1/5 meaning that low-brightness LEDs are on for only every fifth
+    /// multiplex pass, and medium-brightness LEDs are on for two passes in every five. Generally,
+    /// lower duty cycles (numbers closer to zero) will increase contrast between different
+    /// brightness settings but will also increase flicker; higher ones will eliminate flicker, but
+    /// will also reduce contrast. Note that using less simple ratios (such as 3/17 or 2/11) can
+    /// also increase perceived flicker.
+    ///
+    /// If you are particularly sensitive to strobing lights, please use this command with care when
+    /// working with large areas of low-brightness LEDs: in particular, avoid duty cycles of 1/8 or
+    /// less.
     pub fn set_duty_cycle(
         &mut self,
         numerator: u8,
@@ -148,14 +141,13 @@ impl Output {
         }
     }
 
-    /// This method controls the double buffering mode on the Launchpad. See the
-    /// module documentation for an explanation on double buffering.
+    /// This method controls the double buffering mode on the Launchpad. See the module
+    /// documentation for an explanation on double buffering.
     ///
-    /// The default state is no flashing; the first buffer is both the update
-    /// and the displayed buffer: In this mode, any LED data written to
-    /// Launchpad is displayed instantly. Sending this message also resets the
-    /// flash timer, so it can be used to resynchronise the flash rates of all
-    /// the Launchpads connected to a system.
+    /// The default state is no flashing; the first buffer is both the update and the displayed
+    /// buffer: In this mode, any LED data written to Launchpad is displayed instantly. Sending this
+    /// message also resets the flash timer, so it can be used to resynchronise the flash rates of
+    /// all the Launchpads connected to a system.
     ///
     /// - If `copy` is set, copy the LED states from the new displayed buffer to the new updating
     ///   buffer.
@@ -194,11 +186,9 @@ impl Output {
         self.set_button(button, color, DoubleBufferingBehavior::Copy)
     }
 
-    pub fn light_all_rapid(
-        &mut self,
-        color: Color,
-        dbb: DoubleBufferingBehavior,
-    ) -> Result<(), crate::MidiError> {
+    pub fn light_all_rapid(&mut self, color: Color) -> Result<(), crate::MidiError> {
+        let dbb = DoubleBufferingBehavior::None;
+
         for _ in 0..40 {
             self.set_button_rapid(color, dbb, color, dbb)?;
         }

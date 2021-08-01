@@ -275,21 +275,19 @@ impl Canvas for CanvasLayout<'_> {
     }
 
     fn bounding_box_width(&self) -> u32 {
-        return self
-            .devices
+        self.devices
             .iter()
             .map(|device| device.x + device.canvas.bounding_box_width())
             .max()
-            .unwrap_or(0);
+            .unwrap_or(0)
     }
 
     fn bounding_box_height(&self) -> u32 {
-        return self
-            .devices
+        self.devices
             .iter()
             .map(|device| device.y + device.canvas.bounding_box_height())
             .max()
-            .unwrap_or(0);
+            .unwrap_or(0)
     }
 
     fn is_valid(&self, x: u32, y: u32) -> bool {

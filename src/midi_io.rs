@@ -190,10 +190,9 @@ pub trait MsgPollingWrapper {
     /// Wait for a message to arrive, and return that. For a non-block variant, see
     /// [`Self::try_recv`].
     fn recv(&self) -> Self::Message {
-        return self
-            .receiver()
+        self.receiver()
             .recv()
-            .expect("Message sender has hung up - please report a bug");
+            .expect("Message sender has hung up - please report a bug")
     }
 
     /// If there is a pending message, return that. Otherwise, return `None`.
@@ -229,7 +228,7 @@ pub trait MsgPollingWrapper {
     /// For an iteration method that doesn't block, but returns immediately when there are no more
     /// pending messages, see [`Self::iter_pending`].
     fn iter(&self) -> std::sync::mpsc::Iter<Self::Message> {
-        return self.receiver().iter();
+        self.receiver().iter()
     }
 
     /// Returns an iterator over the currently pending messages. As soon as all pending messages
@@ -238,7 +237,7 @@ pub trait MsgPollingWrapper {
     /// For an iteration method that will block, waiting for new messages to arrive, see
     /// [`Self::iter`].
     fn iter_pending(&self) -> std::sync::mpsc::TryIter<Self::Message> {
-        return self.receiver().try_iter();
+        self.receiver().try_iter()
     }
 
     /// Returns an iterator that yields all arriving messages for a specified amount of time. After
@@ -272,6 +271,6 @@ pub trait MsgPollingWrapper {
     ///
     /// This is equivalent to `self.iter_pending().count()`.
     fn drain(&self) -> usize {
-        return self.iter_pending().count();
+        self.iter_pending().count()
     }
 }
