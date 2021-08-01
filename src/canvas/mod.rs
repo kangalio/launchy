@@ -31,25 +31,41 @@ macro_rules! impl_traits_for_canvas {
 
         #[cfg(feature = "embedded-graphics-support")]
         mod eg {
-            pub use embedded_graphics::{prelude::*, DrawTarget, pixelcolor::{Rgb888, RgbColor}};
+            pub use embedded_graphics::{
+                prelude::*,
+                draw_target::DrawTarget,
+                geometry::Dimensions,
+                pixelcolor::{Rgb888, RgbColor},
+                primitives::rectangle::Rectangle,
+            };
         }
 
         #[cfg(feature = "embedded-graphics-support")]
-        impl<$($a $(: $b)?),+> eg::DrawTarget<eg::Rgb888> for $i<$($a),+> {
-            type Error = ();
+        impl<$($a $(: $b)?),+> eg::Dimensions for $i<$($a),+> {
+            fn bounding_box(&self) -> eg::Rectangle {
+                eg::Rectangle::new(
+                    eg::Point::new(0, 0),
+                    eg::Size::new(self.bounding_box_width(), self.bounding_box_height()),
+                )
+            }
+        }
 
-            fn draw_pixel(&mut self, pixel: eg::Pixel<eg::Rgb888>) -> Result<(), ()> {
-                let eg::Pixel(coord, color) = pixel;
+        #[cfg(feature = "embedded-graphics-support")]
+        impl<$($a $(: $b)?),+> eg::DrawTarget for $i<$($a),+> {
+            type Color = eg::Rgb888;
+            type Error = std::convert::Infallible;
 
-                // discard any potential out of bounds errors. that's just how it's done in
-                // embedded-graphics world
-                let _ = self.set(Pad { x: coord.x, y: coord.y }, color.into());
+            fn draw_iter<I: IntoIterator<Item = eg::Pixel<Self::Color>>>(
+                &mut self,
+                pixels: I,
+            ) -> Result<(), std::convert::Infallible> {
+                for eg::Pixel(coord, color) in pixels.into_iter() {
+                    // discard any potential out of bounds errors. that's just how it's done in
+                    // embedded-graphics world
+                    let _ = self.set(Pad { x: coord.x, y: coord.y }, color.into());
+                }
 
                 Ok(())
-            }
-
-            fn size(&self) -> eg::Size {
-                eg::Size::new(self.bounding_box_width(), self.bounding_box_height())
             }
         }
     }
