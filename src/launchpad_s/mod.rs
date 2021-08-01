@@ -60,6 +60,26 @@ impl crate::DeviceSpec for Spec {
                 }
             }
 
+            // Set the scene launch buttons (x = 8)
+            for y in (1..=8).step_by(2) {
+                canvas.output.set_button_rapid(
+                    convert_color(canvas.get_new_unchecked(8, y)),
+                    DoubleBufferingBehavior::Copy,
+                    convert_color(canvas.get_new_unchecked(8, y + 1)),
+                    DoubleBufferingBehavior::Copy,
+                )?;
+            }
+
+            // Set the Automap/live buttons (y = 0)
+            for x in (0..=7).step_by(2) {
+                canvas.output.set_button_rapid(
+                    convert_color(canvas.get_new_unchecked(x, 0)),
+                    DoubleBufferingBehavior::Copy,
+                    convert_color(canvas.get_new_unchecked(x + 1, 0)),
+                    DoubleBufferingBehavior::Copy,
+                )?;
+            }
+
             // dummy-light some button just to get out of the rapid update mode
             canvas.output.light(
                 Button::ControlButton { index: 0 },
