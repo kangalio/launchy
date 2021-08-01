@@ -1,7 +1,7 @@
 use midir::MidiOutputConnection;
 
-use crate::OutputDevice;
 use super::Button;
+use crate::OutputDevice;
 
 #[doc(inline)]
 pub use crate::protocols::double_buffering::*;
@@ -24,12 +24,12 @@ impl crate::OutputDevice for Output {
     fn from_connection(connection: MidiOutputConnection) -> Result<Self, crate::MidiError> {
         let mut self_ = Self { connection };
         self_.change_grid_mapping_mode(GridMappingMode::Session)?;
-        return Ok(self_);
+        Ok(self_)
     }
 
     fn send(&mut self, bytes: &[u8]) -> Result<(), crate::MidiError> {
         self.connection.send(bytes)?;
-        return Ok(());
+        Ok(())
     }
 }
 
@@ -50,20 +50,20 @@ impl Output {
         color: Color,
         d: DoubleBufferingBehavior,
     ) -> Result<(), crate::MidiError> {
-		let light_code = make_color_code(color, d);
+        let light_code = make_color_code(color, d);
 
-		match button {
-			Button::GridButton { x, y } => {
-				let button_code = y * 16 + x;
-				self.send(&[0x90, button_code, light_code])?;
-			},
-			Button::ControlButton { index } => {
-				let button_code = 104 + index;
-				self.send(&[0xB0, button_code, light_code])?;
-			}
-		}
+        match button {
+            Button::GridButton { x, y } => {
+                let button_code = y * 16 + x;
+                self.send(&[0x90, button_code, light_code])?;
+            }
+            Button::ControlButton { index } => {
+                let button_code = 104 + index;
+                self.send(&[0xB0, button_code, light_code])?;
+            }
+        }
 
-		return Ok(());
+        Ok(())
     }
 
     /// In order to make maximum use of the original Launchpad's slow midi
@@ -85,11 +85,11 @@ impl Output {
         color2: Color,
         dbb2: DoubleBufferingBehavior,
     ) -> Result<(), crate::MidiError> {
-        return self.send(&[
+        self.send(&[
             0x92,
             make_color_code(color1, dbb1),
             make_color_code(color2, dbb2),
-        ]);
+        ])
     }
 
     /// Turns on all LEDs to a certain brightness, dictated by the `brightness`
@@ -109,7 +109,7 @@ impl Output {
             Brightness::Full => 127,
         };
 
-        return self.send(&[0xB0, 0, brightness_code]);
+        self.send(&[0xB0, 0, brightness_code])
     }
 
     /// Launchpad controls the brightness of its LEDs by continually switching
@@ -142,9 +142,9 @@ impl Output {
         assert!(denominator <= 18);
 
         if numerator < 9 {
-            return self.send(&[0xB0, 30, 16 * (numerator - 1) + (denominator - 3)]);
+            self.send(&[0xB0, 30, 16 * (numerator - 1) + (denominator - 3)])
         } else {
-            return self.send(&[0xB0, 31, 16 * (numerator - 9) + (denominator - 3)]);
+            self.send(&[0xB0, 31, 16 * (numerator - 9) + (denominator - 3)])
         }
     }
 
@@ -157,10 +157,9 @@ impl Output {
     /// flash timer, so it can be used to resynchronise the flash rates of all
     /// the Launchpads connected to a system.
     ///
-    /// - If `copy` is set, copy the LED states from the new displayed buffer to
-    ///   the new updating buffer.
-    /// - If `flash` is set, continually flip displayed buffers to make selected
-    ///   LEDs flash.
+    /// - If `copy` is set, copy the LED states from the new displayed buffer to the new updating
+    ///   buffer.
+    /// - If `flash` is set, continually flip displayed buffers to make selected LEDs flash.
     /// - `updated`: the new updated buffer
     /// - `displayed`: the new displayed buffer
     pub fn control_double_buffering(&mut self, d: DoubleBuffering) -> Result<(), crate::MidiError> {
@@ -170,7 +169,7 @@ impl Output {
             | ((d.edited_buffer as u8) << 2)
             | d.displayed_buffer as u8;
 
-        return self.send(&[0xB0, 0, last_byte]);
+        self.send(&[0xB0, 0, last_byte])
     }
 
     fn change_grid_mapping_mode(&mut self, mode: GridMappingMode) -> Result<(), crate::MidiError> {
@@ -178,7 +177,7 @@ impl Output {
             GridMappingMode::Session => 0,
             GridMappingMode::DrumRack => 1,
         };
-        return self.send(&[240, 0, 32, 41, 2, 24, 34, mode, 247]);
+        self.send(&[240, 0, 32, 41, 2, 24, 34, mode, 247])
     }
 
     // -----------------------------
@@ -188,11 +187,11 @@ impl Output {
     /// All LEDs are turned off, and the mapping mode, buffer settings, and duty cycle are reset to
     /// their default values.
     pub fn reset(&mut self) -> Result<(), crate::MidiError> {
-        return self.turn_on_all_leds(Brightness::Off);
+        self.turn_on_all_leds(Brightness::Off)
     }
 
     pub fn light(&mut self, button: Button, color: Color) -> Result<(), crate::MidiError> {
-        return self.set_button(button, color, DoubleBufferingBehavior::Copy);
+        self.set_button(button, color, DoubleBufferingBehavior::Copy)
     }
 
     pub fn light_all_rapid(
@@ -204,6 +203,6 @@ impl Output {
             self.set_button_rapid(color, dbb, color, dbb)?;
         }
 
-        return Ok(());
+        Ok(())
     }
 }

@@ -15,7 +15,7 @@ pub struct Input;
 fn decode_grid_button(btn: u8) -> Button {
     let x = btn % 16;
     let y = btn / 16;
-    return Button::GridButton { x, y };
+    Button::GridButton { x, y }
 }
 
 impl crate::InputDevice for Input {

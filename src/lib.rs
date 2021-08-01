@@ -1,9 +1,3 @@
-// I know explicitly returning at the end of functions is not idiomatic, but I prefer it personally.
-// Also, I use tabs everywhere and I don't agree with clippy's reasoning against tabs in doc
-// comments, so I will keep using tabs in doc comments
-#![allow(clippy::needless_return, clippy::tabs_in_doc_comments)]
-
-
 /*!
 An interfacing library for your Novation Launchpads, providing both low-level access as well as
 powerful high-level abstractions.
@@ -20,11 +14,11 @@ use launchy::{CanvasMessage, Color};
 let (mut canvas, input_poller) = launchy::s::Canvas::guess_polling()?;
 
 for msg in input_poller.iter() {
-	match msg {
-		CanvasMessage::Press { pad } => canvas[pad] = Color::WHITE,
-		CanvasMessage::Release { pad } => canvas[pad] = Color::BLACK,
-	}
-	canvas.flush()?;
+    match msg {
+        CanvasMessage::Press { pad } => canvas[pad] = Color::WHITE,
+        CanvasMessage::Release { pad } => canvas[pad] = Color::BLACK,
+    }
+    canvas.flush()?;
 }
 ```
 The above `match` statement could also be written in a more concise way:
@@ -55,27 +49,27 @@ let mut output = launchy::s::Output::guess()?;
 
 // Start editing buffer A
 output.control_double_buffering(DoubleBuffering {
-	copy: false,
-	flash: false,
-	edited_buffer: Buffer::A,
-	displayed_buffer: Buffer::B,
+    copy: false,
+    flash: false,
+    edited_buffer: Buffer::A,
+    displayed_buffer: Buffer::B,
 });
 
 // Light all buttons red, using the rapid update feature - just 40 midi messages
 for _ in 0..40 {
-	output.set_button_rapid(
-		Color::RED, DoubleBufferingBehavior::None,
-		Color::RED, DoubleBufferingBehavior::None,
-	)
+    output.set_button_rapid(
+        Color::RED, DoubleBufferingBehavior::None,
+        Color::RED, DoubleBufferingBehavior::None,
+    )
 }
 
 // Now buffer A is completely red and B is empty. Let's leverage the Launchpad S flash
 // feature to continually flash between both buffers, producing a red flash:
 output.control_double_buffering(DoubleBuffering {
-	copy: false,
-	flash: true, // this is the important bit
-	edited_buffer: Buffer::A,
-	displayed_buffer: Buffer::A,
+    copy: false,
+    flash: true, // this is the important bit
+    edited_buffer: Buffer::A,
+    displayed_buffer: Buffer::A,
 });
 ```
 */
@@ -110,8 +104,8 @@ pub use launch_control as launch_control_xl;
 pub use launch_control as control_xl;
 
 pub mod prelude {
-	pub use crate::midi_io::{OutputDevice, InputDevice, MsgPollingWrapper};
-	pub use crate::canvas::{Canvas, Color, Pad};
+    pub use crate::canvas::{Canvas, Color, Pad};
+    pub use crate::midi_io::{InputDevice, MsgPollingWrapper, OutputDevice};
 }
 
 /// Identifier used for e.g. the midi port names etc.

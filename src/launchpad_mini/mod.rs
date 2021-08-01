@@ -28,7 +28,7 @@ impl crate::DeviceSpec for Spec {
         if x == 8 && y == 0 {
             return false;
         }
-        return true;
+        true
     }
 
     fn flush(
@@ -92,7 +92,7 @@ impl crate::DeviceSpec for Spec {
             }
         }
 
-        return Ok(());
+        Ok(())
     }
 
     fn convert_message(msg: Message) -> Option<crate::CanvasMessage> {
