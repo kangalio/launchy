@@ -29,7 +29,7 @@ macro_rules! impl_traits_for_canvas {
             }
         }
 
-        #[cfg(feature = "embedded-graphics-support")]
+        #[cfg(feature = "embedded-graphics")]
         mod eg {
             pub use embedded_graphics::{
                 prelude::*,
@@ -40,7 +40,7 @@ macro_rules! impl_traits_for_canvas {
             };
         }
 
-        #[cfg(feature = "embedded-graphics-support")]
+        #[cfg(feature = "embedded-graphics")]
         impl<$($a $(: $b)?),+> eg::Dimensions for $i<$($a),+> {
             fn bounding_box(&self) -> eg::Rectangle {
                 eg::Rectangle::new(
@@ -50,7 +50,7 @@ macro_rules! impl_traits_for_canvas {
             }
         }
 
-        #[cfg(feature = "embedded-graphics-support")]
+        #[cfg(feature = "embedded-graphics")]
         impl<$($a $(: $b)?),+> eg::DrawTarget for $i<$($a),+> {
             type Color = eg::Rgb888;
             type Error = std::convert::Infallible;
