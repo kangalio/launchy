@@ -7,6 +7,8 @@ pub enum Message {
     Press { button: Button },
     /// A button was released
     Release { button: Button },
+    /// Emitted after a text scroll ends or loops
+    TextEndedOrLooped,
 }
 
 fn decode_grid_button(btn: u8) -> Button {
@@ -49,6 +51,7 @@ impl crate::InputDevice for Input {
                     other => panic!("Unexpected control note-on velocity {}", other),
                 }
             }
+            &[0xB0, 0, 3] => Message::TextEndedOrLooped,
             // YES we have no note off message handler here because it's not used by the launchpad.
             // It sends zero-velocity note-on messages instead.
             other => panic!("Unexpected midi message: {:?}", other),

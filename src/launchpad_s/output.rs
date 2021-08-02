@@ -204,12 +204,3 @@ impl Output {
         Ok(())
     }
 }
-
-fn make_color_code_loopable(color: Color, should_loop: bool) -> u8 {
-    // Bit 6 - Loop - If 1: loop the text
-    // Bit 5..4 - Green LED brightness
-    // Bit 3..2 - uhhhh, I think these should probably be empty?
-    // Bit 1..0 - Red LED brightness
-
-    ((should_loop as u8) << 6) | (color.green() << 4) | color.red()
-}

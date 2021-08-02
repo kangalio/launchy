@@ -167,6 +167,19 @@ impl Output {
         self.send(&[0xB0, 0, last_byte])
     }
 
+    pub fn scroll_text(
+        &mut self,
+        text: &[u8],
+        color: Color,
+        should_loop: bool,
+    ) -> Result<(), crate::MidiError> {
+        let color_code = make_color_code_loopable(color, should_loop);
+
+        let bytes = &[&[240, 0, 32, 41, 9, color_code], text, &[247]].concat();
+
+        return self.send(bytes);
+    }
+
     fn change_grid_mapping_mode(&mut self, mode: GridMappingMode) -> Result<(), crate::MidiError> {
         let mode = match mode {
             GridMappingMode::Session => 0,
