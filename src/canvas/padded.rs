@@ -45,8 +45,8 @@ impl<C: Canvas> PaddingCanvas<C> {
 
         Self {
             inner,
-            curr_buf: Array2d::new(width as usize, height as usize),
-            new_buf: Array2d::new(width as usize, height as usize),
+            curr_buf: Array2d::new(width, height),
+            new_buf: Array2d::new(width, height),
         }
     }
 }
@@ -63,7 +63,7 @@ impl<C: Canvas> Canvas for PaddingCanvas<C> {
         if let Some(color) = self.inner.low_level_get(x, y) {
             Some(color)
         } else {
-            self.curr_buf.get(x as usize, y as usize)
+            self.curr_buf.get(x, y)
         }
     }
 
@@ -71,7 +71,7 @@ impl<C: Canvas> Canvas for PaddingCanvas<C> {
         if let Some(color) = self.inner.low_level_get_pending(x, y) {
             Some(color)
         } else {
-            self.new_buf.get(x as usize, y as usize)
+            self.new_buf.get(x, y)
         }
     }
 
@@ -79,7 +79,7 @@ impl<C: Canvas> Canvas for PaddingCanvas<C> {
         if let Some(color) = self.inner.low_level_get_pending_mut(x, y) {
             Some(color)
         } else {
-            self.new_buf.get_mut(x as usize, y as usize)
+            self.new_buf.get_mut(x, y)
         }
     }
 

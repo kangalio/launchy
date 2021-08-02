@@ -89,14 +89,10 @@ impl<Spec: DeviceSpec> DeviceCanvas<Spec> {
         let mut output = Spec::Output::guess()?;
         Spec::setup(&mut output)?;
 
-        let curr_state = crate::util::Array2d::new(
-            Spec::BOUNDING_BOX_WIDTH as usize,
-            Spec::BOUNDING_BOX_HEIGHT as usize,
-        );
-        let new_state = crate::util::Array2d::new(
-            Spec::BOUNDING_BOX_WIDTH as usize,
-            Spec::BOUNDING_BOX_HEIGHT as usize,
-        );
+        let curr_state =
+            crate::util::Array2d::new(Spec::BOUNDING_BOX_WIDTH, Spec::BOUNDING_BOX_HEIGHT);
+        let new_state =
+            crate::util::Array2d::new(Spec::BOUNDING_BOX_WIDTH, Spec::BOUNDING_BOX_HEIGHT);
 
         Ok(Self {
             _input,
@@ -145,7 +141,7 @@ impl<Spec: DeviceSpec> crate::Canvas for DeviceCanvas<Spec> {
             return None;
         }
 
-        self.curr_state.get(x as usize, y as usize)
+        self.curr_state.get(x, y)
     }
 
     fn low_level_get_pending_mut(&mut self, x: u32, y: u32) -> Option<&mut Color> {
@@ -153,7 +149,7 @@ impl<Spec: DeviceSpec> crate::Canvas for DeviceCanvas<Spec> {
             return None;
         }
 
-        self.new_state.get_mut(x as usize, y as usize)
+        self.new_state.get_mut(x, y)
     }
 
     fn low_level_get_pending(&self, x: u32, y: u32) -> Option<&Color> {
@@ -161,7 +157,7 @@ impl<Spec: DeviceSpec> crate::Canvas for DeviceCanvas<Spec> {
             return None;
         }
 
-        self.new_state.get(x as usize, y as usize)
+        self.new_state.get(x, y)
     }
 
     fn flush(&mut self) -> Result<(), crate::MidiError> {
