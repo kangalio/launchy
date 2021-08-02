@@ -52,7 +52,8 @@ impl Color {
     /// Create a new color from the given red, green, and blue components
     ///
     /// Examples:
-    /// ```rust
+    /// ```
+    /// # use launchy::Color;
     /// let lime = Color::new(0.75, 1.0, 0.0);
     /// let beige = Color::new(0.96, 0.96, 0.86);
     /// ```
@@ -63,7 +64,8 @@ impl Color {
     /// Creates a color from a hue, starting at 0.0 (red) and ending at 1.0 (red). You can pass in
     /// any number though, because the cycle repeats (think the `x` in `sin(x)`)
     ///
-    /// ```rust
+    /// ```
+    /// # use launchy::Color;
     /// let red = Color::from_hue(0.0);
     /// let orange = Color::from_hue(0.1);
     /// let greenish_yellow = Color::from_hue(0.2);
@@ -137,7 +139,8 @@ impl Color {
     /// `proportion_of_other`.
     ///
     /// Examples:
-    /// ```rust
+    /// ```
+    /// # use launchy::Color;
     /// let very_dark_red = Color::RED.mix(Color::BLACK, 0.9);
     /// let orange = Color::RED.mix(Color::YELLOW, 0.5);
     /// let dark_brown = Color::RED.mix(Color::YELLOW, 0.5).mix(Color::BLACK, 0.7);

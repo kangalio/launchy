@@ -36,12 +36,15 @@ impl Output {
     /// Set a `button` to a certain `color`.
     ///
     /// For example to set the leftmost control button to yellow:
-    /// ```
-    /// let mut output = Output::guess();
+    /// ```no_run
+    /// # use launchy::mini::{Output, Button, Color, DoubleBufferingBehavior};
+    /// # use launchy::OutputDevice as _;
+    /// # let output: launchy::mini::Output = unimplemented!();
     ///
     /// let button = Button::ControlButton { index: 0 };
     /// let color = Color::YELLOW;
     /// output.set_button(button, color, DoubleBufferingBehavior::Copy)?;
+    /// # Ok::<(), launchy::MidiError>(())
     /// ```
     pub fn set_button(
         &mut self,

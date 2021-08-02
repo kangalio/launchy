@@ -6,7 +6,8 @@
 /// [`Pad`] implements various mathematical operator traits for the `(i32, i32)` tuple. Therefore
 /// it's possible move a pad around by adding or subtracting (x, y) coordinate tuples:
 ///
-/// ```rust
+/// ```
+/// # use launchy::Pad;
 /// let pad = Pad { x: 3, y: 6 };
 ///
 /// assert_eq!(pad + (4, 4), Pad { x: 7, y: 10 });

@@ -8,11 +8,14 @@ use crate::OutputDevice;
 ///
 /// Everywhere where a PaletteColor is expected as a funcion argument, you can also directly pass
 /// in the palette index and call `.into()` on it. Example:
-/// ```
+/// ```no_run
+/// # use launchy::mk2::{PaletteColor};
+/// # let output: launchy::mk2::Output = unimplemented!();
 /// // This:
 /// output.light_all(PaletteColor::new(92));
 /// // can also be written as:
 /// output.light_all(92.into());
+/// # Ok::<(), launchy::MidiError>(())
 /// ```
 #[derive(Debug, Copy, Clone, Hash, Eq, PartialEq)]
 pub struct PaletteColor {
@@ -244,8 +247,10 @@ impl FaderMode {
 /// to the launchpad will get closed when this object goes out of scope.
 ///
 /// For example:
-/// ```
-/// let mut output = Output::guess();
+/// ```no_run
+/// # use launchy::OutputDevice as _;
+/// # use launchy::mk2::{PaletteColor, Button, Output};
+/// let mut output = Output::guess()?;
 ///
 /// output.light_all(PaletteColor::BLACK); // clear screen
 ///
@@ -257,6 +262,7 @@ impl FaderMode {
 ///
 /// // light top left button magenta
 /// output.light(Button::GridButton { x: 0, y: 0 }, PaletteColor::MAGENTA);
+/// # Ok::<(), launchy::MidiError>(())
 /// ```
 ///
 /// # Representing color
@@ -374,13 +380,14 @@ impl Output {
     /// Set a `button` to a certain `color` with a certain `light_mode`.
     ///
     /// For example to start a yellow pulse on the leftmost control button:
-    /// ```
-    /// let mut output = Output::guess();
-    ///
+    /// ```no_run
+    /// # use launchy::mk2::{PaletteColor, Button, LightMode};
+    /// # let output: launchy::mk2::Output = unimplemented!();
     /// let button = Button::ControlButton { index: 0 };
     /// let color = PaletteColor::YELLOW;
     /// let light_mode = LightMode::Pulse;
     /// output.set_button(button, color, light_mode)?;
+    /// # Ok::<(), launchy::MidiError>(())
     /// ```
     pub fn set_button(
         &mut self,
@@ -407,11 +414,14 @@ impl Output {
     ///
     /// For example to start a yellow flash on the leftmost control button and a red flash on the
     /// button to the right:
-    /// ```
+    /// ```no_run
+    /// # use launchy::mk2::{PaletteColor, Button, LightMode};
+    /// # let output: launchy::mk2::Output = unimplemented!();
     /// output.set_buttons(&[
     ///     (Button::ControlButton { index: 0 }, PaletteColor::YELLOW),
     ///     (Button::ControlButton { index: 1 }, PaletteColor::RED),
     /// ], LightMode::Flash)?;
+    /// # Ok::<(), launchy::MidiError>(())
     /// ```
     pub fn set_buttons(
         &mut self,
@@ -446,11 +456,14 @@ impl Output {
     /// Light multiple buttons with varying color. This method support RGB.
     ///
     /// For example to light the top left button green and the top right button red:
-    /// ```
+    /// ```no_run
+    /// # use launchy::mk2::{Button, RgbColor};
+    /// # let output: launchy::mk2::Output = unimplemented!();
     /// output.light_multiple_rgb(&[
-    ///     (Button::GridButton { x: 0, y: 0 }, RgbColor.new(0, 0, 63)),
-    ///     (Button::GridButton { x: 7, y: 0 }, RgbColor.new(63, 0, 0)),
+    ///     (Button::GridButton { x: 0, y: 0 }, RgbColor::new(0, 0, 63)),
+    ///     (Button::GridButton { x: 7, y: 0 }, RgbColor::new(63, 0, 0)),
     /// ])?;
+    /// # Ok::<(), launchy::MidiError>(())
     /// ```
     pub fn light_multiple_rgb<I, T>(&mut self, buttons: I) -> Result<(), crate::MidiError>
     where
@@ -479,11 +492,14 @@ impl Output {
     /// buttons
     ///
     /// For example to light the first column yellow and the second column blue:
-    /// ```
+    /// ```no_run
+    /// # use launchy::mk2::{Button, PaletteColor};
+    /// # let output: launchy::mk2::Output = unimplemented!();
     /// output.light_columns(&[
     ///     (0, PaletteColor::YELLOW),
     ///     (1, PaletteColor::BLUE),
     /// ])?;
+    /// # Ok::<(), launchy::MidiError>(())
     /// ```
     pub fn light_columns(
         &mut self,
@@ -496,11 +512,14 @@ impl Output {
     ///
     /// Note: the row are counted starting at the control row! For example to light the control row
     /// magenta and the first grid row green:
-    /// ```
+    /// ```no_run
+    /// # use launchy::mk2::{Button, PaletteColor};
+    /// # let output: launchy::mk2::Output = unimplemented!();
     /// output.light_rows(&[
     ///     (0, PaletteColor::MAGENTA),
     ///     (1, PaletteColor::GREEN),
     /// ])?;
+    /// # Ok::<(), launchy::MidiError>(())
     /// ```
     pub fn light_rows(
         &mut self,
@@ -520,8 +539,11 @@ impl Output {
     /// Light all buttons, including control and side buttons.
     ///
     /// For example to clear the screen:
-    /// ```
+    /// ```no_run
+    /// # use launchy::mk2::PaletteColor;
+    /// # let output: launchy::mk2::Output = unimplemented!();
     /// output.light_all(PaletteColor::BLACK)?;
+    /// # Ok::<(), launchy::MidiError>(())
     /// ```
     pub fn light_all(&mut self, color: PaletteColor) -> Result<(), crate::MidiError> {
         self.send(&[240, 0, 32, 41, 2, 24, 14, color.id, 247])
@@ -538,7 +560,8 @@ impl Output {
     /// ignored.
     ///
     /// For example to send clock ticks at 200 BPM:
-    /// ```
+    /// ```no_run
+    /// # let output: launchy::mk2::Output = unimplemented!();
     /// let beats_per_minute = 200;
     /// let clock_ticks_per_second = beats_per_minute * 60 * 24;
     /// let clock_tick_interval = std::time::Duration::from_millis(1000 / clock_ticks_per_second);
@@ -546,6 +569,7 @@ impl Output {
     ///     output.send_clock_tick()?;
     ///     std::thread::sleep(clock_tick_interval);
     /// }
+    /// # Ok::<(), launchy::MidiError>(())
     /// ```
     pub fn send_clock_tick(&mut self) -> Result<(), crate::MidiError> {
         self.send(&[248, 0, 0])
@@ -592,8 +616,11 @@ impl Output {
     ///
     /// For example to scroll the text "Hello, world!" in blue; "Hello" scrolling slow and "world"
     /// fast:
-    /// ```
+    /// ```no_run
+    /// # use launchy::mk2::PaletteColor;
+    /// # let output: launchy::mk2::Output = unimplemented!();
     /// output.scroll_text(b"\x01Hello, \x07world!", PaletteColor::BLUE, false)?;
+    /// # Ok::<(), launchy::MidiError>(())
     /// ```
     pub fn scroll_text(
         &mut self,
@@ -630,16 +657,19 @@ impl Output {
     /// - A green one on the left, turned all the way down
     /// - Another green one next to the first fader, turned all the way up
     /// - A white one on the right, centered
-    /// ```
-    /// let mut fader_setup = output.enter_fader_mode()?;
+    /// ```no_run
+    /// # use launchy::mk2::{PaletteColor, Fader, FaderType};
+    /// # let mut output: launchy::mk2::Output = unimplemented!();
+    /// let mut fader_setup = output.enter_fader_mode(FaderType::Volume)?;
     ///
-    /// fader_mode.designate_faders(&[
+    /// fader_setup.designate_faders(&[
     ///     Fader::new(0, PaletteColor::GREEN, 0),
     ///     Fader::new(1, PaletteColor::GREEN, 127),
     ///     Fader::new(7, PaletteColor::WHITE, 63),
     /// ])?;
     ///
     /// let mut output = fader_setup.exit()?;
+    /// # Ok::<(), launchy::MidiError>(())
     /// ```
     #[must_use = "If you don't use the returned object, the MIDI connection will be dropped immediately"]
     pub fn enter_fader_mode(self, fader_type: FaderType) -> Result<FaderMode, crate::MidiError> {
@@ -721,8 +751,11 @@ impl Output {
     ///
     /// For example to light the "Volume" side button cyan:
     ///
-    /// ```
+    /// ```no_run
+    /// # use launchy::mk2::{Button, PaletteColor};
+    /// # let output: launchy::mk2::Output = unimplemented!();
     /// output.light(Button::VOLUME, PaletteColor::CYAN)?;
+    /// # Ok::<(), launchy::MidiError>(())
     /// ```
     pub fn light(&mut self, button: Button, color: PaletteColor) -> Result<(), crate::MidiError> {
         self.set_button(button, color, LightMode::Plain)
@@ -735,8 +768,11 @@ impl Output {
     /// Identical to `set_button(<button>, <color>, LightMode::FLASH)`.
     ///
     /// For example to start a red flash on the "Session" button at the top:
-    /// ```
+    /// ```no_run
+    /// # use launchy::mk2::{Button, PaletteColor};
+    /// # let output: launchy::mk2::Output = unimplemented!();
     /// output.flash(Button::UP, PaletteColor::RED)?;
+    /// # Ok::<(), launchy::MidiError>(())
     /// ```
     pub fn flash(&mut self, button: Button, color: PaletteColor) -> Result<(), crate::MidiError> {
         self.set_button(button, color, LightMode::Flash)
@@ -746,8 +782,11 @@ impl Output {
     /// using `send_clock_tick()`. Identical to `set_button(<button>, <color>, LightMode::PULSE)`.
     ///
     /// For example to start a magenta pulse on the top right grid button:
-    /// ```
+    /// ```no_run
+    /// # use launchy::mk2::{Button, PaletteColor};
+    /// # let output: launchy::mk2::Output = unimplemented!();
     /// output.pulse(Button::GridButton { x: 7, y: 0 }, PaletteColor::MAGENTA)?;
+    /// # Ok::<(), launchy::MidiError>(())
     /// ```
     pub fn pulse(&mut self, button: Button, color: PaletteColor) -> Result<(), crate::MidiError> {
         self.set_button(button, color, LightMode::Pulse)
@@ -756,8 +795,11 @@ impl Output {
     /// Light a single column, specified by `column` (0-8).
     ///
     /// For example to light the entire side button column white:
-    /// ```
+    /// ```no_run
+    /// # use launchy::mk2::{Button, PaletteColor};
+    /// # let output: launchy::mk2::Output = unimplemented!();
     /// output.light_column(8, PaletteColor::WHITE)?;
+    /// # Ok::<(), launchy::MidiError>(())
     /// ```
     pub fn light_column(
         &mut self,
@@ -771,8 +813,11 @@ impl Output {
     /// row! So e.g. when you want to light the first grid row, pass `1` not `0`.
     ///
     /// For example to light the first grid row green:
-    /// ```
+    /// ```no_run
+    /// # use launchy::mk2::{Button, PaletteColor};
+    /// # let output: launchy::mk2::Output = unimplemented!();
     /// output.light_row(1, PaletteColor::GREEN)?;
+    /// # Ok::<(), launchy::MidiError>(())
     /// ```
     pub fn light_row(&mut self, row: u8, color: PaletteColor) -> Result<(), crate::MidiError> {
         self.light_rows(&[(row, color)])
@@ -781,8 +826,11 @@ impl Output {
     /// Light a single button with an RGB color.
     ///
     /// For example to light the bottom right button cyan:
-    /// ```
+    /// ```no_run
+    /// # use launchy::mk2::{Button, RgbColor};
+    /// # let output: launchy::mk2::Output = unimplemented!();
     /// output.light_rgb(Button::GridButton { x: 7, y: 7 }, RgbColor::new(0, 63, 63))?;
+    /// # Ok::<(), launchy::MidiError>(())
     /// ```
     pub fn light_rgb(&mut self, button: Button, color: RgbColor) -> Result<(), crate::MidiError> {
         self.light_multiple_rgb(&[(button, color)])
@@ -792,11 +840,14 @@ impl Output {
     /// `set_buttons(<pairs>, LightMode::Plain)`
     ///
     /// For example to light both User 1 and User 2 buttons orange:
-    /// ```
+    /// ```no_run
+    /// # use launchy::mk2::{Button, PaletteColor};
+    /// # let output: launchy::mk2::Output = unimplemented!();
     /// output.light_multiple(&[
     ///     (Button::USER_1, PaletteColor::new(9)),
     ///     (Button::USER_2, PaletteColor::new(9)),
     /// ])?;
+    /// # Ok::<(), launchy::MidiError>(())
     /// ```
     pub fn light_multiple(
         &mut self,
@@ -809,11 +860,14 @@ impl Output {
     /// `set_buttons(<pairs>, LightMode::Flash)`
     ///
     /// For example to flash both User 1 and User 2 buttons orange:
-    /// ```
+    /// ```no_run
+    /// # use launchy::mk2::{Button, PaletteColor};
+    /// # let output: launchy::mk2::Output = unimplemented!();
     /// output.flash_multiple(&[
     ///     (Button::USER_1, PaletteColor::new(9)),
     ///     (Button::USER_2, PaletteColor::new(9)),
     /// ])?;
+    /// # Ok::<(), launchy::MidiError>(())
     /// ```
     pub fn flash_multiple(
         &mut self,
@@ -826,11 +880,14 @@ impl Output {
     /// `set_buttons(<pairs>, LightMode::Pulse)`
     ///
     /// For example to pulse both User 1 and User 2 buttons orange:
-    /// ```
+    /// ```no_run
+    /// # use launchy::mk2::{Button, PaletteColor};
+    /// # let output: launchy::mk2::Output = unimplemented!();
     /// output.pulse_multiple(&[
     ///     (Button::USER_1, PaletteColor::new(9)),
     ///     (Button::USER_2, PaletteColor::new(9)),
     /// ])?;
+    /// # Ok::<(), launchy::MidiError>(())
     /// ```
     pub fn pulse_multiple(
         &mut self,

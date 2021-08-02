@@ -109,17 +109,20 @@ fn transform_color(color: Color, source: f32, target: f32) -> Color {
 /// you're ready to rock!
 ///
 /// Example:
-/// ```rust
+/// ```no_run
+/// # use launchy::{CanvasLayout, Canvas as _};
 /// let mut canvas_layout = CanvasLayout::new(|msg| println!("Got a message: {:?}", msg));
 ///
 /// // Assuming you have a Launchpad MK2 and a Launchpad S lying next to it:
-/// canvas_layout.add_by_guess::<launchy::mk2::Canvas>(0, 0);
-/// canvas_layout.add_by_guess::<launchy::s::Canvas>(9, 0);
+/// canvas_layout.add_by_guess::<launchy::mk2::Canvas>(0, 0)?;
+/// canvas_layout.add_by_guess::<launchy::s::Canvas>(9, 0)?;
 ///
 /// // Light the entire canvas layout red - i.e. both Launchpads will be red
-/// for button in canvas_layout.iter() {
-///     button.set(&mut canvas_layout, launchy::Color::RED);
+/// for pad in canvas_layout.iter() {
+///     canvas_layout[pad] = launchy::Color::RED;
 /// }
+/// canvas_layout.flush()?;
+/// # Ok::<(), launchy::MidiError>(())
 /// ```
 pub struct CanvasLayout<'a> {
     devices: Vec<LayoutDevice<'a>>,
@@ -170,14 +173,19 @@ impl<'a> CanvasLayout<'a> {
     /// The `Result` which the closure returns will be propagated.
     ///
     /// Example:
-    /// ```rust
-    /// canvas_layout.add(0, 0, |callback| launchy::mk2::Canvas::guess(callback))?;
+    /// ```no_run
+    /// # use launchy::{CanvasLayout, Rotation};
+    /// # let mut canvas_layout = launchy::CanvasLayout::new(|_| {});
+    /// canvas_layout.add(0, 0, Rotation::None, |callback| launchy::mk2::Canvas::guess(callback))?;
     ///
     /// // or even nested layouts:
-    /// canvas_layout.add(0, 0, |callback| {
-    ///     let mut inner_canvas_layout = CanvasLayout::new(callback);
-    ///     inner_canvas_layout.add(0, 0, |inner_callback| launchy::mk2::Canvas::guess(inner_callback))
+    /// canvas_layout.add(0, 0, Rotation::None, |callback| {
+    ///     let mut canvas_layout = CanvasLayout::new(callback);
+    ///     canvas_layout.add(0, 0, Rotation::None, |callback| launchy::mk2::Canvas::guess(callback))?;
+    ///     Ok::<_, launchy::MidiError>(canvas_layout)
     /// })?;
+    ///
+    /// # Ok::<(), launchy::MidiError>(())
     /// ```
     ///
     /// If you want an easier way to add simple devices, see `add_by_guess`.
@@ -245,10 +253,12 @@ impl<'a> CanvasLayout<'a> {
     /// Specifiy the type of device using a generic Canvas type parameter.
     ///
     /// Example
-    /// ```rust
+    /// ```no_run
+    /// # let mut canvas_layout = launchy::CanvasLayout::new(|_| {});
     /// // Assuming a Launchpad MK2 and a Launchpad S next to it:
-    /// canvas_layout.add_by_guess::<launchy::mk2::Canvas>(0, 0);
-    /// canvas_layout.add_by_guess::<launchy::s::Canvas>(9, 0);
+    /// canvas_layout.add_by_guess::<launchy::mk2::Canvas>(0, 0)?;
+    /// canvas_layout.add_by_guess::<launchy::s::Canvas>(9, 0)?;
+    /// # Ok::<(), launchy::MidiError>(())
     /// ```
     pub fn add_by_guess<E: 'a + DeviceCanvasTrait>(
         &mut self,

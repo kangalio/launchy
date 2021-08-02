@@ -13,8 +13,9 @@ use super::*;
 /// respectively.
 ///
 /// Example:
-/// ```rust
-/// fn light_white(canvas: &mut impl Canvas) -> Result<()> {
+/// ```no_run
+/// # use launchy::{Canvas, Color};
+/// fn light_white(canvas: &mut impl Canvas) {
 ///     // Iterate through all buttons in the canvas. See the documentation on [`CanvasIterator`] for
 ///     // more info
 ///     for pad in canvas.iter() {
@@ -26,8 +27,9 @@ use super::*;
 /// // Output. Instead it utilizes Canvas, so you can call it with _all_ devices!
 ///
 /// // Light a connected Launchpad S and Launchpad Mk2 completely white
-/// light_white(&mut launchy::s::Canvas::guess());
-/// light_white(&mut launchy::mk2::Canvas::guess());
+/// light_white(&mut launchy::s::Canvas::guess(|_| {})?);
+/// light_white(&mut launchy::mk2::Canvas::guess(|_| {})?);
+/// # Ok::<(), launchy::MidiError>(())
 /// ```
 pub trait Canvas:
     std::ops::Index<Pad, Output = Color> + std::ops::IndexMut<Pad, Output = Color>
@@ -37,10 +39,13 @@ pub trait Canvas:
     /// The width and height of the smallest rectangle that still fully encapsulates the shape of
     /// this canvas
     ///
-    /// ```rust
-    /// let canvas = launchy::mk2::Canvas::guess(|_| {})?;
+    /// ```
+    /// # use launchy::Canvas as _;
+    /// # /*
+    /// let mut canvas = launchy::mk2::Canvas::guess(|_| {})?;
+    /// # */ let mut canvas = launchy::MockCanvas::new(9, 9);
     ///
-    /// assert_eq!(canvas.bounding_box_width(), (9, 9));
+    /// assert_eq!(canvas.bounding_box(), (9, 9));
     /// ```
     fn bounding_box(&self) -> (u32, u32);
 
@@ -53,8 +58,9 @@ pub trait Canvas:
 
     /// Flush the accumulated changes to the underlying device
     ///
-    /// ```rust
-    /// let mut canvas = launchy::mk2::Canvas::guess(|_| {})?;
+    /// ```
+    /// # use launchy::{Pad, Color, Canvas as _};
+    /// # let mut canvas = launchy::MockCanvas::new(9, 9);
     ///
     /// canvas[Pad { x: 0, y: 0 }] = Color::RED;
     /// canvas[Pad { x: 1, y: 0 }] = Color::GREEN;
@@ -63,6 +69,7 @@ pub trait Canvas:
     ///
     /// // The changes are only transmitted when they are flushed
     /// canvas.flush()?;
+    /// # Ok::<(), launchy::MidiError>(())
     /// ```
     fn flush(&mut self) -> Result<(), crate::MidiError>;
     /// The lowest visible brightness on this canvas. Used to calibrate brightness across
@@ -73,13 +80,15 @@ pub trait Canvas:
 
     /// Returns the currently displayed color at the given position, or None if out of bounds
     ///
-    /// ```rust
-    /// # let canvas = launchy::mk2::Canvas::guess(|_| {})?;
+    /// ```
+    /// # use launchy::{Pad, Color, Canvas as _};
+    /// # let mut canvas = launchy::MockCanvas::new(9, 9);
     /// canvas[Pad { x: 5, y: 5 }] = Color::RED;
     ///
     /// assert_eq!(canvas.get(Pad { x: 5, y: 5 }), Some(Color::BLACK));
     /// canvas.flush()?;
     /// assert_eq!(canvas.get(Pad { x: 5, y: 5 }), Some(Color::RED));
+    /// # Ok::<(), launchy::MidiError>(())
     /// ```
     ///
     /// Use `canvas[pad]` for a simpler, panicking version
@@ -90,8 +99,9 @@ pub trait Canvas:
 
     /// Returns the buffered/unflushed color at the given position, or None if out of bounds
     ///
-    /// ```rust
-    /// # let canvas = launchy::mk2::Canvas::guess(|_| {})?;
+    /// ```
+    /// # use launchy::{Pad, Color, Canvas as _};
+    /// # let mut canvas = launchy::MockCanvas::new(9, 9);
     ///
     /// assert_eq!(canvas.get_pending(Pad { x: 5, y: 5 }), Some(Color::BLACK));
     /// canvas[Pad { x: 5, y: 5 }] = Color::RED;
@@ -99,6 +109,7 @@ pub trait Canvas:
     ///
     /// canvas.flush()?;
     /// assert_eq!(canvas.get_pending(Pad { x: 5, y: 5 }), Some(Color::RED)); // didn't change
+    /// # Ok::<(), launchy::MidiError>(())
     /// ```
     fn get_pending(&self, pad: Pad) -> Option<Color> {
         let (x, y) = pad.to_u32()?;
@@ -106,10 +117,6 @@ pub trait Canvas:
     }
 
     /// Sets the color at the given position. Returns None if out of bounds
-    ///
-    /// ```rust
-    /// canvas.set()
-    /// ```
     ///
     /// Use `canvas[pad] = color` for a simpler, panicking version
     fn set(&mut self, pad: Pad, color: Color) -> Option<()> {
@@ -126,23 +133,26 @@ pub trait Canvas:
     /// the documentation on [`Pad`] for more information.
     ///
     /// For example to light the entire canvas white:
-    /// ```rust
+    /// ```
+    /// # use launchy::{Color, Pad, Canvas as _};
+    /// # let mut canvas = launchy::MockCanvas::new(9, 9);
     /// for pad in canvas.iter() {
     ///     canvas[pad] = Color::WHITE;
     /// }
     /// canvas.flush()?;
+    /// # Ok::<(), launchy::MidiError>(())
     /// ```
     ///
     /// Or, if you want to move the entire contents of the canvas one pixel to the right:
-    /// ```rust
+    /// ```
+    /// # use launchy::{Color, Pad, Canvas as _};
+    /// # let mut canvas = launchy::MockCanvas::new(9, 9);
     /// for pad in canvas.iter() {
-    ///     // If there's a pad to the left
-    ///     if let Some(color) = canvas[pad.left(1)] {
-    ///         // Move the color of the left pad to this pad
-    ///         canvas[pad] = color;
-    ///     }
+    ///     // Move this pad's color to the right
+    ///     canvas.set(pad.right(1), canvas[pad]);
     /// }
     /// canvas.flush()?;
+    /// # Ok::<(), launchy::MidiError>(())
     /// ```
     fn iter(&self) -> CanvasIterator {
         CanvasIterator::new(self)
@@ -155,15 +165,17 @@ pub trait Canvas:
     ///
     /// For example, if you were to make a paint program for the Launchpad MK2 where you can toggle
     /// pixels by pressing:
-    /// ```rust
-    /// let mut (canvas, poller) = launchy::mk2::Canvas::guess();
+    /// ```no_run
+    /// # use launchy::{Color, CanvasMessage, Canvas as _, MsgPollingWrapper as _};
+    /// let (mut canvas, poller) = launchy::mk2::Canvas::guess_polling()?;
     ///
     /// for msg in poller.iter() {
-    ///     if let CanvasMessage::Press { x, y } = msg {
-    ///         canvas.toggle(x, y, Color::WHITE);
+    ///     if msg.is_press() {
+    ///         canvas.toggle(msg.pad(), Color::WHITE);
     ///         canvas.flush()?;
     ///     }
     /// }
+    /// # Ok::<(), launchy::MidiError>(())
     /// ```
     fn toggle(&mut self, pad: Pad, color: Color) -> Option<()> {
         let (x, y) = pad.to_u32()?;
@@ -180,18 +192,24 @@ pub trait Canvas:
 
     /// Clear the entire canvas by setting all buttons to black.
     ///
-    /// ```rust
-    /// // light a square in the top left, for one second
+    /// ```
+    /// # use launchy::{Color, Pad, Canvas as _};
+    /// # let mut canvas = launchy::MockCanvas::new(9, 9);
+    /// // light a square in the top left for one second, then clear it
     ///
-    /// canvas.set(0, 0, Color::MAGENTA);
-    /// canvas.set(0, 1, Color::MAGENTA);
-    /// canvas.set(1, 0, Color::MAGENTA);
-    /// canvas.set(1, 1, Color::MAGENTA);
+    /// canvas[Pad { x: 0, y: 0 }] = Color::MAGENTA;
+    /// canvas[Pad { x: 0, y: 1 }] = Color::MAGENTA;
+    /// canvas[Pad { x: 1, y: 0 }] = Color::MAGENTA;
+    /// canvas[Pad { x: 1, y: 1 }] = Color::MAGENTA;
+    /// canvas.flush()?;
     ///
+    /// # /*
     /// std::thread::sleep_ms(1000);
+    /// # */
     ///
     /// canvas.clear();
     /// canvas.flush()?;
+    /// # Ok::<(), launchy::MidiError>(())
     /// ```
     fn clear(&mut self)
     where

@@ -8,21 +8,24 @@ High-level access is possible through the [Canvas] API. The [`Canvas`] trait sim
 LEDs that can be written to, and consequently flushed to the actual hardware. A number of high-level
 utilities make the Canvas API a pleasure to use.
 
-```rust
-use launchy::{CanvasMessage, Color};
+```no_run
+use launchy::{CanvasMessage, Color, Canvas as _, MsgPollingWrapper as _};
 
 let (mut canvas, input_poller) = launchy::s::Canvas::guess_polling()?;
 
 for msg in input_poller.iter() {
     match msg {
-        CanvasMessage::Press { pad } => canvas[pad] = Color::WHITE,
-        CanvasMessage::Release { pad } => canvas[pad] = Color::BLACK,
+        CanvasMessage::Press { .. } => canvas[msg.pad()] = Color::WHITE,
+        CanvasMessage::Release { .. } => canvas[msg.pad()] = Color::BLACK,
     }
     canvas.flush()?;
 }
+# Ok::<(), launchy::MidiError>(())
 ```
 The above `match` statement could also be written in a more concise way:
-```rust
+```no_run
+# use launchy::Color;
+# let (canvas, msg): (launchy::MockCanvas, launchy::CanvasMessage) = unimplemented!();
 canvas[msg.pad()] = if msg.is_press() { Color::WHITE } else { Color::BLACK };
 ```
 
@@ -41,9 +44,9 @@ corresponds to exactly one MIDI message (unless noted otherwise in the documenta
 user has fine control over the data that's actually being sent.
 
 ## Using double-buffering to produce a continuous red flash
-```rust
-use launchy::Color;
-use launchy::s::{DoubleBuffering, DoubleBufferingBehavior, Buffer};
+```no_run
+use launchy::{OutputDevice as _};
+use launchy::s::{Color, DoubleBuffering, DoubleBufferingBehavior, Buffer};
 
 let mut output = launchy::s::Output::guess()?;
 
@@ -53,14 +56,14 @@ output.control_double_buffering(DoubleBuffering {
     flash: false,
     edited_buffer: Buffer::A,
     displayed_buffer: Buffer::B,
-});
+})?;
 
 // Light all buttons red, using the rapid update feature - just 40 midi messages
 for _ in 0..40 {
     output.set_button_rapid(
         Color::RED, DoubleBufferingBehavior::None,
         Color::RED, DoubleBufferingBehavior::None,
-    )
+    )?;
 }
 
 // Now buffer A is completely red and B is empty. Let's leverage the Launchpad S flash
@@ -71,6 +74,7 @@ output.control_double_buffering(DoubleBuffering {
     edited_buffer: Buffer::A,
     displayed_buffer: Buffer::A,
 });
+# Ok::<(), launchy::MidiError>(())
 ```
 */
 

@@ -18,9 +18,10 @@ use crate::util::Array2d;
 /// the Launchpad as if it were a perfectly rectangular grid.
 ///
 /// Example:
-/// ```rust
+/// ```no_run
+/// # use launchy::{Pad, Canvas as _};
 /// // Create the base canvas
-/// let mut canvas = launchy::mk2::Canvas::guess(|msg| {});
+/// let mut canvas = launchy::mk2::Canvas::guess(|msg| {})?;
 ///
 /// // Wrap the holey canvas in `PaddingCanvas`
 /// let mut canvas = launchy::PaddingCanvas::from(canvas);
@@ -28,9 +29,10 @@ use crate::util::Array2d;
 /// // Now you can fearlessly work with the canvas as if it's a rectangle
 /// for y in 0..9 {
 ///     for x in 0..9 {
-///         canvas.set(x, y, launchy::Color::WHITE);
+///         canvas[Pad { x, y }] = launchy::Color::WHITE;
 ///     }
 /// }
+/// # Ok::<(), launchy::MidiError>(())
 /// ```
 pub struct PaddingCanvas<C: Canvas> {
     inner: C,
