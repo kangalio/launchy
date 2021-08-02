@@ -89,4 +89,4 @@ impl<C: Canvas> Canvas for PaddingCanvas<C> {
     }
 }
 
-impl_traits_for_canvas!(<C: Canvas>, PaddingCanvas);
+impl_traits_for_canvas!(PaddingCanvas[C: Canvas]);

@@ -14,8 +14,8 @@
 // manually duplicate the trait implementations for each Canvas implementor. For that, I made this
 // macro.
 macro_rules! impl_traits_for_canvas {
-    (<$($a:tt $(: $b:tt)?),+>, $i:ident) => {
-        impl<$($a $(: $b)?),+> std::ops::Index<Pad> for $i<$($a),+> {
+    ($i:ident[ $( $a:tt $(: $b:tt)? ),* ]) => {
+        impl<$($a $(: $b)?),*> std::ops::Index<Pad> for $i<$($a),*> {
             type Output = Color;
 
             fn index(&self, pad: Pad) -> &Color {
@@ -24,7 +24,7 @@ macro_rules! impl_traits_for_canvas {
             }
         }
 
-        impl<$($a $(: $b)?),+> std::ops::IndexMut<Pad> for $i<$($a),+> {
+        impl<$($a $(: $b)?),*> std::ops::IndexMut<Pad> for $i<$($a),*> {
             fn index_mut(&mut self, pad: Pad) -> &mut Color {
                 let (x, y) = pad.to_u32().expect("Pad coordinates out of bounds");
                 self.low_level_get_pending_mut(x, y).expect("Pad coordinates out of bounds")
@@ -43,7 +43,7 @@ macro_rules! impl_traits_for_canvas {
         }
 
         #[cfg(feature = "embedded-graphics")]
-        impl<$($a $(: $b)?),+> eg::Dimensions for $i<$($a),+> {
+        impl<$($a $(: $b)?),*> eg::Dimensions for $i<$($a),*> {
             fn bounding_box(&self) -> eg::Rectangle {
                 eg::Rectangle::new(
                     eg::Point::new(0, 0),
@@ -53,7 +53,7 @@ macro_rules! impl_traits_for_canvas {
         }
 
         #[cfg(feature = "embedded-graphics")]
-        impl<$($a $(: $b)?),+> eg::DrawTarget for $i<$($a),+> {
+        impl<$($a $(: $b)?),*> eg::DrawTarget for $i<$($a),*> {
             type Color = eg::Rgb888;
             type Error = std::convert::Infallible;
 

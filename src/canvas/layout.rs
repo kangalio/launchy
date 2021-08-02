@@ -332,4 +332,4 @@ impl Canvas for CanvasLayout<'_> {
     }
 }
 
-impl_traits_for_canvas!(<'a>, CanvasLayout);
+impl_traits_for_canvas!(CanvasLayout['a]);

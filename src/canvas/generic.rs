@@ -130,7 +130,7 @@ impl<S: DeviceSpec> DeviceCanvasTrait for DeviceCanvas<S> {
     type Spec = S;
 }
 
-impl_traits_for_canvas!(<S: DeviceSpec>, DeviceCanvas);
+impl_traits_for_canvas!(DeviceCanvas[S: DeviceSpec]);
 
 impl<Spec: DeviceSpec> crate::Canvas for DeviceCanvas<Spec> {
     fn bounding_box(&self) -> (u32, u32) {
