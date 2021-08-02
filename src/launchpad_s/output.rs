@@ -190,17 +190,19 @@ impl Output {
         self.turn_on_all_leds(Brightness::Off)
     }
 
-    pub fn light(&mut self, button: Button, color: Color) -> Result<(), crate::MidiError> {
-        self.set_button(button, color, DoubleBufferingBehavior::Copy)
-    }
-
-    pub fn light_all_rapid(&mut self, color: Color) -> Result<(), crate::MidiError> {
-        let dbb = DoubleBufferingBehavior::None;
-
+    pub fn set_all_buttons(&mut self, color: Color, dbb: DoubleBufferingBehavior) -> Result<(), crate::MidiError> {
         for _ in 0..40 {
             self.set_button_rapid(color, dbb, color, dbb)?;
         }
 
         Ok(())
+    }
+
+    pub fn light(&mut self, button: Button, color: Color) -> Result<(), crate::MidiError> {
+        self.set_button(button, color, DoubleBufferingBehavior::Copy)
+    }
+
+    pub fn light_all_rapid(&mut self, color: Color) -> Result<(), crate::MidiError> {
+        self.set_all_buttons(color, DoubleBufferingBehavior::Copy)
     }
 }
