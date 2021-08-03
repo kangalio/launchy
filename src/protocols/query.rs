@@ -49,8 +49,8 @@ where
 }
 
 pub(crate) fn parse_device_query(data: &[u8]) -> Option<DeviceInquiry> {
-    if let &[240, 126, device_id, 6, 2, 0, 32, 41, fc1, fc2, fmc1, fmc2, fr1, fr2, fr3, fr4, 247] =
-        data
+    if let [240, 126, device_id, 6, 2, 0, 32, 41, fc1, fc2, fmc1, fmc2, fr1, fr2, fr3, fr4, 247] =
+        *data
     {
         let family_code = u16::from_be_bytes([fc1, fc2]);
         let family_member_code = u16::from_be_bytes([fmc1, fmc2]);
@@ -69,7 +69,9 @@ pub(crate) fn parse_device_query(data: &[u8]) -> Option<DeviceInquiry> {
 }
 
 pub(crate) fn parse_version_query(data: &[u8]) -> Option<VersionInquiry> {
-    if let &[240, 0, 32, 41, 0, 112, bl1, bl2, bl3, bl4, bl5, fw1, fw2, fw3, fw4, fw5, bs1, bs2, 247] = data {
+    if let [240, 0, 32, 41, 0, 112, bl1, bl2, bl3, bl4, bl5, fw1, fw2, fw3, fw4, fw5, bs1, bs2, 247] =
+        *data
+    {
         let bootloader_version = bl1 as u32 * 10000
             + bl2 as u32 * 1000
             + bl3 as u32 * 100
