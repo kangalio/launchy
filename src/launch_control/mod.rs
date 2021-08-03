@@ -161,7 +161,10 @@ impl crate::DeviceSpec for Spec {
                 let (x, y) = button_to_xy(button);
                 Some(crate::CanvasMessage::Release { x, y })
             }
-            _ => None,
+            Message::StalePadRelease
+            | Message::StaleControlButtonRelease
+            | Message::TemplateChanged { .. }
+            | Message::KnobChanged { .. } => None,
         }
     }
 }
