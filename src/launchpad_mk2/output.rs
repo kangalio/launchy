@@ -1,5 +1,7 @@
 use midir::MidiOutputConnection;
 
+pub use crate::protocols::query::*;
+
 use super::Button;
 use crate::OutputDevice;
 
@@ -124,14 +126,6 @@ pub enum LightMode {
     Flash,
     /// A smooth pulse
     Pulse,
-}
-
-/// Used for the Device Inquiry message
-pub enum DeviceIdQuery {
-    /// Send the Device Inquiry request to a specific device id
-    Specific(u8),
-    /// Send the Device Inquiry request to all devices
-    Any,
 }
 
 /// Volume faders light from the bottom up, and pan faders light from the centre out.
@@ -581,17 +575,7 @@ impl Output {
     /// In order to be able to receive the Launchpad Mk2's response to this request,
     /// you must have a Launchpad Mk2 input object set up.
     pub fn request_device_inquiry(&mut self, query: DeviceIdQuery) -> Result<(), crate::MidiError> {
-        const QUERY_DEVICE_ID_FOR_ANY: u8 = 127;
-
-        let query_device_id = match query {
-            DeviceIdQuery::Specific(device_id) => {
-                assert_ne!(device_id, QUERY_DEVICE_ID_FOR_ANY);
-                device_id
-            }
-            DeviceIdQuery::Any => QUERY_DEVICE_ID_FOR_ANY,
-        };
-
-        self.send(&[240, 126, query_device_id, 6, 1, 247])
+        request_device_inquiry(self, query)
     }
 
     /// Requests the Launchpad Mk2 to send a so-called version inquiry. The version inquiry contains
@@ -601,7 +585,7 @@ impl Output {
     /// In order to be able to receive the Launchpad Mk2's response to this request,
     /// you must have a Launchpad Mk2 input object set up.
     pub fn request_version_inquiry(&mut self) -> Result<(), crate::MidiError> {
-        self.send(&[240, 0, 32, 41, 0, 112, 247])
+        request_version_inquiry(self)
     }
 
     /// Starts a text scroll across the screen. The screen is temporarily cleared. You can specify

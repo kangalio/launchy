@@ -1,3 +1,5 @@
+use crate::protocols::query::*;
+
 use super::Button;
 
 /// A Launchpad Mini input message
@@ -7,6 +9,10 @@ pub enum Message {
     Press { button: Button },
     /// A button was released
     Release { button: Button },
+    /// The response to a [device inquiry request](super::Output::request_device_inquiry)
+    DeviceInquiry(DeviceInquiry),
+    /// The response to a [version inquiry request](super::Output::request_version_inquiry)
+    VersionInquiry(VersionInquiry),
 }
 
 fn decode_grid_button(btn: u8) -> Button {
@@ -25,6 +31,14 @@ impl crate::InputDevice for Input {
     type Message = Message;
 
     fn decode_message(_timestamp: u64, data: &[u8]) -> Message {
+        if let Some(device_inquiry) = parse_device_query(data) {
+            return Message::DeviceInquiry(device_inquiry);
+        }
+
+        if let Some(version_inquiry) = parse_version_query(data) {
+            return Message::VersionInquiry(version_inquiry);
+        }
+
         // first byte of a launchpad midi message is the message type
         match data {
             // Note on
