@@ -1,7 +1,7 @@
 #[derive(Debug)]
 pub enum MidiError {
-    InputConnectError(midir::ConnectError<midir::MidiInput>),
-    OutputConnectError(midir::ConnectError<midir::MidiOutput>),
+    InputConnectError(midir::ConnectError<()>),
+    OutputConnectError(midir::ConnectError<()>),
     InitError(midir::InitError),
     PortInfoError(midir::PortInfoError),
     SendError(midir::SendError),
@@ -39,13 +39,15 @@ impl std::error::Error for MidiError {
 
 impl From<midir::ConnectError<midir::MidiInput>> for MidiError {
     fn from(e: midir::ConnectError<midir::MidiInput>) -> Self {
-        Self::InputConnectError(e)
+        // Strip contained MidiInput from error because it's not Sync
+        Self::InputConnectError(midir::ConnectError::new(e.kind(), ()))
     }
 }
 
 impl From<midir::ConnectError<midir::MidiOutput>> for MidiError {
     fn from(e: midir::ConnectError<midir::MidiOutput>) -> Self {
-        Self::OutputConnectError(e)
+        // Strip contained MidiOutput from error because it's not Sync
+        Self::OutputConnectError(midir::ConnectError::new(e.kind(), ()))
     }
 }
 
