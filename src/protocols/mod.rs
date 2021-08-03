@@ -1,4 +1,5 @@
 pub(crate) mod double_buffering;
+pub(crate) mod query;
 
 #[derive(Debug, Copy, Clone, Hash, Eq, PartialEq)]
 /// The button type used for Launchpads with 80 buttons

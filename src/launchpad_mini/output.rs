@@ -4,6 +4,7 @@ use super::Button;
 use crate::OutputDevice;
 
 pub use crate::protocols::double_buffering::*;
+pub use crate::protocols::query::*;
 
 #[allow(dead_code)] // to prevent "variant is never constructed" warning
 enum GridMappingMode {
@@ -165,6 +166,14 @@ impl Output {
             | d.displayed_buffer as u8;
 
         self.send(&[0xB0, 0, last_byte])
+    }
+
+    pub fn request_device_inquiry(&mut self, query: DeviceIdQuery) -> Result<(), crate::MidiError> {
+        request_device_inquiry(self, query)
+    }
+
+    pub fn request_version_inquiry(&mut self) -> Result<(), crate::MidiError> {
+        request_version_inquiry(self)
     }
 
     fn change_grid_mapping_mode(&mut self, mode: GridMappingMode) -> Result<(), crate::MidiError> {
