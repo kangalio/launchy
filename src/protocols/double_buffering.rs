@@ -6,10 +6,20 @@ pub struct Color {
 }
 
 impl Color {
-    pub const BLACK: Color = Color { red: 0, green: 0 };
+    // Standard colors
+    pub const OFF: Color = Color { red: 0, green: 0 };
     pub const RED: Color = Color { red: 3, green: 0 };
     pub const GREEN: Color = Color { red: 0, green: 3 };
-    pub const YELLOW: Color = Color { red: 3, green: 3 };
+    pub const AMBER: Color = Color { red: 3, green: 3 };
+
+    // Extended colors
+    pub const DIM_GREEN: Color = Color { red: 0, green: 1 };
+    pub const DIM_RED: Color = Color { red: 1, green: 0 };
+    pub const ORANGE: Color = Color { red: 3, green: 2 };
+    pub const YELLOW: Color = Color { red: 2, green: 3 };
+
+    // Alias colors
+    pub const BLACK: Color = Color::OFF;
 
     /// Create a new color from the given red and green components.
     ///
