@@ -9,6 +9,8 @@ pub enum Message {
     Press { button: Button },
     /// A button was released
     Release { button: Button },
+    /// Emitted after a text scroll ends or loops
+    TextEndedOrLooped,
     /// The response to a [device inquiry request](super::Output::request_device_inquiry)
     DeviceInquiry(DeviceInquiry),
     /// The response to a [version inquiry request](super::Output::request_version_inquiry)
@@ -63,6 +65,7 @@ impl crate::InputDevice for Input {
                     other => panic!("Unexpected control note-on velocity {}", other),
                 }
             }
+            &[0xB0, 0, 3] => Message::TextEndedOrLooped,
             // YES we have no note off message handler here because it's not used by the launchpad.
             // It sends zero-velocity note-on messages instead.
             other => panic!("Unexpected midi message: {:?}", other),

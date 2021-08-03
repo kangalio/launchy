@@ -168,6 +168,19 @@ impl Output {
         self.send(&[0xB0, 0, last_byte])
     }
 
+    pub fn scroll_text(
+        &mut self,
+        text: &[u8],
+        color: Color,
+        should_loop: bool,
+    ) -> Result<(), crate::MidiError> {
+        let color_code = make_color_code_loopable(color, should_loop);
+
+        let bytes = &[&[240, 0, 32, 41, 9, color_code], text, &[247]].concat();
+
+        return self.send(bytes);
+    }
+
     pub fn request_device_inquiry(&mut self, query: DeviceIdQuery) -> Result<(), crate::MidiError> {
         request_device_inquiry(self, query)
     }
@@ -194,17 +207,19 @@ impl Output {
         self.turn_on_all_leds(Brightness::Off)
     }
 
-    pub fn light(&mut self, button: Button, color: Color) -> Result<(), crate::MidiError> {
-        self.set_button(button, color, DoubleBufferingBehavior::Copy)
-    }
-
-    pub fn light_all_rapid(&mut self, color: Color) -> Result<(), crate::MidiError> {
-        let dbb = DoubleBufferingBehavior::None;
-
+    pub fn set_all_buttons(&mut self, color: Color, dbb: DoubleBufferingBehavior) -> Result<(), crate::MidiError> {
         for _ in 0..40 {
             self.set_button_rapid(color, dbb, color, dbb)?;
         }
 
         Ok(())
+    }
+
+    pub fn light(&mut self, button: Button, color: Color) -> Result<(), crate::MidiError> {
+        self.set_button(button, color, DoubleBufferingBehavior::Copy)
+    }
+
+    pub fn light_all(&mut self, color: Color) -> Result<(), crate::MidiError> {
+        self.set_all_buttons(color, DoubleBufferingBehavior::Copy)
     }
 }

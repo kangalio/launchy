@@ -193,26 +193,19 @@ impl Output {
         self.turn_on_all_leds(Brightness::Off)
     }
 
-    pub fn light(&mut self, button: Button, color: Color) -> Result<(), crate::MidiError> {
-        self.set_button(button, color, DoubleBufferingBehavior::Copy)
-    }
-
-    pub fn light_all_rapid(&mut self, color: Color) -> Result<(), crate::MidiError> {
-        let dbb = DoubleBufferingBehavior::None;
-
+    pub fn set_all_buttons(&mut self, color: Color, dbb: DoubleBufferingBehavior) -> Result<(), crate::MidiError> {
         for _ in 0..40 {
             self.set_button_rapid(color, dbb, color, dbb)?;
         }
 
         Ok(())
     }
-}
 
-fn make_color_code_loopable(color: Color, should_loop: bool) -> u8 {
-    // Bit 6 - Loop - If 1: loop the text
-    // Bit 5..4 - Green LED brightness
-    // Bit 3..2 - uhhhh, I think these should probably be empty?
-    // Bit 1..0 - Red LED brightness
+    pub fn light(&mut self, button: Button, color: Color) -> Result<(), crate::MidiError> {
+        self.set_button(button, color, DoubleBufferingBehavior::Copy)
+    }
 
-    ((should_loop as u8) << 6) | (color.green() << 4) | color.red()
+    pub fn light_all_rapid(&mut self, color: Color) -> Result<(), crate::MidiError> {
+        self.set_all_buttons(color, DoubleBufferingBehavior::Copy)
+    }
 }
