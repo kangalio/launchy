@@ -4,6 +4,7 @@ use super::Button;
 use crate::OutputDevice;
 
 pub use crate::protocols::double_buffering::*;
+pub use crate::protocols::query::*;
 
 #[allow(dead_code)] // to prevent "variant is never constructed" warning
 enum GridMappingMode {
@@ -178,6 +179,14 @@ impl Output {
         let bytes = &[&[240, 0, 32, 41, 9, color_code], text, &[247]].concat();
 
         return self.send(bytes);
+    }
+
+    pub fn request_device_inquiry(&mut self, query: DeviceIdQuery) -> Result<(), crate::MidiError> {
+        request_device_inquiry(self, query)
+    }
+
+    pub fn request_version_inquiry(&mut self) -> Result<(), crate::MidiError> {
+        request_version_inquiry(self)
     }
 
     fn change_grid_mapping_mode(&mut self, mode: GridMappingMode) -> Result<(), crate::MidiError> {

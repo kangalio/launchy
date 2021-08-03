@@ -107,6 +107,8 @@ impl crate::DeviceSpec for Spec {
                 y: button.abs_y() as u32,
             }),
             Message::TextEndedOrLooped => None,
+            Message::DeviceInquiry(_) => None,
+            Message::VersionInquiry(_) => None,
         }
     }
 }

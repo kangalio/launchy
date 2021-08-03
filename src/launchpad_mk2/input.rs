@@ -1,4 +1,4 @@
-use std::convert::TryInto;
+pub use crate::protocols::query::*;
 
 use super::Button;
 
@@ -12,15 +12,9 @@ pub enum Message {
     /// Emitted after a text scroll was initiated
     TextEndedOrLooped,
     /// The response to a [device inquiry request](super::Output::request_device_inquiry)
-    DeviceInquiry {
-        device_id: u8,
-        firmware_revision: u32,
-    },
+    DeviceInquiry(DeviceInquiry),
     /// The response to a [version inquiry request](super::Output::request_version_inquiry)
-    VersionInquiry {
-        bootloader_version: u32,
-        firmware_version: u32,
-    },
+    VersionInquiry(VersionInquiry),
     /// Emitted when a fader was changed by the user, in [fader
     /// mode](super::Output::enter_fader_mode)
     FaderChange { index: u8, value: u8 },
@@ -28,93 +22,6 @@ pub enum Message {
 
 /// The Launchpad MK2 input connection creator.
 pub struct Input;
-
-fn decode_short_message(data: &[u8]) -> Message {
-    assert_eq!(data.len(), 3); // if this function was called, it should be
-
-    // first byte of a launchpad midi message is the message type
-    match data[0] {
-        0x90 => {
-            // Note on
-            let button = decode_grid_button(data[1]);
-
-            let velocity = data[2];
-            match velocity {
-                0 => Message::Release { button },
-                127 => Message::Press { button },
-                other => panic!("Unexpected grid note-on velocity {}", other),
-            }
-        }
-        0xB0 => {
-            // Controller change
-            match data[1] {
-                104..=111 => {
-                    let button = Button::ControlButton {
-                        index: data[1] - 104,
-                    };
-
-                    let velocity = data[2];
-                    match velocity {
-                        0 => Message::Release { button },
-                        127 => Message::Press { button },
-                        other => panic!("Unexpected control note-on velocity {}", other),
-                    }
-                }
-                21..=28 => Message::FaderChange {
-                    index: data[1] - 21,
-                    value: data[2],
-                },
-                _ => panic!("Unexpected data byte 1. {:?}", data),
-            }
-        }
-        // This is the note off code BUT it's not used by the launchpad. It sends zero-velocity
-        // note-on messages instead
-        0x80 => panic!("Unexpected note-on message: {:?}", data),
-        _other => panic!(
-            "First byte of midi short messages was unexpected. {:?}",
-            data
-        ),
-    }
-}
-
-fn decode_sysex_message(data: &[u8]) -> Message {
-    match data {
-        &[240, 0, 32, 41, 2, 24, 21, 247] => Message::TextEndedOrLooped,
-        &[240, 126, device_id, 6, 2, 0, 32, 41, 105, 0, 0, 0, fr1, fr2, fr3, fr4, 247] => {
-            let firmware_revision = u32::from_be_bytes([fr1, fr2, fr3, fr4]);
-            Message::DeviceInquiry {
-                device_id,
-                firmware_revision,
-            }
-        }
-        &[240, 0, 32, 41, 0, 112, ref data @ .., 247] => {
-            let data: [u8; 12] = data
-                .try_into()
-                .expect("Invalid version inquiry response length");
-
-            let bootloader_version = data[0] as u32 * 10000
-                + data[1] as u32 * 1000
-                + data[2] as u32 * 100
-                + data[3] as u32 * 10
-                + data[4] as u32;
-
-            let firmware_version = data[5] as u32 * 10000
-                + data[6] as u32 * 1000
-                + data[7] as u32 * 100
-                + data[8] as u32 * 10
-                + data[9] as u32;
-
-            // Last two bytes are [13, 1] in my case, but the actual meaning of it is unknown.
-            // Let's just ignore them here
-
-            Message::VersionInquiry {
-                bootloader_version,
-                firmware_version,
-            }
-        }
-        other => panic!("Unexpected sysex message: {:?}", other),
-    }
-}
 
 fn decode_grid_button(btn: u8) -> Button {
     let x = (btn % 10) - 1;
@@ -128,10 +35,43 @@ impl crate::InputDevice for Input {
     type Message = Message;
 
     fn decode_message(_timestamp: u64, data: &[u8]) -> Message {
-        if data.len() == 3 {
-            decode_short_message(data)
-        } else {
-            decode_sysex_message(data)
+        if let Some(device_inquiry) = parse_device_query(data) {
+            return Message::DeviceInquiry(device_inquiry);
+        }
+
+        if let Some(version_inquiry) = parse_version_query(data) {
+            return Message::VersionInquiry(version_inquiry);
+        }
+
+        match data {
+            &[0x90, button, velocity] => {
+                let button = decode_grid_button(button);
+
+                match velocity {
+                    0 => Message::Release { button },
+                    127 => Message::Press { button },
+                    other => panic!("Unexpected grid note-on velocity {}", other),
+                }
+            }
+            // Controller change
+            &[0xB0, number @ 104..=111, velocity] => {
+                let button = Button::ControlButton {
+                    index: number - 104,
+                };
+
+                match velocity {
+                    0 => Message::Release { button },
+                    127 => Message::Press { button },
+                    other => panic!("Unexpected control note-on velocity {}", other),
+                }
+            }
+            // Fader change
+            &[0xB0, number @ 21..=28, value] => Message::FaderChange {
+                index: number - 21,
+                value,
+            },
+            &[240, 0, 32, 41, 2, 24, 21, 247] => Message::TextEndedOrLooped,
+            other => panic!("Unexpected midi message: {:?}", other),
         }
     }
 }

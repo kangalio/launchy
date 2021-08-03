@@ -4,6 +4,7 @@ use super::Button;
 use crate::OutputDevice;
 
 pub use crate::protocols::double_buffering::*;
+pub use crate::protocols::query::*;
 
 /**
 The Launchpad S output connection handler.
@@ -161,11 +162,13 @@ impl Output {
         self.send(&[0xB0, 0, last_byte])
     }
 
-    // TODO: fix this
-    // Uncommented because I have no idea to parse the return format
-    // pub fn request_device_inquiry(&mut self) -> Result<(), crate::MidiError> {
-    //     self.send(&[240, 126, 127, 6, 1, 247])
-    // }
+    pub fn request_device_inquiry(&mut self, query: DeviceIdQuery) -> Result<(), crate::MidiError> {
+        request_device_inquiry(self, query)
+    }
+
+    pub fn request_version_inquiry(&mut self) -> Result<(), crate::MidiError> {
+        request_version_inquiry(self)
+    }
 
     pub fn scroll_text(
         &mut self,
