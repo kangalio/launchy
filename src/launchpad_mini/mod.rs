@@ -40,7 +40,7 @@ impl crate::DeviceSpec for Spec {
         use crate::Canvas;
 
         let convert_color = |color: crate::Color| {
-            let (r, g, _b) = color.quantize(Self::COLOR_PRECISION);
+            let (r, g, _b) = color.quantize(Self::COLOR_PRECISION as u8);
             Color::new(r, g)
         };
 

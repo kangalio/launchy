@@ -167,8 +167,8 @@ impl<Spec: DeviceSpec> crate::Canvas for DeviceCanvas<Spec> {
             let old = self.get(pad).unwrap();
             let new = self.get_pending(pad).unwrap();
 
-            let old = old.quantize(Spec::COLOR_PRECISION);
-            let new = new.quantize(Spec::COLOR_PRECISION);
+            let old = old.quantize(Spec::COLOR_PRECISION as u8);
+            let new = new.quantize(Spec::COLOR_PRECISION as u8);
 
             if new != old {
                 changes.push((pad.x as u32, pad.y as u32, new));

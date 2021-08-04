@@ -121,18 +121,54 @@ impl Color {
         Self::new(r, g, 0.0)
     }
 
-    /// Return a tuple of color components scaled from 0..=1 to 0..range by doing
-    /// `(component * range).floor().min(range - 1).max(0)` on every component.
+    /// Clamp to a range of 0..=1.
+    ///
+    /// If any component is below 0, it is brought up to 0. If any component is above 1, every
+    /// component will be multiplied by a certain value so that every component will be at most 1.
+    ///
+    /// This algorithm ensures that the color hue stays the same, no matter the brightness.
+    ///
+    /// ```rust
+    /// # use launchy::Color;
+    /// assert_eq!(
+    ///     launchy::Color::new(-1.0, 1.0, 3.0).clamp(),
+    ///     launchy::Color::new(0.0, 1.0/3.0, 1.0),
+    /// );
+    /// ```
+    pub fn clamp(self) -> Self {
+        let Self { r, g, b } = self;
+
+        let highest_component = r.max(g).max(b);
+        let multiplier = if highest_component > 1.0 {
+            1.0 / highest_component
+        } else {
+            1.0
+        };
+
+        let r = f32::clamp(r * multiplier, 0.0, 1.0);
+        let g = f32::clamp(g * multiplier, 0.0, 1.0);
+        let b = f32::clamp(b * multiplier, 0.0, 1.0);
+
+        Self { r, g, b }
+    }
+
+    /// Return a tuple of color components scaled from 0..=1 to 0..range using the same algorithm
+    /// as in [`Self::clamp`].
     ///
     /// This function is used by the Canvas implementation of the Launchpads to downscale the
     /// high-precision [`Color`]s to their respective color width. For example the Launchpad S only
     /// supports four levels of brightness for its red and green component, respectively. Therefore,
     /// the Launchpad S calls `.quantize(4)` on a given [`Color`] to derive how that color should be
     /// represented on the Launchpad S LEDs.
-    pub fn quantize(self, range: u16) -> (u8, u8, u8) {
-        let quant = |f: f32| (f * range as f32).max(0.0).min(range as f32 - 1.0) as u8;
+    pub fn quantize(self, range: u8) -> (u8, u8, u8) {
+        let Self { r, g, b } = self.clamp();
 
-        (quant(self.r), quant(self.g), quant(self.b))
+        let quantize_component = |c| u8::min((c * range as f32) as u8, range - 1);
+        (
+            quantize_component(r),
+            quantize_component(g),
+            quantize_component(b),
+        )
     }
 
     /// Mix two colors together. The proportion of the second color is specified by
