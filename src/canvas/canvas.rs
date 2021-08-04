@@ -227,6 +227,13 @@ pub trait Canvas:
     {
         PaddingCanvas::from(self)
     }
+
+    fn is_valid(&self, pad: Pad) -> bool {
+        match pad.to_u32() {
+            Some((x, y)) => self.low_level_get(x, y).is_some(),
+            None => false,
+        }
+    }
 }
 
 #[derive(Clone, Eq, PartialEq, Hash, Debug)]
