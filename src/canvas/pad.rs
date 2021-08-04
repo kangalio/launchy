@@ -20,6 +20,11 @@ pub struct Pad {
 }
 
 impl Pad {
+    // Direct struct initialization seems to be all around superior
+    // pub fn new(x: i32, y: i32) -> Self {
+    //     Self { x, y }
+    // }
+
     /// Return a copy of this [`Pad`], moved upwards by a certain number of steps
     pub fn up(self, steps: i32) -> Self {
         Self {
@@ -99,6 +104,16 @@ impl Pad {
             None
         }
     }
+
+    /// If this pad is outside the bounding rectangle, wrap it around
+    ///
+    /// Note: if you want more fine-grained edges, use [`Canvas::wrap_edges`] instead
+    pub fn wrap_edges(self, width: u32, height: u32) -> Pad {
+        Pad {
+            x: self.x.rem_euclid(width as i32),
+            y: self.y.rem_euclid(height as i32),
+        }
+    }
 }
 
 impl std::ops::Add<(i32, i32)> for Pad {
@@ -138,5 +153,20 @@ impl std::ops::SubAssign<(i32, i32)> for Pad {
         let (x_offset, y_offset) = offset;
         self.x -= x_offset;
         self.y -= y_offset;
+    }
+}
+
+impl From<(i32, i32)> for Pad {
+    fn from((x, y): (i32, i32)) -> Self {
+        Self { x, y }
+    }
+}
+
+impl From<(u32, u32)> for Pad {
+    fn from((x, y): (u32, u32)) -> Self {
+        Self {
+            x: x as i32,
+            y: y as i32,
+        }
     }
 }
