@@ -14,6 +14,7 @@
 /// assert_eq!(pad - (4, 4), Pad { x: -1, y: 2 });
 /// ```
 #[derive(Copy, Clone, PartialEq, Eq, Debug, Default, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Pad {
     pub x: i32,
     pub y: i32,
@@ -133,6 +134,14 @@ impl std::ops::AddAssign<(i32, i32)> for Pad {
         let (x_offset, y_offset) = offset;
         self.x += x_offset;
         self.y += y_offset;
+    }
+}
+
+impl std::ops::Sub<Pad> for Pad {
+    type Output = (i32, i32);
+
+    fn sub(self, other: Pad) -> (i32, i32) {
+        (self.x - other.x, self.y - other.y)
     }
 }
 

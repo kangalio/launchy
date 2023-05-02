@@ -1,6 +1,7 @@
 /// A simple float-based color struct. Each component should lie in 0..=1, but it can also be
 /// outside that range. If outside, it will be clipped for some operations
 #[derive(Debug, Copy, Clone, PartialEq, Default)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Color {
     pub r: f32,
     pub g: f32,
@@ -185,6 +186,8 @@ impl Color {
         other * proportion_of_other + self * (1.0 - proportion_of_other)
     }
 }
+
+impl std::cmp::Eq for Color {}
 
 impl std::ops::Mul<f32> for Color {
     type Output = Self;
