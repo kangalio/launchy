@@ -11,5 +11,5 @@ keywords = ["novation", "launchpad", "midi", "midi-controller", "lightshow"]
 categories = ["api-bindings", "games", "graphics", "rendering", "multimedia::images"]
 
 [dependencies]
-midir = "0.7"
+midir = "0.9.1"
 embedded-graphics = { version = "0.7", optional = true }
