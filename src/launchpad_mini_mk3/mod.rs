@@ -61,8 +61,7 @@ impl crate::DeviceSpec for Spec {
             Message::TextEndedOrLooped
             | Message::DeviceInquiry(_)
             | Message::VersionInquiry(_)
-            | Message::FaderChange { .. } => None,
-            Message::Unknown => None,
+            | Message::ChangeLayout(_) => None,
         }
     }
 }

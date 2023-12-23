@@ -128,10 +128,20 @@ pub enum LightMode {
     Pulse,
 }
 
-#[allow(dead_code)] // to prevent "variant is never constructed" warning
-enum Layout {
+#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
+pub enum Layout {
     Live = 0, // reserved for Ableton Live, shouldn't be used here
     Programmer = 1,
+}
+
+impl From<u8> for Layout {
+    fn from(id: u8) -> Self {
+        match id {
+            0 => Self::Live,
+            1 => Self::Programmer,
+            _ => panic!("Unexpected layout id {}", id),
+        }
+    }
 }
 
 /// The object handling any messages _to_ the launchpad. To get started, initialize with

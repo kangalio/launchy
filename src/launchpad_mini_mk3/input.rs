@@ -2,7 +2,7 @@ use core::panic;
 
 pub use crate::protocols::query::*;
 
-use super::Button;
+use super::{Button, Layout};
 
 #[derive(Debug, Eq, PartialEq, Hash, Clone)]
 /// A Launchpad Mini MK3 input message
@@ -21,14 +21,7 @@ pub enum Message {
     DeviceInquiry(DeviceInquiry),
     /// The response to a [version inquiry request](super::Output::request_version_inquiry)
     VersionInquiry(VersionInquiry),
-    /// Emitted when a fader was changed by the user, in [fader
-    /// mode](super::Output::enter_fader_mode)
-    FaderChange {
-        index: u8,
-        value: u8,
-    },
-
-    Unknown,
+    ChangeLayout(Layout),
 }
 
 /// The Launchpad Mini MK3 input connection creator.
@@ -105,28 +98,7 @@ impl crate::InputDevice for Input {
                     other => panic!("Unexpected grid note-on velocity {}", other),
                 }
             }
-            // // Controller change
-            // &[0xB0, number @ 104..=111, velocity] => {
-            //     let button = Button::ControlButton {
-            //         index: number - 104,
-            //     };
-
-            //     match velocity {
-            //         0 => Message::Release { button },
-            //         127 => Message::Press { button },
-            //         other => panic!("Unexpected control note-on velocity {}", other),
-            //     }
-            // }
-            // // Fader change
-            // &[0xB0, number @ 21..=28, value] => Message::FaderChange {
-            //     index: number - 21,
-            //     value,
-            // },
-            // &[240, 0, 32, 41, 2, 24, 21, 247] => Message::TextEndedOrLooped,
-            &[240, 0, 32, 41, 2, 13, 14, 1, 247] => {
-                println!("Programmer Mode Successfully enabled");
-                Message::Unknown
-            }
+            &[240, 0, 32, 41, 2, 13, 14, layout, 247] => Message::ChangeLayout(layout.into()),
             other => panic!("Unexpected midi message: {:?}", other),
         }
     }
