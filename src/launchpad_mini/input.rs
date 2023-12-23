@@ -53,6 +53,16 @@ impl crate::InputDevice for Input {
                     other => panic!("Unexpected grid note-on velocity {}", other),
                 }
             }
+            &[0x80, button, extra] => {
+                // TODO: figure out what extra is, appears to be 0x40 for all buttons
+                if extra != 0x40 {
+                    panic!("Unexpected grid note-off extra byte {}", extra);
+                }
+
+                let button = decode_grid_button(button);
+
+                Message::Release { button }
+            }
             // Controller change
             &[0xB0, number @ 104..=111, velocity] => {
                 let button = Button::ControlButton {
