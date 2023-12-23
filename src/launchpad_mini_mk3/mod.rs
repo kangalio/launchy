@@ -62,6 +62,7 @@ impl crate::DeviceSpec for Spec {
             | Message::DeviceInquiry(_)
             | Message::VersionInquiry(_)
             | Message::FaderChange { .. } => None,
+            Message::Unknown => None,
         }
     }
 }

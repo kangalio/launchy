@@ -271,7 +271,7 @@ pub struct Output {
 
 impl crate::OutputDevice for Output {
     const MIDI_CONNECTION_NAME: &'static str = "Launchy Mini Mk3 output";
-    const MIDI_DEVICE_KEYWORD: &'static str = "Launchpad Mini MK3";
+    const MIDI_DEVICE_KEYWORD: &'static str = "Launchpad Mini MK3 LPMiniMK3 MI";
 
     fn from_connection(connection: MidiOutputConnection) -> Result<Self, crate::MidiError> {
         let mut self_ = Self { connection };
@@ -719,9 +719,13 @@ impl Output {
                 10 * (8 - y) + x + 1
             }
             Button::ControlButton { index } => {
-                assert!(index <= 7);
+                assert!(index <= 15);
 
-                index + 104
+                if index <= 7 {
+                    index + 91
+                } else {
+                    (8 - (index - 8)) * 10 + 9
+                }
             }
         }
     }
