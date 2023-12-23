@@ -178,6 +178,7 @@ impl<Spec: DeviceSpec> crate::Canvas for DeviceCanvas<Spec> {
         if !changes.is_empty() {
             use crate::midi_io::OutputDevice;
             self.num_sent_changes += changes.len();
+
             if self.num_sent_changes / 1000 != (self.num_sent_changes - changes.len()) / 1000 {
                 println!(
                     "{}: we're at {} total transmitted changes now",

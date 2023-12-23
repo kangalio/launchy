@@ -19,15 +19,15 @@ macro_rules! impl_traits_for_canvas {
             type Output = Color;
 
             fn index(&self, pad: Pad) -> &Color {
-                let (x, y) = pad.to_u32().expect("Pad coordinates out of bounds");
-                self.low_level_get(x, y).expect("Pad coordinates out of bounds")
+                let (x, y) = pad.to_u32().unwrap_or_else(|| panic!("Pad coordinates out of bounds (pad to u32: {:?})", pad));
+                self.low_level_get(x, y).unwrap_or_else(|| panic!("Pad coordinates out of bounds: ({}, {})", x, y))
             }
         }
 
         impl<$($a $(: $b)?),*> std::ops::IndexMut<Pad> for $i<$($a),*> {
             fn index_mut(&mut self, pad: Pad) -> &mut Color {
-                let (x, y) = pad.to_u32().expect("Pad coordinates out of bounds");
-                self.low_level_get_pending_mut(x, y).expect("Pad coordinates out of bounds")
+                let (x, y) = pad.to_u32().unwrap_or_else(|| panic!("Pad coordinates out of bounds (pad to u32: {:?})", pad));
+                self.low_level_get_pending_mut(x, y).unwrap_or_else(|| panic!("Pad coordinates out of bounds: ({}, {})", x, y))
             }
         }
 
