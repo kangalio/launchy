@@ -84,8 +84,6 @@ impl crate::InputDevice for Input {
 
                 let button = decode_grid_button(button);
 
-                println!("Extra release");
-
                 Message::Release { button }
             }
             // Control button press & release

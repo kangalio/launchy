@@ -129,6 +129,12 @@ pub enum LightMode {
 }
 
 #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
+pub enum SleepMode {
+    Sleep = 0,
+    Wake = 1,
+}
+
+#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
 pub enum Layout {
     Live = 0, // reserved for Ableton Live, shouldn't be used here
     Programmer = 1,
@@ -448,7 +454,21 @@ impl Output {
     /// # Ok::<(), launchy::MidiError>(())
     /// ```
     pub fn light_all(&mut self, color: PaletteColor) -> Result<(), crate::MidiError> {
-        self.send(&[240, 0, 32, 41, 2, 24, 14, color.id, 247])
+        let mut buffer = vec![240, 0, 32, 41, 2, 13, 3];
+
+        for row in 1..10 {
+            for column in 1..10 {
+                buffer.push(0);
+
+                buffer.push(row * 10 + column);
+                
+                buffer.push(color.id);
+            }
+        }
+
+        buffer.push(247);
+
+        self.send(&buffer)
     }
 
     /// By default, Launchpad MK2 will flash and pulse at 120 BPM. This can be altered by sending
@@ -530,6 +550,10 @@ impl Output {
         self.send(bytes)
     }
 
+    pub fn send_sleep(&mut self, sleep_mode: SleepMode) -> Result<() , crate::MidiError> {
+        self.send(&[240, 0, 32, 41, 2, 13, 9, sleep_mode as u8, 247])
+    }
+
     // /// Force the Launchpad MK2 into bootloader mode
     // pub fn enter_bootloader(&mut self) -> Result<(), crate::MidiError> {
     //     self.send(&[240, 0, 32, 41, 0, 113, 0, 105, 247])
@@ -602,10 +626,20 @@ impl Output {
             }
         }
     }
-
+ 
     // --------------------------------------------------------------------------------------------
     // Below this point are shorthand function
     // --------------------------------------------------------------------------------------------
+
+    /// Put the Launchpad MK3 to sleep
+    pub fn sleep(&mut self) -> Result<(), crate::MidiError> {
+        self.send_sleep(SleepMode::Sleep)
+    }
+
+    /// Wake the device up from sleep mode
+    pub fn wake(&mut self) -> Result<(), crate::MidiError> {
+        self.send_sleep(SleepMode::Wake)
+    }
 
     /// Light a button with a color from the Mk2 palette. Identical to
     /// `set_button(<button>, <color>, LightMode::Plain)`.
