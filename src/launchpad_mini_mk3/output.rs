@@ -5,13 +5,6 @@ pub use crate::protocols::query::*;
 use super::Button;
 use crate::OutputDevice;
 
-/// A mode in which the Launchpad Mini Mk3 can be in.
-#[derive(Debug, Copy, Clone, Hash, Eq, PartialEq)]
-pub enum BoardMode {
-    Live = 0,
-    Programmer = 1,
-}
-
 /// A color from the Mk3 color palette. See the "Launchpad MK3 Programmers Reference Manual"
 /// to see the palette, or [see here](http://launchpaddr.com/mk2palette/).
 ///
@@ -135,112 +128,10 @@ pub enum LightMode {
     Pulse,
 }
 
-/// Volume faders light from the bottom up, and pan faders light from the centre out.
-#[derive(Copy, Clone, Hash, Eq, PartialEq)]
-pub enum FaderType {
-    Volume,
-    Pan,
-}
-
-/// Specifies information about a fader
-pub struct Fader {
-    index: u8,
-    color: PaletteColor,
-    initial_value: u8,
-}
-
-impl Fader {
-    pub fn new(index: u8, color: PaletteColor, initial_value: u8) -> Self {
-        assert!(initial_value <= 127);
-        // future reader, don't attempt to raise this limit to 8, it breaks the Mk3 until you
-        // reconnect :p
-        assert!(index <= 7);
-
-        Self {
-            index,
-            color,
-            initial_value,
-        }
-    }
-
-    pub fn index(&self) -> u8 {
-        self.index
-    }
-    pub fn color(&self) -> PaletteColor {
-        self.color
-    }
-    pub fn initial_value(&self) -> u8 {
-        self.initial_value
-    }
-}
-
 #[allow(dead_code)] // to prevent "variant is never constructed" warning
 enum Layout {
-    Session,
-    User1, // drum rack
-    User2,
-    Reserved, // reserved for Ableton Live, shouldn't be used here
-    Volume,
-    Pan,
-}
-
-/// This is the handler object for the Launchpad Mk3's fader mode, in which you can utilize the
-/// built-in fader functionality. You can specify for each fader its position, its color, and its
-/// default value.
-///
-/// For further documentation and examples, see [`Output::enter_fader_mode`].
-pub struct FaderMode {
-    output: Output,
-    fader_type: FaderType,
-}
-
-impl FaderMode {
-    fn new(mut output: Output, fader_type: FaderType) -> Result<Self, crate::MidiError> {
-        output.change_layout(match fader_type {
-            FaderType::Volume => Layout::Volume,
-            FaderType::Pan => Layout::Pan,
-        })?;
-        Ok(Self { output, fader_type })
-    }
-
-    /// Exit fader mode by transforming this FaderMode object back into a Output object.
-    #[must_use = "You must use the returned object, or the MIDI connection will be dropped"]
-    pub fn exit(mut self) -> Result<Output, crate::MidiError> {
-        self.output.change_layout(Layout::Session)?;
-        Ok(self.output)
-    }
-
-    /// Place faders on the screen. The faders' properties are specified using the `&[Fader]` slice.
-    pub fn designate_faders(&mut self, faders: &[Fader]) -> Result<(), crate::MidiError> {
-        assert!(faders.len() <= 8);
-
-        let fader_type = match self.fader_type {
-            FaderType::Volume => 0,
-            FaderType::Pan => 1,
-        };
-
-        let mut bytes = Vec::with_capacity(8 + 4 * faders.len());
-        bytes.extend(&[240, 0, 32, 41, 2, 24, 43]);
-        for fader in faders {
-            bytes.extend(&[
-                fader.index,
-                fader_type,
-                fader.color.id(),
-                fader.initial_value,
-            ]);
-        }
-        bytes.push(247);
-
-        self.output.send(&bytes)
-    }
-
-    /// Moves a fader, specified by `index`, to a specific `value`
-    pub fn set_fader(&mut self, index: u8, value: u8) -> Result<(), crate::MidiError> {
-        assert!(index <= 7);
-        assert!(value <= 127);
-
-        self.output.send(&[176, 21 + index, value])
-    }
+    Live = 0, // reserved for Ableton Live, shouldn't be used here
+    Programmer = 1,
 }
 
 /// The object handling any messages _to_ the launchpad. To get started, initialize with
@@ -282,7 +173,7 @@ impl crate::OutputDevice for Output {
 
     fn from_connection(connection: MidiOutputConnection) -> Result<Self, crate::MidiError> {
         let mut self_ = Self { connection };
-        self_.change_layout(Layout::Session)?;
+        self_.change_layout(Layout::Programmer)?;
         Ok(self_)
     }
 
@@ -408,24 +299,6 @@ impl Output {
         };
 
         self.send(&[type_byte, Self::encode_button(button), color.id])
-    }
-
-    /// Set Board mode
-    /// This is required for the mini mk3 to function properly
-    /// 
-    /// For example to swap the board to programmer mode:
-    /// ```no_run
-    /// # use launchy::mini_mk3::{BoardMode};
-    /// # let output: launchy::mini_mk3::Output = unimplemented!();
-    /// let board_mode = BoardMode::Programmer;
-    /// output.set_mode(board_mode)?;
-    /// # Ok::<(), launchy::MidiError>(())
-    /// ```
-    pub fn set_mode(
-        &mut self,
-        mode: BoardMode
-    ) -> Result<(), crate::MidiError> {
-        self.send(&[240, 0, 32, 41, 2, 13, 14, mode as u8, 247])
     }
 
     /// Like `set_button()`, but for multiple buttons. This method lights multiple buttons with
@@ -616,7 +489,7 @@ impl Output {
     /// Starts a text scroll across the screen. The screen is temporarily cleared. You can specify
     /// the color of the text and whether the text should loop indefinitely.
     ///
-    /// In addition to the standard ASCII characters, Launchpad MK2 recognises plain values 1 – 7 as
+    /// In addition to the standard ASCII characters, Launchpad MK2 recognises plain values 1 - 7 as
     /// speed commands (where 1 is the slowest and 7 is fastest). This allows the scrolling speed to
     /// be manipulated mid-text. The default speed is 4.
     ///
@@ -647,59 +520,24 @@ impl Output {
         self.send(bytes)
     }
 
-    /// Transforms this Output object to go into "fader mode". In fader mode, you have
-    /// the ability to utilize the Mk2's built-in fader functionality.
+    // /// Force the Launchpad MK2 into bootloader mode
+    // pub fn enter_bootloader(&mut self) -> Result<(), crate::MidiError> {
+    //     self.send(&[240, 0, 32, 41, 0, 113, 0, 105, 247])
+    // }
+
+    /// Set Board mode
+    /// This is required for the mini mk3 to function properly
     ///
-    /// Launchpad MK2 has two virtual fader modes, one with volume style faders and one with pan
-    /// style (the two styles cannot be mixed).
-    ///
-    /// The fader will light up according to its current value with volume faders lighting from the
-    /// bottom up, and pan faders lighting from the centre out.
-    ///
-    /// When a button is pressed to change the level of a fader, Launchpad MK2 will move the fader
-    /// to that position and send interim values to smooth the transition. For each interim value, a
-    /// message is sent to Input.
-    ///
-    /// See [FaderMode](struct.FaderMode.html) for documentation on FaderMode's methods.
-    ///
-    /// For example to place three pan faders:
-    /// - A green one on the left, turned all the way down
-    /// - Another green one next to the first fader, turned all the way up
-    /// - A white one on the right, centered
+    /// For example to swap the board to programmer mode:
     /// ```no_run
-    /// # use launchy::mk2::{PaletteColor, Fader, FaderType};
-    /// # let mut output: launchy::mk2::Output = unimplemented!();
-    /// let mut fader_setup = output.enter_fader_mode(FaderType::Volume)?;
-    ///
-    /// fader_setup.designate_faders(&[
-    ///     Fader::new(0, PaletteColor::GREEN, 0),
-    ///     Fader::new(1, PaletteColor::GREEN, 127),
-    ///     Fader::new(7, PaletteColor::WHITE, 63),
-    /// ])?;
-    ///
-    /// let mut output = fader_setup.exit()?;
+    /// # use launchy::mini_mk3::{Layout};
+    /// # let output: launchy::mini_mk3::Output = unimplemented!();
+    /// let layout_mode = Layout::Programmer;
+    /// output.change_layout(layout_mode)?;
     /// # Ok::<(), launchy::MidiError>(())
     /// ```
-    #[must_use = "If you don't use the returned object, the MIDI connection will be dropped immediately"]
-    pub fn enter_fader_mode(self, fader_type: FaderType) -> Result<FaderMode, crate::MidiError> {
-        FaderMode::new(self, fader_type)
-    }
-
-    /// Force the Launchpad MK2 into bootloader mode
-    pub fn enter_bootloader(&mut self) -> Result<(), crate::MidiError> {
-        self.send(&[240, 0, 32, 41, 0, 113, 0, 105, 247])
-    }
-
     fn change_layout(&mut self, layout: Layout) -> Result<(), crate::MidiError> {
-        let layout = match layout {
-            Layout::Session => 0,
-            Layout::User1 => 1,
-            Layout::User2 => 2,
-            Layout::Reserved => 3,
-            Layout::Volume => 4,
-            Layout::Pan => 5,
-        };
-        self.send(&[240, 0, 32, 41, 2, 24, 34, layout, 247])
+        self.send(&[240, 0, 32, 41, 2, 13, 14, layout as u8, 247])
     }
 
     // param `insert_null_bytes`: whether every packet should be preceeded by a null byte
