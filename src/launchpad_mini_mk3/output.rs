@@ -5,6 +5,13 @@ pub use crate::protocols::query::*;
 use super::Button;
 use crate::OutputDevice;
 
+/// A mode in which the Launchpad Mini Mk3 can be in.
+#[derive(Debug, Copy, Clone, Hash, Eq, PartialEq)]
+pub enum BoardMode {
+    Live = 0,
+    Programmer = 1,
+}
+
 /// A color from the Mk3 color palette. See the "Launchpad MK3 Programmers Reference Manual"
 /// to see the palette, or [see here](http://launchpaddr.com/mk2palette/).
 ///
@@ -401,6 +408,24 @@ impl Output {
         };
 
         self.send(&[type_byte, Self::encode_button(button), color.id])
+    }
+
+    /// Set Board mode
+    /// This is required for the mini mk3 to function properly
+    /// 
+    /// For example to swap the board to programmer mode:
+    /// ```no_run
+    /// # use launchy::mini_mk3::{BoardMode};
+    /// # let output: launchy::mini_mk3::Output = unimplemented!();
+    /// let board_mode = BoardMode::Programmer;
+    /// output.set_mode(board_mode)?;
+    /// # Ok::<(), launchy::MidiError>(())
+    /// ```
+    pub fn set_mode(
+        &mut self,
+        mode: BoardMode
+    ) -> Result<(), crate::MidiError> {
+        self.send(&[240, 0, 32, 41, 2, 13, 14, mode as u8, 247])
     }
 
     /// Like `set_button()`, but for multiple buttons. This method lights multiple buttons with

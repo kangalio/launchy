@@ -123,6 +123,10 @@ impl crate::InputDevice for Input {
             //     value,
             // },
             // &[240, 0, 32, 41, 2, 24, 21, 247] => Message::TextEndedOrLooped,
+            &[240, 0, 32, 41, 2, 13, 14, 1, 247] => {
+                println!("Programmer Mode Successfully enabled");
+                Message::Unknown
+            }
             other => panic!("Unexpected midi message: {:?}", other),
         }
     }
