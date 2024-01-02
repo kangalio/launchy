@@ -19,7 +19,7 @@ pub struct Output {
 
 impl crate::OutputDevice for Output {
     const MIDI_CONNECTION_NAME: &'static str = "Launchy Mini output";
-    const MIDI_DEVICE_KEYWORD: &'static str = "Launchpad Mini";
+    const MIDI_DEVICE_KEYWORD: &'static str = "Launchpad Mini MIDI";
 
     fn from_connection(connection: MidiOutputConnection) -> Result<Self, crate::MidiError> {
         let mut self_ = Self { connection };

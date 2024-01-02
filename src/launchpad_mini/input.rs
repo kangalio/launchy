@@ -28,7 +28,7 @@ fn decode_grid_button(btn: u8) -> Button {
 pub struct Input;
 
 impl crate::InputDevice for Input {
-    const MIDI_DEVICE_KEYWORD: &'static str = "Launchpad Mini";
+    const MIDI_DEVICE_KEYWORD: &'static str = "Launchpad Mini MIDI";
     const MIDI_CONNECTION_NAME: &'static str = "Launchy Mini Input";
     type Message = Message;
 
