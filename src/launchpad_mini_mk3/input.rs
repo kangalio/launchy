@@ -1,35 +1,57 @@
-use crate::protocols::query::*;
+use core::panic;
 
-use super::Button;
+pub use crate::protocols::query::*;
 
-/// A Launchpad Mini input message
+use super::{Button, Layout};
+
 #[derive(Debug, Eq, PartialEq, Hash, Clone)]
+/// A Launchpad Mini MK3 input message
 pub enum Message {
     /// A button was pressed
-    Press { button: Button },
+    Press {
+        button: Button,
+    },
     /// A button was released
-    Release { button: Button },
-    /// Emitted after a text scroll ends or loops
+    Release {
+        button: Button,
+    },
+    /// Emitted after a text scroll was initiated
     TextEndedOrLooped,
     /// The response to a [device inquiry request](super::Output::request_device_inquiry)
     DeviceInquiry(DeviceInquiry),
     /// The response to a [version inquiry request](super::Output::request_version_inquiry)
     VersionInquiry(VersionInquiry),
+    ChangeLayout(Layout),
 }
 
-fn decode_grid_button(btn: u8) -> Button {
-    Button::GridButton {
-        x: btn % 16,
-        y: btn / 16,
-    }
-}
-
-/// The Launchpad Mini input connection creator.
+/// The Launchpad Mini MK3 input connection creator.
 pub struct Input;
 
+fn decode_grid_button(btn: u8) -> Button {
+    let x = (btn % 10) - 1;
+    let y = 8 - (btn / 10);
+    Button::GridButton { x, y }
+}
+
+fn decode_control_button(btn: u8) -> Button {
+    // Because of how the buttons are communicated, the right-side control buttons are encoded as
+    // 89, 79, 69, 59, 49, 39, 29, 19 and the top control buttons are encoded as 91, 92, 95, 96,
+    // 97, 98 This function converts those values to the correct button
+
+    if btn >= 91 && btn <= 98 {
+        return Button::ControlButton { index: btn - 91 };
+    } else if btn >= 19 && btn <= 89 && btn % 10 == 9 {
+        return Button::ControlButton {
+            index: 8 + (8 - (btn - 9) / 10),
+        };
+    }
+
+    panic!("Unexpected control button value {}", btn);
+}
+
 impl crate::InputDevice for Input {
-    const MIDI_DEVICE_KEYWORD: &'static str = "Launchpad Mini MIDI";
-    const MIDI_CONNECTION_NAME: &'static str = "Launchy Mini Input";
+    const MIDI_DEVICE_KEYWORD: &'static str = "Launchpad Mini MK3 LPMiniMK3 MI";
+    const MIDI_CONNECTION_NAME: &'static str = "Launchy Mini Mk3 Input";
     type Message = Message;
 
     fn decode_message(_timestamp: u64, data: &[u8]) -> Message {
@@ -41,18 +63,19 @@ impl crate::InputDevice for Input {
             return Message::VersionInquiry(version_inquiry);
         }
 
-        // first byte of a launchpad midi message is the message type
         match data {
-            // Note on
+            // Press
             &[0x90, button, velocity] => {
                 let button = decode_grid_button(button);
 
                 match velocity {
+                    // TODO: Is this release deprecated?
                     0 => Message::Release { button },
                     127 => Message::Press { button },
                     other => panic!("Unexpected grid note-on velocity {}", other),
                 }
             }
+            // Implement release (actively used)
             &[0x80, button, extra] => {
                 // TODO: figure out what extra is, appears to be 0x40 for all buttons
                 if extra != 0x40 {
@@ -63,21 +86,17 @@ impl crate::InputDevice for Input {
 
                 Message::Release { button }
             }
-            // Controller change
-            &[0xB0, number @ 104..=111, velocity] => {
-                let button = Button::ControlButton {
-                    index: number - 104,
-                };
+            // Control button press & release
+            &[0xB0, number, velocity] => {
+                let button = decode_control_button(number);
 
                 match velocity {
                     0 => Message::Release { button },
                     127 => Message::Press { button },
-                    other => panic!("Unexpected control note-on velocity {}", other),
+                    other => panic!("Unexpected grid note-on velocity {}", other),
                 }
             }
-            &[0xB0, 0, 3] => Message::TextEndedOrLooped,
-            // YES we have no note off message handler here because it's not used by the launchpad.
-            // It sends zero-velocity note-on messages instead.
+            &[240, 0, 32, 41, 2, 13, 14, layout, 247] => Message::ChangeLayout(layout.into()),
             other => panic!("Unexpected midi message: {:?}", other),
         }
     }

@@ -9,6 +9,7 @@ pub enum Button80 {
 }
 
 impl Button80 {
+    // TODO: Should these be global? as they're device specific?
     pub const UP: Self = Button80::ControlButton { index: 0 };
     pub const DOWN: Self = Button80::ControlButton { index: 1 };
     pub const LEFT: Self = Button80::ControlButton { index: 2 };
