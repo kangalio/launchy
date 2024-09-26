@@ -92,6 +92,8 @@ pub use midi_io::*;
 mod errors;
 pub use errors::*;
 
+mod shared;
+
 pub mod launchpad_s;
 pub use launchpad_s as s;
 
@@ -110,6 +112,7 @@ pub use launch_control as control_xl;
 pub mod prelude {
     pub use crate::canvas::{Canvas, Color, Pad};
     pub use crate::midi_io::{InputDevice, MsgPollingWrapper, OutputDevice};
+    pub use crate::protocols::{LogicalButton, PhysicalButton};
 }
 
 /// Identifier used for e.g. the midi port names etc.

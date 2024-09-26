@@ -463,13 +463,12 @@ impl Output {
     where
         I: IntoIterator<Item = T>,
         T: std::borrow::Borrow<(Button, RgbColor)>,
-        I::IntoIter: ExactSizeIterator,
     {
         let buttons = buttons.into_iter();
 
         assert!(buttons.size_hint().0 <= 80);
 
-        let mut bytes = Vec::with_capacity(8 + 12 * buttons.len());
+        let mut bytes = Vec::with_capacity(8 + 12 * buttons.size_hint().1.unwrap_or(40));
 
         bytes.extend(&[240, 0, 32, 41, 2, 24, 11]);
         for pair in buttons {

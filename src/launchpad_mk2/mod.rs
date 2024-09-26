@@ -10,7 +10,11 @@ pub use input::*;
 mod output;
 pub use output::*;
 
-pub use crate::protocols::Button80 as Button;
+pub use crate::protocols::LogicalButton as Button;
+use crate::{
+    prelude::PhysicalButton,
+    shared::{default_logical_to_physical, default_physical_to_logical},
+};
 
 #[doc(hidden)]
 pub struct Spec;
@@ -33,30 +37,36 @@ impl crate::DeviceSpec for Spec {
         true
     }
 
+    fn to_physical(button: Button) -> PhysicalButton {
+        default_logical_to_physical(button)
+    }
+
+    fn to_logical(button: PhysicalButton) -> Option<Button> {
+        default_physical_to_logical::<Self>(button)
+    }
+
     fn flush(
         canvas: &mut crate::DeviceCanvas<Self>,
         changes: &[(u32, u32, (u8, u8, u8))],
     ) -> Result<(), crate::MidiError> {
-        let changes = changes.iter().map(|&(x, y, (r, g, b))| {
+        let changes = changes.iter().filter_map(|&(x, y, (r, g, b))| {
             let color = RgbColor::new(r, g, b);
 
-            let button = Button::from_abs(x as u8, y as u8);
-
-            (button, color)
+            Self::to_logical(PhysicalButton::new(x, y)).map(|b| (b, color))
         });
         canvas.output.light_multiple_rgb(changes)
     }
 
     fn convert_message(msg: Message) -> Option<crate::CanvasMessage> {
         match msg {
-            Message::Press { button } => Some(crate::CanvasMessage::Press {
-                x: button.abs_x() as u32,
-                y: button.abs_y() as u32,
-            }),
-            Message::Release { button } => Some(crate::CanvasMessage::Release {
-                x: button.abs_x() as u32,
-                y: button.abs_y() as u32,
-            }),
+            Message::Press { button } => {
+                let b = Self::to_physical(button);
+                Some(crate::CanvasMessage::Press { x: b.x, y: b.y })
+            }
+            Message::Release { button } => {
+                let b = Self::to_physical(button);
+                Some(crate::CanvasMessage::Release { x: b.x, y: b.y })
+            }
             Message::TextEndedOrLooped
             | Message::DeviceInquiry(_)
             | Message::VersionInquiry(_)

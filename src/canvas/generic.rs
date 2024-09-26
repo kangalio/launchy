@@ -1,3 +1,5 @@
+use crate::{protocols::LogicalButton, protocols::PhysicalButton};
+
 use super::*;
 
 /// Launchpad's implement this trait to signify how they can be used as a [`Canvas`]. Based on this
@@ -20,6 +22,9 @@ pub trait DeviceSpec {
     type Output: crate::OutputDevice;
 
     /// Returns whether the point at the given `x` and `y` coordinates are in bounds
+    ///
+    /// If `is_valid` returns `true` then `to_logical` should return a `Some` variant,
+    /// and vice versa.
     fn is_valid(x: u32, y: u32) -> bool;
 
     /// Flush the changes, as specified by `changes`, to the given underlying output handler.
@@ -38,6 +43,15 @@ pub trait DeviceSpec {
     /// low-level message has no CanvasMessage equivalent, i.e. if it's irrelevant in a canvas
     /// context, None is returned.
     fn convert_message(msg: <Self::Input as crate::InputDevice>::Message) -> Option<CanvasMessage>;
+
+    /// Converts the given logical button to physical coordinates on this LaunchPad
+    fn to_physical(button: LogicalButton) -> PhysicalButton;
+
+    /// Returns the correct [LogicalButton] value for a given physical location on the pad.
+    ///
+    /// Not all buttons are occupied. If the indicated position does not have a button,
+    /// this method returns `None`.
+    fn to_logical(button: PhysicalButton) -> Option<LogicalButton>;
 
     /// Optional code to setup this device for canvas usage
     fn setup(output: &mut Self::Output) -> Result<(), crate::MidiError> {
@@ -132,6 +146,7 @@ impl<Spec: DeviceSpec> crate::Canvas for DeviceCanvas<Spec> {
     fn bounding_box(&self) -> (u32, u32) {
         (Spec::BOUNDING_BOX_WIDTH, Spec::BOUNDING_BOX_HEIGHT)
     }
+
     fn lowest_visible_brightness(&self) -> f32 {
         1.0 / Spec::COLOR_PRECISION as f32
     }

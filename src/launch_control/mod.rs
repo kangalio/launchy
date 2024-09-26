@@ -10,6 +10,9 @@ pub use input::*;
 mod output;
 pub use output::*;
 
+use crate::prelude::{LogicalButton, PhysicalButton};
+use crate::shared::{default_logical_to_physical, default_physical_to_logical};
+
 #[derive(Copy, Clone, Eq, PartialEq, Debug, Hash)]
 pub struct Template(u8);
 
@@ -108,6 +111,14 @@ impl crate::DeviceSpec for Spec {
             return false;
         }
         true
+    }
+
+    fn to_physical(button: LogicalButton) -> PhysicalButton {
+        default_logical_to_physical(button)
+    }
+
+    fn to_logical(button: PhysicalButton) -> Option<LogicalButton> {
+        default_physical_to_logical::<Self>(button)
     }
 
     fn setup(output: &mut Self::Output) -> Result<(), crate::MidiError> {
