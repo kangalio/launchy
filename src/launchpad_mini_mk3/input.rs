@@ -8,9 +8,9 @@ use super::{Button, Layout, SleepMode};
 /// A Launchpad Mini MK3 input message
 pub enum Message {
     /// A button was pressed
-    Press(Button),
+    Press { button: Button },
     /// A button was released
-    Release(Button),
+    Release { button: Button },
     /// One of the responses to a [device inquiry request](super::Output::request_device_inquiry)
     ApplicationVersion(Version),
     /// One of the responses to a [device inquiry request](super::Output::request_device_inquiry)
@@ -74,8 +74,8 @@ impl crate::InputDevice for Input {
                 let button = decode_grid_button(button);
 
                 match velocity {
-                    0 => Message::Release(button),
-                    127 => Message::Press(button),
+                    0 => Message::Release { button },
+                    127 => Message::Press { button },
                     other => panic!("Unexpected grid note-on velocity {}", other),
                 }
             }
@@ -84,8 +84,8 @@ impl crate::InputDevice for Input {
                 let button = decode_control_button(number);
 
                 match velocity {
-                    0 => Message::Release(button),
-                    127 => Message::Press(button),
+                    0 => Message::Release { button },
+                    127 => Message::Press { button },
                     other => panic!("Unexpected grid note-on velocity {}", other),
                 }
             }
@@ -98,7 +98,7 @@ impl crate::InputDevice for Input {
 
                 let button = decode_grid_button(button);
 
-                Message::Release(button)
+                Message::Release { button }
             }
             // Response to a Device Inquiry
             &[240, 126, 0, 6, 2, 0, 32, 41, 19, 1, 0, 0, v1, v2, v3, v4, 247] => {

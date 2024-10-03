@@ -60,6 +60,42 @@ pub struct RgbColor {
     b: u8,
 }
 
+impl RgbColor {
+    /// Create a new RgbColor from the individual component values
+    pub fn new(r: u8, g: u8, b: u8) -> Self {
+        let self_ = Self { r, g, b };
+        assert!(self_.is_valid());
+        self_
+    }
+
+    /// Check whether the rgb color is valid - each component may only go up to MAX_RGB.
+    pub fn is_valid(&self) -> bool {
+        self.r <= MAX_RGB && self.g <= MAX_RGB && self.b <= MAX_RGB
+    }
+
+    pub fn red(&self) -> u8 {
+        self.r
+    }
+    pub fn green(&self) -> u8 {
+        self.g
+    }
+    pub fn blue(&self) -> u8 {
+        self.b
+    }
+    pub fn set_red(&mut self, r: u8) {
+        assert!(r <= MAX_RGB);
+        self.r = r
+    }
+    pub fn set_green(&mut self, g: u8) {
+        assert!(g <= MAX_RGB);
+        self.g = g
+    }
+    pub fn set_blue(&mut self, b: u8) {
+        assert!(b <= MAX_RGB);
+        self.b = b
+    }
+}
+
 /// The button styles supported by the MK3 Mini
 ///
 /// Buttons can be in one of 3 states:
@@ -151,42 +187,6 @@ impl From<RgbColor> for ButtonStyle {
 impl From<&RgbColor> for ButtonStyle {
     fn from(color: &RgbColor) -> Self {
         Self::from(*color)
-    }
-}
-
-impl RgbColor {
-    /// Create a new RgbColor from the individual component values
-    pub fn new(r: u8, g: u8, b: u8) -> Self {
-        let self_ = Self { r, g, b };
-        assert!(self_.is_valid());
-        self_
-    }
-
-    /// Check whether the rgb color is valid - each component may only go up to MAX_RGB.
-    pub fn is_valid(&self) -> bool {
-        self.r <= MAX_RGB && self.g <= MAX_RGB && self.b <= MAX_RGB
-    }
-
-    pub fn red(&self) -> u8 {
-        self.r
-    }
-    pub fn green(&self) -> u8 {
-        self.g
-    }
-    pub fn blue(&self) -> u8 {
-        self.b
-    }
-    pub fn set_red(&mut self, r: u8) {
-        assert!(r <= MAX_RGB);
-        self.r = r
-    }
-    pub fn set_green(&mut self, g: u8) {
-        assert!(g <= MAX_RGB);
-        self.g = g
-    }
-    pub fn set_blue(&mut self, b: u8) {
-        assert!(b <= MAX_RGB);
-        self.b = b
     }
 }
 

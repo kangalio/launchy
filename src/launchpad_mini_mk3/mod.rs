@@ -1,7 +1,7 @@
 /*!
 # Launchpad Mini MK3 low-level API
 
-![Picture](https://imgur.com/a/oy2iubC.png)
+![Picture](https://imgur.com/ra7nOzc.png)
 
 The Launchpad Mini MK3 has a 9x9 grid with 80 buttons. The top
 row are control buttons, indexed `0..7`. The `launchy` library
@@ -54,11 +54,11 @@ impl crate::DeviceSpec for Spec {
 
     fn convert_message(msg: Message) -> Option<crate::CanvasMessage> {
         match msg {
-            Message::Press(button) => Some(crate::CanvasMessage::Press {
+            Message::Press { button } => Some(crate::CanvasMessage::Press {
                 x: button.abs_x() as u32,
                 y: button.abs_y() as u32,
             }),
-            Message::Release(button) => Some(crate::CanvasMessage::Release {
+            Message::Release { button } => Some(crate::CanvasMessage::Release {
                 x: button.abs_x() as u32,
                 y: button.abs_y() as u32,
             }),
