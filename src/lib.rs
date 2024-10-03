@@ -101,6 +101,9 @@ pub use launchpad_mini as mini;
 pub mod launchpad_mk2;
 pub use launchpad_mk2 as mk2;
 
+pub mod launchpad_mini_mk3;
+pub use launchpad_mini_mk3 as mini_mk3;
+
 pub mod launch_control;
 pub use launch_control as control;
 /// The MIDI API of the classic Launch Control and the Launch Control XL is identical

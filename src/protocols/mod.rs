@@ -14,8 +14,32 @@ impl Button80 {
     pub const LEFT: Self = Button80::ControlButton { index: 2 };
     pub const RIGHT: Self = Button80::ControlButton { index: 3 };
     pub const SESSION: Self = Button80::ControlButton { index: 4 };
+
+    /**
+     * The 6th top-row button
+     *
+     * On the MK2 and the S, this button is called "User 1".
+     *
+     * On the MK3 Mini, this button is called "Drums".
+     */
     pub const USER_1: Self = Button80::ControlButton { index: 5 };
+
+    /**
+     * The 7th top-row button
+     *
+     * On the MK2 and the S, this button is called "User 2".
+     *
+     * On the MK3 Mini, this button is called "Keys".
+     */
     pub const USER_2: Self = Button80::ControlButton { index: 6 };
+
+    /**
+     * The 8th top-row button
+     *
+     * On the MK2 and the S, this button is called "Mixer".
+     *
+     * On the MK3 Mini, this button is called "User".
+     */
     pub const MIXER: Self = Button80::ControlButton { index: 7 };
     pub const VOLUME: Self = Button80::GridButton { x: 8, y: 0 };
     pub const PAN: Self = Button80::GridButton { x: 8, y: 1 };
@@ -25,6 +49,16 @@ impl Button80 {
     pub const MUTE: Self = Button80::GridButton { x: 8, y: 5 };
     pub const SOLO: Self = Button80::GridButton { x: 8, y: 6 };
     pub const RECORD_ARM: Self = Button80::GridButton { x: 8, y: 7 };
+
+    /// Creates a new GridButton coordinate
+    pub fn grid(x: u8, y: u8) -> Button80 {
+        Button80::GridButton { x, y }
+    }
+
+    /// Creates a new ControlButton coordinate
+    pub fn control(index: u8) -> Button80 {
+        Button80::ControlButton { index }
+    }
 
     /// Creates a new button out of absolute coordinates, like the ones returned by `abs_x()` and
     /// `abs_y()`.
