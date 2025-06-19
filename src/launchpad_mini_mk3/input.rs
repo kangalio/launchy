@@ -63,7 +63,7 @@ impl crate::InputDevice for Input {
     /// - Launchpad Mini MK3 LPMiniMK3 MIDI
     ///
     /// But only the MIDI interface works, so include the "MIDI" string.
-    const MIDI_DEVICE_KEYWORD: &'static str = "Launchpad Mini MK3 LPMiniMK3 MIDI";
+    const MIDI_DEVICE_KEYWORD: &'static str = "Launchpad Mini MK3 LPMiniMK3 MI";
     const MIDI_CONNECTION_NAME: &'static str = "Launchy Mini Mk3 Input";
     type Message = Message;
 
