@@ -296,7 +296,7 @@ impl crate::OutputDevice for Output {
     /// - "Launchpad Mini MK3 LPMiniMK3 MIDI"
     ///
     /// But only the MIDI interface works for what we want to do, so include the "MIDI" string.
-    const MIDI_DEVICE_KEYWORD: &'static str = "Launchpad Mini MK3 LPMiniMK3 MIDI";
+    const MIDI_DEVICE_KEYWORD: &'static str = "Launchpad Mini MK3 LPMiniMK3 MI";
 
     fn from_connection(connection: MidiOutputConnection) -> Result<Self, crate::MidiError> {
         let mut self_ = Self { connection };

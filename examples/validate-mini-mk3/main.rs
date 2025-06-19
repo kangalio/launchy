@@ -178,11 +178,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut did_see_press = false;
     for msg in input.iter() {
         match msg {
-            Message::Press(button) if button == Button::grid(4, 3) => {
+            Message::Press { button } if button == Button::grid(4, 3) => {
                 println!("Press");
                 did_see_press = true;
             }
-            Message::Release(button) if button == Button::grid(4, 3) => {
+            Message::Release { button } if button == Button::grid(4, 3) => {
                 println!("Release");
                 if did_see_press {
                     break;
