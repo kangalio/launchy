@@ -1,4 +1,5 @@
 use midir::{MidiInput, MidiInputConnection, MidiInputPort, MidiOutput, MidiOutputConnection};
+use log::debug;
 
 fn guess_port<T: midir::MidiIO>(midi_io: &T, keyword: &str) -> Option<T::Port> {
     for port in midi_io.ports() {
@@ -6,13 +7,15 @@ fn guess_port<T: midir::MidiIO>(midi_io: &T, keyword: &str) -> Option<T::Port> {
             Ok(name) => name,
             Err(_) => continue,
         };
+<<<<<<< HEAD
 
+        debug!("Considering MIDI port: '{}'", name);
         if name.contains(keyword) {
+            debug!("Found matching MIDI port: '{}'", name);
             return Some(port);
         }
     }
-
-    None
+    debug!("No MIDI port found with keyword: '{}'", keyword);
 }
 
 pub trait OutputDevice
@@ -28,6 +31,7 @@ where
     fn send(&mut self, bytes: &[u8]) -> Result<(), crate::MidiError>;
 
     fn guess() -> Result<Self, crate::MidiError> {
+        debug!("Attempting to guess output device with keyword: '{}'", Self::MIDI_DEVICE_KEYWORD);
         let midi_output = MidiOutput::new(crate::APPLICATION_NAME)?;
         let port = guess_port(&midi_output, Self::MIDI_DEVICE_KEYWORD).ok_or(
             crate::MidiError::NoPortFound {
@@ -35,6 +39,7 @@ where
             },
         )?;
         let connection = midi_output.connect(&port, Self::MIDI_CONNECTION_NAME)?;
+        debug!("Successfully connected to output device: '{}'", Self::MIDI_DEVICE_KEYWORD);
         Self::from_connection(connection)
     }
 }
@@ -126,6 +131,7 @@ pub trait InputDevice {
     where
         F: FnMut(Self::Message) + Send + 'static,
     {
+        debug!("Attempting to guess input device with keyword: '{}'", Self::MIDI_DEVICE_KEYWORD);
         let midi_input = MidiInput::new(crate::APPLICATION_NAME)?;
 
         let port = guess_port(&midi_input, Self::MIDI_DEVICE_KEYWORD).ok_or(
@@ -133,7 +139,7 @@ pub trait InputDevice {
                 keyword: Self::MIDI_DEVICE_KEYWORD,
             },
         )?;
-
+        debug!("Successfully connected to input device: '{}'", Self::MIDI_DEVICE_KEYWORD);
         Self::from_port(midi_input, &port, user_callback)
     }
 
@@ -143,6 +149,7 @@ pub trait InputDevice {
     where
         Self::Message: Send + 'static,
     {
+        debug!("Attempting to guess input device (polling) with keyword: '{}'", Self::MIDI_DEVICE_KEYWORD);
         let midi_input = MidiInput::new(crate::APPLICATION_NAME)?;
 
         let port = guess_port(&midi_input, Self::MIDI_DEVICE_KEYWORD).ok_or(
@@ -150,7 +157,7 @@ pub trait InputDevice {
                 keyword: Self::MIDI_DEVICE_KEYWORD,
             },
         )?;
-
+        debug!("Successfully connected to input device (polling): '{}'", Self::MIDI_DEVICE_KEYWORD);
         Self::from_port_polling(midi_input, &port)
     }
 }
@@ -227,7 +234,8 @@ pub trait MsgPollingWrapper {
     ///
     /// For an iteration method that doesn't block, but returns immediately when there are no more
     /// pending messages, see [`Self::iter_pending`].
-    fn iter(&self) -> std::sync::mpsc::Iter<Self::Message> {
+<<<<<<< HEAD
+    fn iter(&self) -> std::sync::mpsc::Iter<'_, Self::Message> {
         self.receiver().iter()
     }
 
@@ -236,7 +244,8 @@ pub trait MsgPollingWrapper {
     ///
     /// For an iteration method that will block, waiting for new messages to arrive, see
     /// [`Self::iter`].
-    fn iter_pending(&self) -> std::sync::mpsc::TryIter<Self::Message> {
+<<<<<<< HEAD
+    fn iter_pending(&self) -> std::sync::mpsc::TryIter<'_, Self::Message> {
         self.receiver().try_iter()
     }
 
@@ -245,7 +254,8 @@ pub trait MsgPollingWrapper {
     ///
     /// For a shorthand of this function that accepts the duration in milliseconds, see
     /// [`Self::iter_for_millis`]
-    fn iter_for(&self, duration: std::time::Duration) -> IterFor<Self::Message> {
+<<<<<<< HEAD
+    fn iter_for(&self, duration: std::time::Duration) -> IterFor<'_, Self::Message> {
         IterFor {
             receiver: self.receiver(),
             deadline: std::time::Instant::now() + duration,
@@ -257,7 +267,8 @@ pub trait MsgPollingWrapper {
     ///
     /// For a more general version of this function that accepts any [std::time::Duration], see
     /// [`Self::iter_for`]
-    fn iter_for_millis(&self, millis: u64) -> IterFor<Self::Message> {
+<<<<<<< HEAD
+    fn iter_for_millis(&self, millis: u64) -> IterFor<'_, Self::Message> {
         self.iter_for(std::time::Duration::from_millis(millis))
     }
 

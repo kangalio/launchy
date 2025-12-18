@@ -1,7 +1,7 @@
 [package]
 name = "launchy"
-version = "0.3.0"
-authors = ["Kangalioo <jannik.a.schaper@web.de>"]
+version = "0.3.1"
+authors = ["kangalio <me@kangalio.net>"]
 edition = "2018"
 description = "Low-level bindings and high-level abstractions for the Novation Launchpad MIDI devices"
 license = "MIT"
