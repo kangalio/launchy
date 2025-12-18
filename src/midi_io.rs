@@ -7,8 +7,6 @@ fn guess_port<T: midir::MidiIO>(midi_io: &T, keyword: &str) -> Option<T::Port> {
             Ok(name) => name,
             Err(_) => continue,
         };
-<<<<<<< HEAD
-
         debug!("Considering MIDI port: '{}'", name);
         if name.contains(keyword) {
             debug!("Found matching MIDI port: '{}'", name);
@@ -16,6 +14,7 @@ fn guess_port<T: midir::MidiIO>(midi_io: &T, keyword: &str) -> Option<T::Port> {
         }
     }
     debug!("No MIDI port found with keyword: '{}'", keyword);
+    None
 }
 
 pub trait OutputDevice
@@ -234,7 +233,6 @@ pub trait MsgPollingWrapper {
     ///
     /// For an iteration method that doesn't block, but returns immediately when there are no more
     /// pending messages, see [`Self::iter_pending`].
-<<<<<<< HEAD
     fn iter(&self) -> std::sync::mpsc::Iter<'_, Self::Message> {
         self.receiver().iter()
     }
@@ -244,7 +242,6 @@ pub trait MsgPollingWrapper {
     ///
     /// For an iteration method that will block, waiting for new messages to arrive, see
     /// [`Self::iter`].
-<<<<<<< HEAD
     fn iter_pending(&self) -> std::sync::mpsc::TryIter<'_, Self::Message> {
         self.receiver().try_iter()
     }
@@ -254,7 +251,6 @@ pub trait MsgPollingWrapper {
     ///
     /// For a shorthand of this function that accepts the duration in milliseconds, see
     /// [`Self::iter_for_millis`]
-<<<<<<< HEAD
     fn iter_for(&self, duration: std::time::Duration) -> IterFor<'_, Self::Message> {
         IterFor {
             receiver: self.receiver(),
@@ -267,7 +263,6 @@ pub trait MsgPollingWrapper {
     ///
     /// For a more general version of this function that accepts any [std::time::Duration], see
     /// [`Self::iter_for`]
-<<<<<<< HEAD
     fn iter_for_millis(&self, millis: u64) -> IterFor<'_, Self::Message> {
         self.iter_for(std::time::Duration::from_millis(millis))
     }
