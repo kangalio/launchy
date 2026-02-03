@@ -21,7 +21,8 @@ Launchy is a library for the Novation Launchpad MIDI devices, for the Rust progr
 - very modular design: it's very easy to add support for new devices, or to add new features to [`Canvas`]
 
 ## Supported devices
-- [x] Launchpad (MK1) - see [`launchpad_midi_1` module](./src/launchpad_midi_1/README.md) for details. Note: this device has a slower processing speed than newer models.
+
+- [x] Launchpad (MK1)
 - [x] Launchpad S
 - [x] Launchpad Mini
 - [x] Launchpad Control
@@ -29,19 +30,22 @@ Launchy is a library for the Novation Launchpad MIDI devices, for the Rust progr
 - [ ] Launchpad Pro
 - [x] Launchpad MK2
 - [ ] Launchpad X
-- [ ] Launchpad Mini MK3
+- [x] Launchpad Mini MK3
 - [ ] Launchpad Pro MK2
 
 ## Canvas API
+
 Launchy provides a `Canvas` trait that allows you to abstract over the hardware-specific details of your Launchpad and write concise, performant and
 Launchpad-agnostic code.
 
 The `Canvas` API even allows you to chain multiple Launchpads together and use them as if they were a single device. See `CanvasLayout` for that.
 
 ## Direct Input/Output API
+
 In cases where you need direct access to your device's API, the abstraction provided by the `Canvas` API gets in your way.
 
 Say if you wanted to programmatically retrieve the firmware version of your Launchpad MK2:
+
 ```rust
 let input = launchy::mk2::Input::guess_polling()?;
 let mut output = launchy::mk2::Output::guess()?;
@@ -55,7 +59,9 @@ for msg in input.iter() {
 ```
 
 ## Examples
+
 ### Satisfying pulse light effect
+
 <a href="https://youtu.be/DHwv7yu5dJc"><img src="https://imgur.com/gBKAjgS.jpg" width="50%"/></a>
 
 ```rust
@@ -130,6 +136,7 @@ loop {
 ```-->
 
 ### Seamless text scrolling across multiple Launchpads (leveraging `embedded_graphics`)
+
 <a href="https://youtu.be/BJqoH3p9mhE"><img src="https://imgur.com/Fxe9al9.jpg" width="50%"/></a>
 
 (This image shows the first three letters of the word "Hello")
