@@ -1,12 +1,12 @@
 [package]
 name = "launchy"
-version = "0.3.0"
-authors = ["Kangalioo <jannik.a.schaper@web.de>"]
+version = "0.4.0"
+authors = ["kangalio <me@kangalio.net>"]
 edition = "2018"
 description = "Low-level bindings and high-level abstractions for the Novation Launchpad MIDI devices"
 license = "MIT"
 readme = "README.md"
-repository = "https://github.com/kangalioo/launchy"
+repository = "https://github.com/kangalio/launchy"
 keywords = ["novation", "launchpad", "midi", "midi-controller", "lightshow"]
 categories = ["api-bindings", "games", "graphics", "rendering", "multimedia::images"]
 
