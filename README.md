@@ -21,7 +21,7 @@ Launchy is a library for the Novation Launchpad MIDI devices, for the Rust progr
 - very modular design: it's very easy to add support for new devices, or to add new features to [`Canvas`]
 
 ## Supported devices
-- [ ] Launchpad
+- [x] Launchpad (MK1) - see [`launchpad_midi_1` module](./src/launchpad_midi_1/README.md) for details. Note: this device has a slower processing speed than newer models.
 - [x] Launchpad S
 - [x] Launchpad Mini
 - [x] Launchpad Control

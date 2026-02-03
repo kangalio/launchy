@@ -14,8 +14,10 @@ categories = ["api-bindings", "games", "graphics", "rendering", "multimedia::ima
 midir = "0.9.1"
 embedded-graphics = { version = "0.7", optional = true }
 serde = { version = "1.0", features = ["derive"], optional = true }
+log = "0.4"
 
 [dev-dependencies]
 # For the example crate
 nanorand = "0.7"
 rodio = "0.15.0"
+env_logger = "0.10"
