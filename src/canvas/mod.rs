@@ -37,7 +37,7 @@ macro_rules! impl_traits_for_canvas {
                 prelude::*,
                 draw_target::DrawTarget,
                 geometry::Dimensions,
-                pixelcolor::{Rgb888, RgbColor},
+                pixelcolor::Rgb888,
                 primitives::rectangle::Rectangle,
             };
         }

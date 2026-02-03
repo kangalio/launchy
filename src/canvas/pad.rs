@@ -107,8 +107,6 @@ impl Pad {
     }
 
     /// If this pad is outside the bounding rectangle, wrap it around
-    ///
-    /// Note: if you want more fine-grained edges, use [`Canvas::wrap_edges`] instead
     pub fn wrap_edges(self, width: u32, height: u32) -> Pad {
         Pad {
             x: self.x.rem_euclid(width as i32),

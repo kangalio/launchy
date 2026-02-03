@@ -73,9 +73,7 @@ pub struct DeviceCanvas<Spec: DeviceSpec> {
 }
 
 impl<Spec: DeviceSpec> DeviceCanvas<Spec> {
-    /// Create a new canvas by guessing both input and output MIDI connection by their name. If you
-    /// need precise control over the specific MIDI connections that will be used, use
-    /// [`DeviceCanvas::from_ports`] instead // TODO: not implemented yet
+    /// Create a new canvas by guessing both input and output MIDI connection by their name.
     pub fn guess(
         mut callback: impl FnMut(CanvasMessage) + Send + 'static,
     ) -> Result<Self, crate::MidiError> {

@@ -282,7 +282,7 @@ impl std::iter::Sum for Color {
 #[cfg(feature = "embedded-graphics")]
 impl From<Color> for embedded_graphics::pixelcolor::Rgb888 {
     fn from(color: Color) -> Self {
-        let (r, g, b) = color.quantize(256);
+        let (r, g, b) = color.quantize(255);
         Self::new(r, g, b)
     }
 }
