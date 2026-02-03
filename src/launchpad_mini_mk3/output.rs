@@ -100,14 +100,12 @@ impl RgbColor {
 ///
 /// Buttons can be in one of 3 states:
 ///
-/// - Plain: a constant color, using either a palette color or an RGB
-///   color.
-/// - Flashing: flashing between two colors on a 50% duty cycle. For
-///   simplicity, [ButtonStyle::flash] flashes between a given color
-///   and black, and [ButtonStyle::flash2] flashes between 2 colors.
-///   Flashing can only use palette colors.
-/// - Pulsing: pulsing between a given (palette) color and black.
-///   Pulsing looks more subdued than flashing.
+/// - Plain: a constant color, using either a palette color or an RGB color.
+/// - Flashing: flashing between two colors on a 50% duty cycle. For simplicity,
+///   [ButtonStyle::flash] flashes between a given color and black, and [ButtonStyle::flash2]
+///   flashes between 2 colors. Flashing can only use palette colors.
+/// - Pulsing: pulsing between a given (palette) color and black. Pulsing looks more subdued than
+///   flashing.
 ///
 /// [PaletteColor] and [RgbColor] are convertible into [ButtonStyle]
 /// using `color.into()`; this will use the plain (non-flashing) button
@@ -259,7 +257,7 @@ impl From<u8> for Layout {
 /// For example:
 /// ```no_run
 /// # use launchy::OutputDevice as _;
-/// # use launchy::mk3::{PaletteColor, Button, Output};
+/// # use launchy::mini_mk3::{PaletteColor, Button, Output};
 /// let mut output = Output::guess()?;
 ///
 /// output.light_all(PaletteColor::BLACK); // clear screen
@@ -320,8 +318,8 @@ impl Output {
     ///
     /// For example to start a yellow pulse on the leftmost control button:
     /// ```no_run
-    /// # use launchy::mk3::{PaletteColor, Button, LightMode};
-    /// # let output: launchy::mk3::Output = unimplemented!();
+    /// # use launchy::mini_mk3::{PaletteColor, Button, LightMode};
+    /// # let output: launchy::mini_mk3::Output = unimplemented!();
     /// let button = Button::ControlButton { index: 0 };
     /// let color = PaletteColor::YELLOW;
     /// let light_mode = LightMode::Pulse;
@@ -358,8 +356,8 @@ impl Output {
     ///
     /// For example to light the top left button green and the top right button red:
     /// ```no_run
-    /// # use launchy::mk3::{Button, RgbColor};
-    /// # let output: launchy::mk3::Output = unimplemented!();
+    /// # use launchy::mini_mk3::{Button, ButtonStyle, RgbColor};
+    /// # let output: launchy::mini_mk3::Output = unimplemented!();
     /// output.set_buttons(&[
     ///     (Button::GridButton { x: 0, y: 0 }, ButtonStyle::rgb(RgbColor::new(0, 0, 127))),
     ///     (Button::GridButton { x: 7, y: 0 }, RgbColor::new(127, 0, 0).into()),
@@ -413,8 +411,8 @@ impl Output {
     /// For example to light the top left button green and the top right button red:
     ///
     /// ```no_run
-    /// # use launchy::mk3::{Button, RgbColor};
-    /// # let output: launchy::mk3::Output = unimplemented!();
+    /// # use launchy::mini_mk3::{Button, RgbColor};
+    /// # let output: launchy::mini_mk3::Output = unimplemented!();
     /// output.light_multiple_rgb(&[
     ///     (Button::GridButton { x: 0, y: 0 }, RgbColor::new(0, 0, 127)),
     ///     (Button::GridButton { x: 7, y: 0 }, RgbColor::new(127, 0, 0)),
@@ -442,8 +440,8 @@ impl Output {
     ///
     /// For example to light the first column yellow and the second column blue:
     /// ```no_run
-    /// # use launchy::mk3::{Button, PaletteColor};
-    /// # let output: launchy::mk3::Output = unimplemented!();
+    /// # use launchy::mini_mk3::{Button, PaletteColor};
+    /// # let output: launchy::mini_mk3::Output = unimplemented!();
     /// output.light_columns(&[
     ///     (0, PaletteColor::YELLOW),
     ///     (1, PaletteColor::BLUE),
@@ -469,8 +467,8 @@ impl Output {
     /// Note: the row are counted starting at the control row! For example to light the control row
     /// magenta and the first grid row green:
     /// ```no_run
-    /// # use launchy::mk3::{Button, PaletteColor};
-    /// # let output: launchy::mk3::Output = unimplemented!();
+    /// # use launchy::mini_mk3::{Button, PaletteColor};
+    /// # let output: launchy::mini_mk3::Output = unimplemented!();
     /// output.light_rows(&[
     ///     (0, PaletteColor::MAGENTA),
     ///     (1, PaletteColor::GREEN),
@@ -495,8 +493,8 @@ impl Output {
     ///
     /// For example to clear the screen:
     /// ```no_run
-    /// # use launchy::mk3::PaletteColor;
-    /// # let output: launchy::mk3::Output = unimplemented!();
+    /// # use launchy::mini_mk3::PaletteColor;
+    /// # let output: launchy::mini_mk3::Output = unimplemented!();
     /// output.light_all(PaletteColor::BLACK)?;
     /// # Ok::<(), launchy::MidiError>(())
     /// ```
@@ -530,7 +528,7 @@ impl Output {
     ///
     /// For example to send clock ticks at 200 BPM:
     /// ```no_run
-    /// # let output: launchy::mk3::Output = unimplemented!();
+    /// # let output: launchy::mini_mk3::Output = unimplemented!();
     /// let beats_per_minute = 200;
     /// let clock_ticks_per_second = beats_per_minute * 60 * 24;
     /// let clock_tick_interval = std::time::Duration::from_millis(1000 / clock_ticks_per_second);
@@ -588,8 +586,8 @@ impl Output {
     /// For example to scroll the text "Hello, world!" in blue:
     ///
     /// ```no_run
-    /// # use launchy::mk3::PaletteColor;
-    /// # let output: launchy::mk3::Output = unimplemented!();
+    /// # use launchy::mini_mk3::PaletteColor;
+    /// # let output: launchy::mini_mk3::Output = unimplemented!();
     /// output.scroll_text(b"Hello, world!", PaletteColor::BLUE, 32, false)?;
     /// # Ok::<(), launchy::MidiError>(())
     /// ```
@@ -649,7 +647,7 @@ impl Output {
     /// output.change_layout(layout_mode)?;
     /// # Ok::<(), launchy::MidiError>(())
     /// ```
-    fn change_layout(&mut self, layout: Layout) -> Result<(), crate::MidiError> {
+    pub fn change_layout(&mut self, layout: Layout) -> Result<(), crate::MidiError> {
         self.send(&[240, 0, 32, 41, 2, 13, 14, layout as u8, 247])
     }
 
@@ -693,8 +691,8 @@ impl Output {
     /// For example to light the "Volume" side button cyan:
     ///
     /// ```no_run
-    /// # use launchy::mk3::{Button, PaletteColor};
-    /// # let output: launchy::mk3::Output = unimplemented!();
+    /// # use launchy::mini_mk3::{Button, PaletteColor};
+    /// # let output: launchy::mini_mk3::Output = unimplemented!();
     /// output.light(Button::VOLUME, PaletteColor::CYAN)?;
     /// # Ok::<(), launchy::MidiError>(())
     /// ```
@@ -710,8 +708,8 @@ impl Output {
     ///
     /// For example to start a red flash on the "Session" button at the top:
     /// ```no_run
-    /// # use launchy::mk3::{Button, PaletteColor};
-    /// # let output: launchy::mk3::Output = unimplemented!();
+    /// # use launchy::mini_mk3::{Button, PaletteColor};
+    /// # let output: launchy::mini_mk3::Output = unimplemented!();
     /// output.flash(Button::UP, PaletteColor::RED)?;
     /// # Ok::<(), launchy::MidiError>(())
     /// ```
@@ -724,8 +722,8 @@ impl Output {
     ///
     /// For example to start a magenta pulse on the top right grid button:
     /// ```no_run
-    /// # use launchy::mk3::{Button, PaletteColor};
-    /// # let output: launchy::mk3::Output = unimplemented!();
+    /// # use launchy::mini_mk3::{Button, PaletteColor};
+    /// # let output: launchy::mini_mk3::Output = unimplemented!();
     /// output.pulse(Button::GridButton { x: 7, y: 0 }, PaletteColor::MAGENTA)?;
     /// # Ok::<(), launchy::MidiError>(())
     /// ```
@@ -737,8 +735,8 @@ impl Output {
     ///
     /// For example to light the entire side button column white:
     /// ```no_run
-    /// # use launchy::mk3::{Button, PaletteColor};
-    /// # let output: launchy::mk3::Output = unimplemented!();
+    /// # use launchy::mini_mk3::{Button, PaletteColor};
+    /// # let output: launchy::mini_mk3::Output = unimplemented!();
     /// output.light_column(8, PaletteColor::WHITE)?;
     /// # Ok::<(), launchy::MidiError>(())
     /// ```
@@ -755,8 +753,8 @@ impl Output {
     ///
     /// For example to light the first grid row green:
     /// ```no_run
-    /// # use launchy::mk3::{Button, PaletteColor};
-    /// # let output: launchy::mk3::Output = unimplemented!();
+    /// # use launchy::mini_mk3::{Button, PaletteColor};
+    /// # let output: launchy::mini_mk3::Output = unimplemented!();
     /// output.light_row(1, PaletteColor::GREEN)?;
     /// # Ok::<(), launchy::MidiError>(())
     /// ```
@@ -768,8 +766,8 @@ impl Output {
     ///
     /// For example to light the bottom right button cyan:
     /// ```no_run
-    /// # use launchy::mk3::{Button, RgbColor};
-    /// # let output: launchy::mk3::Output = unimplemented!();
+    /// # use launchy::mini_mk3::{Button, RgbColor};
+    /// # let output: launchy::mini_mk3::Output = unimplemented!();
     /// output.light_rgb(Button::GridButton { x: 7, y: 7 }, RgbColor::new(0, 127, 127))?;
     /// # Ok::<(), launchy::MidiError>(())
     /// ```
@@ -782,8 +780,8 @@ impl Output {
     ///
     /// For example to light both User 1 and User 2 buttons orange:
     /// ```no_run
-    /// # use launchy::mk3::{Button, PaletteColor};
-    /// # let output: launchy::mk3::Output = unimplemented!();
+    /// # use launchy::mini_mk3::{Button, PaletteColor};
+    /// # let output: launchy::mini_mk3::Output = unimplemented!();
     /// output.light_multiple(&[
     ///     (Button::USER_1, PaletteColor::new(9)),
     ///     (Button::USER_2, PaletteColor::new(9)),
@@ -807,8 +805,8 @@ impl Output {
     ///
     /// For example to flash both User 1 and User 2 buttons orange:
     /// ```no_run
-    /// # use launchy::mk3::{Button, PaletteColor};
-    /// # let output: launchy::mk3::Output = unimplemented!();
+    /// # use launchy::mini_mk3::{Button, PaletteColor};
+    /// # let output: launchy::mini_mk3::Output = unimplemented!();
     /// output.flash_multiple(&[
     ///     (Button::USER_1, PaletteColor::new(9)),
     ///     (Button::USER_2, PaletteColor::new(9)),
@@ -832,8 +830,8 @@ impl Output {
     ///
     /// For example to pulse both User 1 and User 2 buttons orange:
     /// ```no_run
-    /// # use launchy::mk3::{Button, PaletteColor};
-    /// # let output: launchy::mk3::Output = unimplemented!();
+    /// # use launchy::mini_mk3::{Button, PaletteColor};
+    /// # let output: launchy::mini_mk3::Output = unimplemented!();
     /// output.pulse_multiple(&[
     ///     (Button::USER_1, PaletteColor::new(9)),
     ///     (Button::USER_2, PaletteColor::new(9)),

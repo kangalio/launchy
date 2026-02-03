@@ -1,5 +1,5 @@
-use midir::{MidiInput, MidiInputConnection, MidiInputPort, MidiOutput, MidiOutputConnection};
 use log::debug;
+use midir::{MidiInput, MidiInputConnection, MidiInputPort, MidiOutput, MidiOutputConnection};
 
 fn guess_port<T: midir::MidiIO>(midi_io: &T, keyword: &str) -> Option<T::Port> {
     for port in midi_io.ports() {
@@ -30,7 +30,10 @@ where
     fn send(&mut self, bytes: &[u8]) -> Result<(), crate::MidiError>;
 
     fn guess() -> Result<Self, crate::MidiError> {
-        debug!("Attempting to guess output device with keyword: '{}'", Self::MIDI_DEVICE_KEYWORD);
+        debug!(
+            "Attempting to guess output device with keyword: '{}'",
+            Self::MIDI_DEVICE_KEYWORD
+        );
         let midi_output = MidiOutput::new(crate::APPLICATION_NAME)?;
         let port = guess_port(&midi_output, Self::MIDI_DEVICE_KEYWORD).ok_or(
             crate::MidiError::NoPortFound {
@@ -38,7 +41,10 @@ where
             },
         )?;
         let connection = midi_output.connect(&port, Self::MIDI_CONNECTION_NAME)?;
-        debug!("Successfully connected to output device: '{}'", Self::MIDI_DEVICE_KEYWORD);
+        debug!(
+            "Successfully connected to output device: '{}'",
+            Self::MIDI_DEVICE_KEYWORD
+        );
         Self::from_connection(connection)
     }
 }
@@ -130,7 +136,10 @@ pub trait InputDevice {
     where
         F: FnMut(Self::Message) + Send + 'static,
     {
-        debug!("Attempting to guess input device with keyword: '{}'", Self::MIDI_DEVICE_KEYWORD);
+        debug!(
+            "Attempting to guess input device with keyword: '{}'",
+            Self::MIDI_DEVICE_KEYWORD
+        );
         let midi_input = MidiInput::new(crate::APPLICATION_NAME)?;
 
         let port = guess_port(&midi_input, Self::MIDI_DEVICE_KEYWORD).ok_or(
@@ -138,7 +147,10 @@ pub trait InputDevice {
                 keyword: Self::MIDI_DEVICE_KEYWORD,
             },
         )?;
-        debug!("Successfully connected to input device: '{}'", Self::MIDI_DEVICE_KEYWORD);
+        debug!(
+            "Successfully connected to input device: '{}'",
+            Self::MIDI_DEVICE_KEYWORD
+        );
         Self::from_port(midi_input, &port, user_callback)
     }
 
@@ -148,7 +160,10 @@ pub trait InputDevice {
     where
         Self::Message: Send + 'static,
     {
-        debug!("Attempting to guess input device (polling) with keyword: '{}'", Self::MIDI_DEVICE_KEYWORD);
+        debug!(
+            "Attempting to guess input device (polling) with keyword: '{}'",
+            Self::MIDI_DEVICE_KEYWORD
+        );
         let midi_input = MidiInput::new(crate::APPLICATION_NAME)?;
 
         let port = guess_port(&midi_input, Self::MIDI_DEVICE_KEYWORD).ok_or(
@@ -156,7 +171,10 @@ pub trait InputDevice {
                 keyword: Self::MIDI_DEVICE_KEYWORD,
             },
         )?;
-        debug!("Successfully connected to input device (polling): '{}'", Self::MIDI_DEVICE_KEYWORD);
+        debug!(
+            "Successfully connected to input device (polling): '{}'",
+            Self::MIDI_DEVICE_KEYWORD
+        );
         Self::from_port_polling(midi_input, &port)
     }
 }

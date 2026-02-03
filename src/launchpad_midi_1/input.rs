@@ -1,6 +1,5 @@
 pub use crate::protocols::query::*;
 
-
 use super::Button;
 
 /// A Launchpad S input message

@@ -2,18 +2,13 @@ use super::*;
 use crate::Color;
 use std::collections::HashMap;
 
-#[derive(Debug, Eq, PartialEq, Hash, Copy, Clone)]
+#[derive(Debug, Eq, PartialEq, Hash, Copy, Clone, Default)]
 pub enum Rotation {
+    #[default]
     None,
     Left,
     Right,
     UpsideDown,
-}
-
-impl Default for Rotation {
-    fn default() -> Self {
-        Self::None
-    }
 }
 
 impl std::ops::Neg for Rotation {

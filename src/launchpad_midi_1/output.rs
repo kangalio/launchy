@@ -1,5 +1,5 @@
-use midir::MidiOutputConnection;
 use log::debug;
+use midir::MidiOutputConnection;
 
 use super::Button;
 use crate::OutputDevice;
@@ -49,7 +49,10 @@ impl Output {
         d: DoubleBufferingBehavior,
     ) -> Result<(), crate::MidiError> {
         let light_code = make_color_code(color, d);
-        debug!("Setting button: {:?}, color: {:?}, double_buffering: {:?}", button, color, d);
+        debug!(
+            "Setting button: {:?}, color: {:?}, double_buffering: {:?}",
+            button, color, d
+        );
         match button {
             Button::GridButton { x, y } => {
                 let button_code = y * 16 + x;
@@ -194,7 +197,11 @@ impl Output {
         self.turn_on_all_leds(Brightness::Off)
     }
 
-    pub fn set_all_buttons(&mut self, color: Color, dbb: DoubleBufferingBehavior) -> Result<(), crate::MidiError> {
+    pub fn set_all_buttons(
+        &mut self,
+        color: Color,
+        dbb: DoubleBufferingBehavior,
+    ) -> Result<(), crate::MidiError> {
         for _ in 0..40 {
             self.set_button_rapid(color, dbb, color, dbb)?;
         }

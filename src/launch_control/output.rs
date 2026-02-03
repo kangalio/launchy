@@ -138,7 +138,7 @@ impl Output {
     /// all the Launchpads connected to a system.
     ///
     /// - If `copy` is set, copy the LED states from the new displayed buffer to the new updating
-    /// buffer.
+    ///   buffer.
     /// - If `flash` is set, continually flip displayed buffers to make selected LEDs flash.
     /// - `updated`: the new updated buffer
     /// - `displayed`: the new displayed buffer
@@ -179,6 +179,6 @@ impl Output {
         color: Color,
         dbb: DoubleBufferingBehavior,
     ) -> Result<(), crate::MidiError> {
-        self.light_multiple(template, &[(button, color, dbb)])
+        self.light_multiple(template, [(button, color, dbb)])
     }
 }

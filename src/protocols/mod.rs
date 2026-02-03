@@ -100,7 +100,8 @@ impl Button80 {
         }
     }
 
-    /// Returns true if the button is part of the top-row control buttons (absolute x: 0-7, absolute y: 0).
+    /// Returns true if the button is part of the top-row control buttons (absolute x: 0-7, absolute
+    /// y: 0).
     pub fn is_top_control_button(&self) -> bool {
         match self {
             Self::ControlButton { index } => *index <= 7,
@@ -108,7 +109,8 @@ impl Button80 {
         }
     }
 
-    /// Returns true if the button is part of the right-column scene launch buttons (absolute x: 8, absolute y: 1-8).
+    /// Returns true if the button is part of the right-column scene launch buttons (absolute x: 8,
+    /// absolute y: 1-8).
     pub fn is_scene_launch_button(&self) -> bool {
         match self {
             Self::GridButton { x, y } => *x == 8 && *y <= 7, // Internal y is 0-7

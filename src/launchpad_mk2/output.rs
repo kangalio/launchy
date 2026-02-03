@@ -306,11 +306,11 @@ impl Output {
         )?;
 
         // Test multiple lights
-        self.light_multiple(&[
+        self.light_multiple([
             (Button::GridButton { x: 0, y: 1 }, PaletteColor { id: 18 }),
             (Button::GridButton { x: 0, y: 2 }, PaletteColor { id: 18 }),
         ])?;
-        self.light_multiple_rgb(&[
+        self.light_multiple_rgb([
             (
                 Button::GridButton { x: 0, y: 3 },
                 RgbColor {
@@ -332,28 +332,28 @@ impl Output {
         // Test pulse and flash
         self.flash(Button::GridButton { x: 1, y: 1 }, PaletteColor { id: 5 })?;
         self.pulse(Button::GridButton { x: 1, y: 2 }, PaletteColor { id: 9 })?;
-        self.flash_multiple(&[
+        self.flash_multiple([
             (Button::GridButton { x: 2, y: 1 }, PaletteColor { id: 5 }),
             (Button::GridButton { x: 2, y: 2 }, PaletteColor { id: 9 }),
         ])?;
-        self.pulse_multiple(&[
+        self.pulse_multiple([
             (Button::GridButton { x: 3, y: 1 }, PaletteColor { id: 5 }),
             (Button::GridButton { x: 3, y: 2 }, PaletteColor { id: 9 }),
         ])?;
         // same but for control row
         self.flash(Button::ControlButton { index: 2 }, PaletteColor { id: 5 })?;
         self.pulse(Button::ControlButton { index: 3 }, PaletteColor { id: 9 })?;
-        self.flash_multiple(&[
+        self.flash_multiple([
             (Button::ControlButton { index: 4 }, PaletteColor { id: 5 }),
             (Button::ControlButton { index: 5 }, PaletteColor { id: 9 }),
         ])?;
-        self.pulse_multiple(&[
+        self.pulse_multiple([
             (Button::ControlButton { index: 6 }, PaletteColor { id: 5 }),
             (Button::ControlButton { index: 7 }, PaletteColor { id: 9 }),
         ])?;
 
         // Test row, only grid
-        self.light_rows(&[(7, PaletteColor { id: 16 }), (8, PaletteColor { id: 18 })])?;
+        self.light_rows([(7, PaletteColor { id: 16 }), (8, PaletteColor { id: 18 })])?;
 
         // loop {
         //     // default is 120 BPM
@@ -790,7 +790,7 @@ impl Output {
         column: u8,
         color: PaletteColor,
     ) -> Result<(), crate::MidiError> {
-        self.light_columns(&[(column, color)])
+        self.light_columns([(column, color)])
     }
 
     /// Light a single row, specified by `row` (0-8). Note: the row counting begins at the control
@@ -804,7 +804,7 @@ impl Output {
     /// # Ok::<(), launchy::MidiError>(())
     /// ```
     pub fn light_row(&mut self, row: u8, color: PaletteColor) -> Result<(), crate::MidiError> {
-        self.light_rows(&[(row, color)])
+        self.light_rows([(row, color)])
     }
 
     /// Light a single button with an RGB color.
@@ -817,7 +817,7 @@ impl Output {
     /// # Ok::<(), launchy::MidiError>(())
     /// ```
     pub fn light_rgb(&mut self, button: Button, color: RgbColor) -> Result<(), crate::MidiError> {
-        self.light_multiple_rgb(&[(button, color)])
+        self.light_multiple_rgb([(button, color)])
     }
 
     /// Light multiple buttons with varying colors. Identical to

@@ -41,7 +41,7 @@ struct State {
 }
 
 fn uncover(state: &mut State, x: u8, y: u8) -> Result<(), launchy::MidiError> {
-    if state.uncovered.iter().any(|&pos| pos == (x, y)) {
+    if state.uncovered.contains(&(x, y)) {
         return Ok(());
     }
 
@@ -53,11 +53,7 @@ fn uncover(state: &mut State, x: u8, y: u8) -> Result<(), launchy::MidiError> {
                 continue;
             }
 
-            if state
-                .mines
-                .iter()
-                .any(|&pos| pos == (neighbor_x, neighbor_y))
-            {
+            if state.mines.contains(&(neighbor_x, neighbor_y)) {
                 num_neighbor_mines += 1;
             }
         }
@@ -96,7 +92,7 @@ fn generate_mines(n: usize) -> Vec<(u8, u8)> {
     let mut mines = vec![];
     while mines.len() < n {
         let (x, y) = (rng.generate_range(0..=7), rng.generate_range(0..=7));
-        if !mines.iter().any(|&m| m == (x, y)) {
+        if !mines.contains(&(x, y)) {
             mines.push((x, y));
         }
     }
@@ -140,13 +136,13 @@ fn handle(state: &Arc<Mutex<State>>, msg: &mk2::Message) -> Result<(), Box<dyn s
             button: mk2::Button::GridButton { x, y },
         } => {
             let mut state = state.lock();
-            let mut state = &mut *state;
+            let state = &mut *state;
 
             if state.currently_pressed.remove(&(x, y)).is_none() {
                 return Ok(());
             }
 
-            if state.mines.iter().any(|&mine| mine == (x, y)) {
+            if state.mines.contains(&(x, y)) {
                 // We hit a mine
                 state.audio.play_raw(state.samples.lose.clone())?;
                 for &(mine_x, mine_y) in &state.mines {
@@ -163,7 +159,7 @@ fn handle(state: &Arc<Mutex<State>>, msg: &mk2::Message) -> Result<(), Box<dyn s
             }
 
             state.audio.play_raw(state.samples.click.clone())?;
-            uncover(&mut state, x, y)?;
+            uncover(state, x, y)?;
 
             if state.uncovered.len() == 64 - state.mines.len() {
                 state.game_won = true;

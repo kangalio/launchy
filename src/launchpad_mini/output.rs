@@ -178,7 +178,7 @@ impl Output {
 
         let bytes = &[&[240, 0, 32, 41, 9, color_code], text, &[247]].concat();
 
-        return self.send(bytes);
+        self.send(bytes)
     }
 
     pub fn request_device_inquiry(&mut self, query: DeviceIdQuery) -> Result<(), crate::MidiError> {
@@ -207,7 +207,11 @@ impl Output {
         self.turn_on_all_leds(Brightness::Off)
     }
 
-    pub fn set_all_buttons(&mut self, color: Color, dbb: DoubleBufferingBehavior) -> Result<(), crate::MidiError> {
+    pub fn set_all_buttons(
+        &mut self,
+        color: Color,
+        dbb: DoubleBufferingBehavior,
+    ) -> Result<(), crate::MidiError> {
         for _ in 0..40 {
             self.set_button_rapid(color, dbb, color, dbb)?;
         }
