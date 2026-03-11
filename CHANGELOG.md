@@ -1,3 +1,7 @@
+# 0.4.1
+
+- More robust MIDI device detection for Launchpad Mini Mk3 (https://github.com/kangalio/launchy/pull/19, thanks @Xysto)
+
 # 0.4.0
 
 - Added support for Launchpad MK1 (https://github.com/kangalio/launchy/pull/17, thanks @sapphicdisaster)
