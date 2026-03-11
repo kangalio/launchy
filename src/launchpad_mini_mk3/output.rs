@@ -287,7 +287,7 @@ impl crate::OutputDevice for Output {
     const MIDI_CONNECTION_NAME: &'static str = "Launchy Mini Mk3 output";
 
     /// Device name.
-    /// 
+    ///
     /// Here's OS MIDI device names seen in the wild:
     /// - Launchpad Mini MK3 LPMiniMK3 DAW (MacOS)
     /// - Launchpad Mini MK3 LPMiniMK3 MIDI (MacOS)
