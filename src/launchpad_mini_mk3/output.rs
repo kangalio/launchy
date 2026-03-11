@@ -288,13 +288,14 @@ impl crate::OutputDevice for Output {
 
     /// Device name.
     ///
-    /// On MacOS, the Mini MK3 advertises:
+    /// Here's OS MIDI device names seen in the wild:
+    /// - Launchpad Mini MK3 LPMiniMK3 DAW (MacOS)
+    /// - Launchpad Mini MK3 LPMiniMK3 MIDI (MacOS)
+    /// - Launchpad Mini MK3:Launchpad Mini MK3 LPMiniMK3 DA 32:0 (Linux)
+    /// - Launchpad Mini MK3:Launchpad Mini MK3 LPMiniMK3 MI 32:1 (Linux)
     ///
-    /// - "Launchpad Mini MK3 LPMiniMK3 DAW"
-    /// - "Launchpad Mini MK3 LPMiniMK3 MIDI"
-    ///
-    /// But only the MIDI interface works for what we want to do, so include the "MIDI" string.
-    const MIDI_DEVICE_KEYWORD: &'static str = "Launchpad Mini MK3 LPMiniMK3 MIDI";
+    /// On some platforms, the string is truncated, and the device with "DAW" in its name does not work.
+    const MIDI_DEVICE_KEYWORD: &'static str = "Launchpad Mini MK3 LPMiniMK3 MI";
 
     fn from_connection(connection: MidiOutputConnection) -> Result<Self, crate::MidiError> {
         let mut self_ = Self { connection };
