@@ -56,7 +56,7 @@ fn decode_control_button(btn: u8) -> Button {
 
 impl crate::InputDevice for Input {
     /// Device name.
-    /// 
+    ///
     /// Here's OS MIDI device names seen in the wild:
     /// - Launchpad Mini MK3 LPMiniMK3 DAW (MacOS)
     /// - Launchpad Mini MK3 LPMiniMK3 MIDI (MacOS)
